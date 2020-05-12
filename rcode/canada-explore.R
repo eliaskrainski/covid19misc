@@ -4,7 +4,8 @@ if (FALSE) { ## can manually skip
     options(width=70)
     setwd('..')
 
-    source('rcode/getdata.R')
+    if (FALSE)
+        source('rcode/getdata.R')
 
 }
 
