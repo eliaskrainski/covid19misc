@@ -9,17 +9,17 @@ if (FALSE) { ## can manually skip
 
 }
 
-dbr <- read.csv('data/caso.csv.gv')
-head(dbr,2)
-tail(dbr,2)
+cbr <- read.csv('data/caso.csv.gv')
+head(cbr,2)
+tail(cbr,2)
 
-dbr$date <- as.Date(as.character(dbr$date))
-dbr <- dbr[order(dbr$date), ]
+cbr$date <- as.Date(as.character(cbr$date))
+cbr <- cbr[order(cbr$date), ]
 
-i.uf <- which(dbr$place_type=='state')
+i.uf <- which(cbr$place_type=='state')
 
 ### put time series by states to wide shape
-wc.uf <- reshape(dbr[i.uf, c('confirmed', 'date', 'state')],
+wc.uf <- reshape(cbr[i.uf, c('confirmed', 'date', 'state')],
                  direction='wide', timevar='date', idvar='state')
 rownames(wc.uf) <- wc.uf[,1]
 dim(wc.uf)
@@ -33,25 +33,30 @@ wc.uf[, -1] <- t(apply(wc.uf[,-1], 1, function(x) {
 wc.uf[1:3, 1:3]
 wc.uf[1:3, -2:0+ncol(wc.uf)]
 
+### w based on serial interval ~ Gamma(mean=5, sd=3)
+### to compute R_t (reproduction number varying over time)
+pw <- pgamma(0:14, shape=(5/3)^2, scale=3^2/5)
+w <- diff(pw)/sum(diff(pw))
+
 library(emisc) ### from https://github.com/eliaskrainski/emisc
 
 date <- as.Date(substring(colnames(wc.uf)[-1], 11))
 
 par(mfrow=c(2,2), mar=c(3,3,1,0.5), mgp=c(2, 0.5, 0), las=1)
-epidplot(date, colSums(wc.uf[,-1]), main='Brasil') 
+epidplot(date, colSums(wc.uf[,-1]), main='Brasil', w=w) 
 
 par(mfrow=c(6,5), mar=c(2,3,1,0.5), mgp=c(2, 0.5, 0))
 for (i in 1:nrow(wc.uf)) 
     epidplot(date, unlist(wc.uf[i, 2:ncol(wc.uf)]),
              which=1,  main=wc.uf[i, 1], cex=0.5) 
-epidplot(date, colSums(wc.uf[,-1]), main='Brasil')
+epidplot(date, colSums(wc.uf[,-1]), 1:3, main='Brasil')
 
 ## plot only the growth for each state and Brasil
 par(mfrow=c(6,5), mar=c(2,3,1,0.5), mgp=c(2, 0.5, 0))
 for (i in 1:nrow(wc.uf)) 
-    epidplot(date, unlist(wc.uf[i, 2:ncol(wc.uf)]), which=2,
-             main=wc.uf[i, 1]) 
-epidplot(date, colSums(wc.uf[,-1]), main='Brasil', which=2)
+    epidplot(date, unlist(wc.uf[i, 2:ncol(wc.uf)]),
+             which=4, w=w, main=wc.uf[i, 1]) 
+epidplot(date, colSums(wc.uf[,-1]), main='Brasil', which=4, w=w)
 
 source('rcode/brazil-uf-map.R')
 head(brufs@data,2)
