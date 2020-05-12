@@ -24,10 +24,13 @@ library(emisc) ### from https://github.com/eliaskrainski/emisc
 par(mfrow=c(2,2), mar=c(3,3,0.5,0.5), mgp=c(2, 0.5, 0))
 epidplot(date, cc.n)
 
-par(mfrow=c(3,4), mar=c(3,3,1.5,0.5), mgp=c(2, 0.5, 0))
-for (i in c(1, 2, 4:11, 14:15)) 
+par(mfrow=c(3,4), mar=c(3,3,1.5,0.5), mgp=c(2, 0.5, 0), las=1)
+for (i in c(1, 2, 4:11, 14:15)) {
     epidplot(date, unlist(cc[i, 5:ncol(cc)]), which=1,
-             main=cc[i, 1]) 
+             main=cc[i, 1])
+    abline(h=log(rep(c(1,3), 5)*(10^rep(0:5, each=2)), 10), 
+           lty=2, col=gray(0.5, 0.5))
+}
 
 source('rcode/canada-map.R')
 
