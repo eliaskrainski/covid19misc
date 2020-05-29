@@ -51,7 +51,7 @@ object.size(w.us)
 
 for (k in 1:2) {
     w.us[[k]][is.na(w.us[[k]])] <- 0L
-    wdl[[1]] <- rbind(
+    wdl[[k]] <- rbind(
         wdl[[k]],
         data.frame(code='', City='',
                    Province.State=rownames(w.us[[k]]),

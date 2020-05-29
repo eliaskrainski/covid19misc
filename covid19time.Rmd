@@ -5,7 +5,7 @@ output: html_document
 runtime: shiny
 ---
 
-```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+```{r setup, include=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(mgcv)
 load('data/wdl.RData')
@@ -22,8 +22,9 @@ if (lastday<(Sys.Date()-1))
 sidebarLayout(
   sidebarPanel(
   radioButtons("data", "Dado de COVID a ser visualizado:",
-               c("Casos confirmados" = 1,
-                 "Obitos" = 2)),
+               choices=list("Casos confirmados" = 1,
+                 "Obitos" = 2), 
+               selected = 1),
   selectInput(inputId = 'country', 
               label = 'País', 
               choices = wc.names, 
@@ -31,8 +32,8 @@ sidebarLayout(
   selectInput(inputId = 'state', 
               label = 'Estado/Província', 
               choices = st.names, 
-              selected = st.names[1]),
-  dateRangeInput('dateRange',
+              selected = 'PR'),
+dateRangeInput('dateRange',
       label = 'Data (intervalo): yyyy-mm-dd',
       start = Sys.Date() - 60, end = Sys.Date() - 1, 
       format = "dd/mm/yy", 
@@ -42,34 +43,104 @@ sidebarLayout(
   actionButton("Exit", "Exit")
 ), 
 renderPlot({
-  k <- input$data
+  k <- as.integer(input$data)
   iic <- wdl[[k]]$Country==input$country
   st.names <- unique(as.character(
-    wdl[[k]]$Province.State[which(iic)]))
+        wdl[[k]]$Province.State[which(iic)]))
   iis <- wdl[[k]]$Province.State==input$state
-  y <- unlist(wdl[[k]][which(iic & iis), 7:ncol(wdl[[k]])])
+  iim <- wdl[[k]]$City==''
+  ii <- which(iic & iis & iim)
+  y <- as.matrix(wdl[[k]][ii, 7:ncol(wdl[[k]])])[1,]
+  iiy <- which(y>0)
+  y <- y[iiy]
+  Date <- Date[iiy]
   dy <- diff(c(0, y))
   r <- dy; r[dy<0] <- 0
-  s <- gam(y ~ x, poisson(), list(x=1:length(y), y=r))$fitted
+  s <- gam(y ~ s(x), poisson(), 
+           list(x=1:length(y), y=r))$fitted
+  ly <- log(y, 10)
+  ldy <- dy  
+  ldy[dy<0] <- -log(abs(dy[dy<0]), 10)
+  ldy[dy==(-1)] <- -0.2
+  ldy[dy==0] <- 0
+  ldy[dy>0] <- log(dy[dy>0], 10)
+  ldy[dy==1] <- 0.2
+  
+  l0 <- log(c(1, 3), 10)
+  ll <- vector('list', 5)
+  ll[[5]]$y <- c(rep(-8:-1, each=2)-rev(l0), -l0[2], 
+                 -0.2, 0, 0.2, l0[2],
+                rep(1:8, each=2)+l0)
+  ll[[5]]$l <- paste0(c(rep(c(-300, -100, -30, -10, -3, -1), 3), 0, 
+                      rep(c(1, 3, 10,30, 100,300), 3)), 
+                     rep(c('M', 'K', '', 'K', 'M'), c(6, 6, 13, 6, 6)))
+  ll[[4]] <- lapply(ll[[5]], function(x) x[seq(2, length(x), 2)])
+  ll[[3]] <- lapply(ll[[5]], function(x) x[seq(1, length(x), 3)])
+  l0 <- log(c(1, 2, 5), 10)
+  ll[[2]] <- list(y=c(rep(-8:-1, each=3)-rev(l0), 
+                  -l0[3:2], -0.2, 0, 0.2, l0[2:3],
+                  rep(1:8, each=3)+l0))
+  ll0 <- c(1, 2, 5, 10, 20, 50, 100, 200, 500)
+  ll[[2]]$l <- paste0(c(rep(-rev(ll0), 3), 0, rep(ll0, 3)), 
+                      rep(c('M', 'K', '', 'K', 'M'), 
+                      c(9, 9, 19, 9, 9)))
   if (input$log10) {
-    yplot <- log(ifelse(dy==0, 0.5, dy), 10)
-    splot <- log(s, 10)
+    y.plot <- ldy
+    s.plot <- log(s, 10)
   } else {
-    yplot <- dy
-    splot <- s
+    y.plot <- dy
+    s.plot <- s
   }
-  par(mfrow=c(1,1), mar=c(2, 3, 0.1, 0.5), mgp=c(1, 0.5, 0))
-  plot(Date, yplot, pch=19, axes=FALSE,
-       xlab='', ylab=c('Casos', 'Óbotos')[k])
+  xlm <- as.Date(input$dateRange, '%d/%m/%y')
+  iip <- which((Date>=xlm[1]) & (Date<=xlm[2]))
+  Date <- Date[iip]
+  y.plot <- y.plot[iip]
+  s.plot <- s.plot[iip]
+  s <- s[iip]
+  ly <- ly[iip]
+  ldy <- ldy[iip]
+  ll[[1]] <- list(y=unique(sort(ldy))) 
+  ll[[1]]$l <- round(10^ll[[1]]$y)
+  par(mfrow=c(2,2), mar=c(2, 3, 0.1, 1), mgp=c(2, 0.5, 0))
+  plot(Date, y.plot, pch=19, axes=FALSE, 
+       xlab='', ylab=c('Casos', 'Óbitos')[k])
   axis(1, pretty(Date), format(pretty(Date), '%d %b'))
-  axis(1, 0:5, 10^(0:5), las=1)
-  lines(Date, splot, lwd=2)
-}, 
-width = 500, heigth=500), 
-observe({
+  nll <- findInterval(
+      sum(findInterval(ll[[5]]$y, par()$usr[3:4])==1), 
+      c(-0.5, 3.5, 9.5, 19.5, 29.5))
+  if (input$log10) {
+    axis(2, ll[[nll]]$y, ll[[nll]]$l, las=1)
+  } else {
+    axis(2, las=1)
+  }
+  lines(Date, s.plot, lwd=2)
+
+  plot(Date, c(NA, diff(s)), type='l', lwd=2, las=1, 
+       xlab='', ylab='Velocidade de crescimento')  
+
+  plot(Date, 100*c(NA, diff(s))/s, type='l', lwd=2, las=1,
+       xlab='', ylab='Crescimento relativo (%)')  
+  abline(h=0)
+  
+  plot(ly, ldy, pch=19, axes=FALSE, las=1,
+       xlab='Acumulados', ylab='Novos')
+  axis(2, ll[[nll]]$y, ll[[nll]]$l, las=1)
+  nllx <- findInterval(
+    sum(findInterval(ll[[5]]$y, par()$usr[1:2])==1),
+    c(-0.5, 3.5, 9.5, 19.5, 29.5))
+  if (nllx>1) {
+    axis(1, ll[[nllx]]$y, ll[[nllx]]$l)
+  } else {
+    sx <- seq(par()$usr[1], par()$usr[2], length=5)
+    axis(1, sx, round(10^sx))
+  }
+    observe({
         if(input$Exit > 0){
             stopApp(NULL)
         }
     })
+ }, 
+ width = 500, height=500
+ )
 )
 ```
