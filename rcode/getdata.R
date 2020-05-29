@@ -27,3 +27,9 @@ url.br <- paste0('https://data.brasil.io/',
 download.file(url.br, 'data/caso.csv.gv')
 
 
+### USdata
+us.fl <- 'data/states_daily_4pm_et.csv'
+us.url <- paste0('https://raw.githubusercontent.com/',
+                 'COVID19Tracking/covid-tracking-data/master/',
+                 us.fl)
+download.file(us.url, us.fl)
