@@ -17,7 +17,8 @@ if (lastday<(Sys.Date()-1))
 ```
 
 ```{r covid19time, echo=FALSE}
-inputPanel(
+sidebarLayout(
+  sidebarPanel(
   radioButtons("data", "Dado:",
                c("Casos confirmados" = "casos",
                  "Obitos" = "óbitos")),
@@ -37,8 +38,7 @@ inputPanel(
     ),
   checkboxInput("log10", label = "Log 10", value = TRUE),
   actionButton("Exit", "Exit")
-)
-
+), 
 renderPlot({
   k <- 1L
   iic <- wdl[[k]]$Country==input$country
@@ -52,4 +52,5 @@ renderPlot({
   plot(Date, dy)
   lines(Date, s)
 })
+)
 ```
