@@ -1,0 +1,55 @@
+---
+title: "COVID19 time"
+author: "Elias T Krainski"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(mgcv)
+load('data/wdl.RData')
+cn <- colnames(wdl[[1]])
+Date <- as.Date(cn[7:length(cn)], 'X%Y%m%d')
+lastday <- tail(Date, 1)
+if (lastday<(Sys.Date()-1))
+  source('rcode/wdata-update.R')
+```
+
+```{r covid19time, echo=FALSE}
+inputPanel(
+  radioButtons("data", "Dado:",
+               c("Casos confirmados" = "casos",
+                 "Obitos" = "óbitos")),
+  selectInput(inputId = 'country', 
+              label = 'País', 
+              choices = wc.names, 
+              selected = 'Brazil'),
+  selectInput(inputId = 'state', 
+              label = 'Estado/Província', 
+              choices = st.names, 
+              selected = st.names[1]),
+  dateRangeInput('dateRange',
+      label = 'Data (intervalo): yyyy-mm-dd',
+      start = Sys.Date() - 60, end = Sys.Date() - 1, 
+      format = "dd/mm/yy", 
+      language = 'pt'
+    ),
+  checkboxInput("log10", label = "Log 10", value = TRUE),
+  actionButton("Exit", "Exit")
+)
+
+renderPlot({
+  k <- 1L
+  iic <- wdl[[k]]$Country==input$country
+  st.names <- unique(as.character(
+    wdl[[k]]$Province.State[which(iic)]))
+  iis <- wdl[[k]]$Province.State==input$state
+  y <- unlist(wdl[[k]][which(iic & iis), 7:ncol(wdl[[k]])])
+  dy <- diff(c(0, y))
+  s <- gam(y ~ x, poisson(), list(x=1:length(x), y=dy))$fitted
+  par(mfrow=c(2,2), mar=c(2, 3, 0.1, 0.5), mgp=c(1, 0.5, 0))
+  plot(Date, dy)
+  lines(Date, s)
+})
+```
