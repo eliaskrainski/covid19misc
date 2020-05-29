@@ -59,9 +59,17 @@ renderPlot({
     splot <- s
   }
   par(mfrow=c(1,1), mar=c(2, 3, 0.1, 0.5), mgp=c(1, 0.5, 0))
-  plot(Date, yplot, pch=19, xlab='', ylab=c('Casos', 'Óbotos')[k])
+  plot(Date, yplot, pch=19, axes=FALSE,
+       xlab='', ylab=c('Casos', 'Óbotos')[k])
+  axis(1, pretty(Date), format(pretty(Date), '%d %b'))
+  axis(1, 0:5, 10^(0:5), las=1)
   lines(Date, splot, lwd=2)
 }, 
-width = 500, heigth=500)
+width = 500, heigth=500), 
+observe({
+        if(input$Exit > 0){
+            stopApp(NULL)
+        }
+    })
 )
 ```
