@@ -9,17 +9,17 @@ if (FALSE) { ## can manually skip
 
 }
 
-cbr <- read.csv('data/caso.csv.gv')
-head(cbr,2)
-tail(cbr,2)
+d.all <- read.csv('data/caso.csv.gv')
+head(d.all,2)
+tail(d.all,2)
 
-cbr$date <- as.Date(as.character(cbr$date))
-cbr <- cbr[order(cbr$date), ]
+d.all$date <- as.Date(as.character(d.all$date))
+d.all <- d.all[order(d.all$date), ]
 
-i.uf <- which(cbr$place_type=='state')
+i.uf <- which(d.all$place_type=='state')
 
 ### put time series by states to wide shape
-wc.uf <- reshape(cbr[i.uf, c('confirmed', 'date', 'state')],
+wc.uf <- reshape(d.all[i.uf, c('confirmed', 'date', 'state')],
                  direction='wide', timevar='date', idvar='state')
 rownames(wc.uf) <- wc.uf[,1]
 dim(wc.uf)
@@ -33,6 +33,11 @@ wc.uf[, -1] <- t(apply(wc.uf[,-1], 1, function(x) {
 wc.uf[1:3, 1:3]
 wc.uf[1:3, -2:0+ncol(wc.uf)]
 
+date <- as.Date(substring(colnames(wc.uf)[-1], 11))
+
+apply(wc.uf[order(wc.uf[,1]), -1], 1, function(x)
+    as.character(date)[which(x>0)[1]])
+
 ### w based on serial interval ~ Gamma(mean=5, sd=3)
 ### to compute R_t (reproduction number varying over time)
 pw <- pgamma(0:14, shape=(5/3)^2, scale=3^2/5)
@@ -40,10 +45,13 @@ w <- diff(pw)/sum(diff(pw))
 
 library(emisc) ### from https://github.com/eliaskrainski/emisc
 
-date <- as.Date(substring(colnames(wc.uf)[-1], 11))
-
 par(mfrow=c(2,2), mar=c(3,3,1,0.5), mgp=c(2, 0.5, 0), las=1)
-epidplot(date, colSums(wc.uf[,-1]), main='Brasil', w=w) 
+epidplot(date, colSums(wc.uf[,-1]), which=list(2, 3, 4, 6),
+         main='Brasil', w=w, lxlab=rep('', 5), log10=FALSE,
+         lylab=list('Casos novos por dia',
+                    'Velocidade do crescimento diário (casos)',
+                    'Crescimento relativo diário (%)',
+                    'Número de reprodução')) 
 
 par(mfrow=c(6,5), mar=c(2,3,1,0.5), mgp=c(2, 0.5, 0))
 for (i in 1:nrow(wc.uf)) 
@@ -53,10 +61,11 @@ epidplot(date, colSums(wc.uf[,-1]), 1:3, main='Brasil')
 
 ## plot only the growth for each state and Brasil
 par(mfrow=c(6,5), mar=c(2,3,1,0.5), mgp=c(2, 0.5, 0))
-for (i in 1:nrow(wc.uf)) 
-    epidplot(date, unlist(wc.uf[i, 2:ncol(wc.uf)]),
-             which=4, w=w, main=wc.uf[i, 1]) 
-epidplot(date, colSums(wc.uf[,-1]), main='Brasil', which=4, w=w)
+plot(date, diff(c(0, colSums(wc.uf[,-1]))),
+     xlab='', ylab='', main='Brasil', pch=19, cex=0.5)
+for (i in order(wc.uf[,1])) 
+    plot(date, diff(c(0, unlist(wc.uf[i, 2:ncol(wc.uf)]))),
+         xlab='', ylab='', main=wc.uf[i, 1], pch=19, cex=0.5) 
 
 source('rcode/brazil-uf-map.R')
 head(brufs@data,2)

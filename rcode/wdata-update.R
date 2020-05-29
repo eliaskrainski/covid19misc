@@ -97,11 +97,29 @@ for (k in 1:2) {
         wbr.uf[[k]] <- wbr.uf[[k]][, 1:(ncol(wbr.uf[[k]])-1)]
 }
 
-aux <- matrix(0L, nrow(wbr.mu[[1]]), ncol(w.us[[1]])-ncol(wbr.mu[[1]]))
+aux <- matrix(0L, nrow(wbr.mu[[1]]),
+              ncol(w.us[[1]])-ncol(wbr.mu[[1]]))
 colnames(aux) <- colnames(w.us[[1]])[1:ncol(aux)]
 
 munam <- dbr$city[pmatch(rownames(wbr.mu[[1]]),
                          dbr$city_ibge_code)]
+
+uf <- c(SE = "SERGIPE", MA = "MARANHÃO", ES = "ESPÍRITO SANTO",
+        AM = "AMAZONAS", RR = "RORAIMA", GO = "GOIÁS",
+        AP = "AMAPÁ", RS = "RIO GRANDE DO SUL", PB = "PARAÍBA",
+        PI = "PIAUÍ", SP = "SÃO PAULO", SC = "SANTA CATARINA",
+        PE = "PERNAMBUCO", RJ = "RIO DE JANEIRO",
+        MS = "MATO GROSSO DO SUL", MT = "MATO GROSSO",
+        BA = "BAHIA", MG = "MINAS GERAIS", AL = "ALAGOAS",
+        CE = "CEARÁ", RN = "RIO GRANDE DO NORTE",
+        PR = "PARANÁ", RO = "RONDÔNIA",
+        DF = "DISTRITO FEDERAL", AC = "ACRE",
+        PA = "PARÁ", TO = "TOCANTINS")
+
+ufuf <- dbr$state[pmatch(rownames(wbr.mu[[1]]),
+                         dbr$city_ibge_code)]
+
+stnam <- uf[pmatch(ufuf, names(uf), duplicates.ok=TRUE)]
 
 for (k in 1:2) {
     wdl[[k]] <- rbind(
@@ -114,7 +132,7 @@ for (k in 1:2) {
         wdl[[k]],
         data.frame(code=rownames(wbr.mu[[k]]),
                    City=munam,
-                   Province.State='', 
+                   Province.State=stnam, 
                    Country.Region='Brazil', Lat=NA, Long=NA,
                    aux, wbr.mu[[k]]))
     rownames(wdl[[k]]) <- 1:nrow(wdl[[k]])

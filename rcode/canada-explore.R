@@ -27,23 +27,44 @@ w <- diff(pw)/sum(diff(pw))
 
 library(emisc) ### from https://github.com/eliaskrainski/emisc
 
-par(mfrow=c(2,2), mar=c(3,3,0.5,0.5), mgp=c(2, 0.5, 0))
-epidplot(date, cc.n, w=w)
+length(c(1, 2, 4:8, 10:11))
 
-par(mfrow=c(3,4), mar=c(3,3,1.5,0.5), mgp=c(2, 0.5, 0), las=1)
-for (i in c(1, 2, 4:11, 14:15)) {
-    epidplot(date, unlist(cc[i, 5:ncol(cc)]), which=1,
-             main=cc[i, 1])
-    abline(h=log(rep(c(1,3), 5)*(10^rep(0:5, each=2)), 10), 
+par(mfrow=c(4,4), mar=c(3,3,1.5,0.5), mgp=c(2, 0.5, 0), las=1)
+for (i in 1:14){
+    cas <- cummax(unlist(cc[i, 5:ncol(cc)]))
+    ii <- which(cas>0)
+    epidplot(date[ii], cas[ii], which=list(1:2),  main=cc[i, 1])
+    abline(h=log(rep(c(1,3), 6)*(10^rep(0:5, each=2)), 10), 
            lty=2, col=gray(0.5, 0.5))
 }
 
-par(mfrow=c(3,4), mar=c(3,3,1.5,0.5), mgp=c(2, 0.5, 0), las=1)
-for (i in c(1, 2, 4:11, 14:15)) {
-    cas <- unlist(cc[i, 5:ncol(cc)])
+length( c(1:2, 4:8, 9:11, 13:14))
+
+png('figures/canada-provinces.png', width=500, height=700)
+par(mfrow=c(4,3), mar=c(3,3,1.5,0.5), mgp=c(2, 0.5, 0), las=1)
+for (i in c(1:2, 4:8, 9:11, 13:14)) {
+##for (i in 1:8){
+    cas <- cummax(unlist(cc[i, 5:ncol(cc)]))
     ii <- which(cas>0)
-    epidplot(date[ii], cas[ii], which=4,
-             main=cc[i, 1], w=w)
+    epidplot(date[ii], cas[ii], which=list(1:2),  main=cc[i, 1])
+    ##ep(date[ii], cas[ii], which=1,  main=cc[i, 1])
+    abline(h=log(rep(c(1,3), 6)*(10^rep(0:5, each=2)), 10), 
+           lty=2, col=gray(0.5, 0.5))
+}
+dev.off()
+if (FALSE)
+    system('eog figures/canada-provinces.png &')
+
+par(mfrow=c(3,6), mar=c(3,3,1.5,0.5), mgp=c(2, 0.5, 0), las=1)
+for (i in c(1:2, 4:8, 10:11)) {
+##for (i in 1:8){
+    cas <- cummax(unlist(cc[i, 5:ncol(cc)]))
+    ii <- which(cas>0)
+    epidplot(date[ii], cas[ii], which=2,  main=cc[i, 1])
+    abline(h=log(rep(c(1,3), 6)*(10^rep(0:5, each=2)), 10), 
+           lty=2, col=gray(0.5, 0.5))
+    epidplot(date[ii], cas[ii], which=4, w=w)
+    title(main=cc[i, 1])
 }
 
 source('rcode/canada-map.R')

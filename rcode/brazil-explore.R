@@ -9,10 +9,75 @@ if (FALSE) { ## can manually skip
 
 }
 
+d.all <- read.csv('data/caso.csv.gv')
+head(d.all,2)
+
+d.uf <- d.all[which(d.all$place_type=='state'), ]
+
+w.uf <- lapply(d.uf[c('confirmed', 'deaths')],
+               tapply, d.uf[c('state', 'date')], as.integer) 
+str(w.uf)
+
+n.uf <- lapply(w.uf, apply, 1, function(x) {
+    x[is.na(x)] <- 0; diff(c(0, cummax(x)))
+})
+
+str(n.uf)
+ss <- lapply(n.uf, apply, 2, function(y)
+    mgcv:::gam(y~s(x), poisson(), list(x=1:length(y), y=y))$fitted)
+str(ss)
+
+plot(ss[[1]][,1], type='l')
+points(n.uf[[1]][,1])
+
+(dd <- dim(n.uf[[1]]))
+uf.long <- data.frame(
+    date=as.Date(rep(colnames(w.uf[[1]]), each=dd[2])),
+    uf=rep(rownames(w.uf[[1]]), dd[1]),
+    aCasos=as.vector(w.uf[[1]]),
+    aObitos=as.vector(w.uf[[2]]),
+    nCasos=as.vector(t(n.uf[[1]])),
+    nObitos=as.vector(t(n.uf[[2]])),
+    sCasos=as.vector(t(ss[[1]])),
+    sObitos=as.vector(t(ss[[2]])))
+    
+summary(uf.long$nCasos)
+
+library(ggplot2)
+
+cores <- c('casos'='black', 'óbitos'='red')
+
+png('figures/uf-date-new.png', 600, 600)
+ggplot(uf.long) +
+    geom_point(aes(x=date, y=nCasos, color='casos')) +
+    geom_point(aes(x=date, y=nObitos, color='óbitos')) +
+    geom_line(aes(x=date, y=sCasos, color='casos')) +
+    geom_line(aes(x=date, y=sObitos, color='óbitos')) +
+        scale_y_log10(breaks=c(1, 10, 100, 1000, 5000),
+                  limits=c(1, 5000)) +
+    facet_wrap(~uf) + theme_bw() + 
+    labs(x='', y='', color='Legenda') + 
+    scale_color_manual(values = cores) +
+    theme(legend.position=c(0.9,0.1))
+dev.off()
+if (FALSE)
+    system('eog figures/uf-date-new.png &')    
+
+d.all$Date <- as.Date(d.all$date)
+d.all <- d.all[order(d.all$Date), ]
+
+
+
+
+ggplot(d.all[which(d.all$place_type=='state'), ]) +
+    geom_point(aes(x=Date, y=confirmed, color='casos')) +
+    geom_point(aes(x=Date, y=confirmed, color='óbitos')) +
+    facet_wrap(~state) + scale_y_log10()
+
 
 library(readxl)
 
-dfl <- 'data/DT1_PAINEL_COVIDBR_20200512.xlsx'
+dfl <- 'data/HIST_PAINEL_COVIDBR_20200515.xlsx'
 d.all <- as.data.frame(read_xlsx(dfl))
 
 for (j in c(10:12))
@@ -20,17 +85,38 @@ for (j in c(10:12))
 d.all$Data <- as.Date(d.all$data)
 
 dbr <- d.all[(d.all$regiao=='Brasil') &
-             (d.all$obitosAcumulado>0), ]
+             (d.all$casosAcumulado>0), ]
+##             (d.all$obitosAcumulado>0), ]
 dim(dbr)
 
-### w based on serial interval with mean=5 and sd=3
+head(dbr,2)
+summary(dbr)
+
+dbr[which(dbr$emAcompanhamento>0), c(8,11,12,13,14)]
+
+plot(dbr$Data, dbr$casosAcumulado)
+lines(dbr$Data, dbr$obitosAcumulado, col=2)
+points(dbr$Data, dbr$Recuperadosnovos, col=4)
+lines(dbr$Data, ifelse(is.na(dbr$Recuperadosnovos), 0,
+                       dbr$Recuperadosnovos) +
+     dbr$obitosAcumulado, col=4)
+
+### w based on serial interval ~ Gamma(mean=5, sd=3)
+### to compute R_t (reproduction number varying over time)
 pw <- pgamma(0:14, shape=(5/3)^2, scale=3^2/5)
 w <- diff(pw)/sum(diff(pw))
 
 library(emisc) ### from https://github.com/eliaskrainski/emisc
-par(mfrow=c(2,2), mar=c(2,3,0.5,0.5), mgp=c(2,0.5,0), las=1)
-epidplot(dbr$Data, dbr$obitosAcumulado, w=w,
-         lwd=3, cex=0.5)
+
+par(mfrow=c(2,4), mar=c(2,3,0.5,0.5), mgp=c(2,0.5,0), las=1)
+epidplot(dbr$Data[dbr$casosAcumulado>0],
+         dbr$casosAcumulado[dbr$casosAcumulado>0],
+         w=w, lwd=3, cex=0.5, which=1:4)
+points(dbr$Data, Rt.h, col=2, pch=4)
+epidplot(dbr$Data[dbr$obitosAcumulado>0],
+         dbr$obitosAcumulado[dbr$obitosAcumulado>0],
+         lylab=c('óbitos', 
+         w=w, lwd=3, cex=0.5, which=1:4)
 
 ### from brazil.io
 cbr <- read.csv('data/caso.csv.gv')

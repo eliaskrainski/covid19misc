@@ -7,21 +7,48 @@ runtime: shiny
 
 ```{r setup, include=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+l0 <- log(c(1, 3), 10)
+ll <- vector('list', 5)
+ll[[5]]$y <- c(rep(-8:-1, each=2)-rev(l0), -l0[2], 
+               -0.15, 0, 0.15, l0[2],
+               rep(1:8, each=2)+l0)
+ll[[5]]$l <- paste0(c(rep(c(-300, -100, -30, -10, -3, -1), 3), 0, 
+                    rep(c(1, 3, 10,30, 100,300), 3)), 
+                    rep(c('M', 'K', '', 'K', 'M'), c(6, 6, 13, 6, 6)))
+ll[[4]] <- lapply(ll[[5]], function(x) x[seq(2, length(x), 2)])
+ll[[3]] <- lapply(ll[[5]], function(x) x[seq(1, length(x), 3)])
+l0 <- log(c(1, 2, 5), 10)
+ll[[2]] <- list(y=c(rep(-8:-1, each=3)-rev(l0), 
+                -l0[3:2], -0.15, 0, 0.15, l0[2:3],
+                rep(1:8, each=3)+l0))
+ll0 <- c(1, 2, 5, 10, 20, 50, 100, 200, 500)
+ll[[2]]$l <- paste0(c(rep(-rev(ll0), 3), 0, rep(ll0, 3)), 
+                    rep(c('M', 'K', '', 'K', 'M'), 
+                    c(9, 9, 19, 9, 9)))
 library(mgcv)
-load('data/wdl.RData')
-wc.names <- unique(as.character(wdl[[1]]$Country.Region))
-st.names <- unique(as.character(wdl[[1]]$Province.State)) 
+if (file.exists('data/wdl.RData')) {
+  load('data/wdl.RData') 
+} else {
+  source('rcode/wdata-update.R')
+}
 cn <- colnames(wdl[[1]])
 Date <- as.Date(cn[7:length(cn)], 'X%Y%m%d')
 lastday <- tail(Date, 1)
-if (lastday<(Sys.Date()-1))
+if (lastday<(Sys.Date()-1)) {
   source('rcode/wdata-update.R')
+  cn <- colnames(wdl[[1]])
+  Date <- as.Date(cn[7:length(cn)], 'X%Y%m%d')
+  lastday <- tail(Date, 1)
+}
+wc.names <- unique(as.character(wdl[[1]]$Country.Region))
+st.names <- unique(as.character(wdl[[1]]$Province.State)) 
+mu.names <- unique(as.character(wdl[[1]]$City)) 
 ```
 
 ```{r covid19time, echo=FALSE}
 sidebarLayout(
   sidebarPanel(
-  radioButtons("data", "Dado de COVID a ser visualizado:",
+  radioButtons("data", "Dado a ser visualizado:",
                choices=list("Casos confirmados" = 1,
                  "Obitos" = 2), 
                selected = 1),
@@ -32,10 +59,15 @@ sidebarLayout(
   selectInput(inputId = 'state', 
               label = 'Estado/Província', 
               choices = st.names, 
-              selected = 'PR'),
+              selected = 'PARANÁ'),
+  selectInput(inputId = 'city', 
+              label = 'Cidade', 
+              choices = mu.names, 
+              selected = 'Curitiba'),
   dateRangeInput('dateRange',
-      label = 'Data (intervalo): yyyy-mm-dd',
-      start = Sys.Date() - 60, end = Sys.Date() - 1, 
+      label = 'Data (intervalo):',
+      start = as.Date('2020-01-20'), 
+      end = Sys.Date() - 1, 
       format = "dd/mm/yy", 
       language = 'pt'
     ),
@@ -48,17 +80,20 @@ renderPlot({
   st.names <- unique(as.character(
         wdl[[k]]$Province.State[which(iic)]))
   iis <- wdl[[k]]$Province.State==input$state
-  ##if (all(!iis)) iis <- iic
-  iim <- wdl[[k]]$City==''
+  if (sum(iis[iic])==0) iis <- iic
+  mu.names <- unique(as.character(
+        wdl[[k]]$City[which(iic & iis)]))
+  iim <- wdl[[k]]$City==input$city
+  if (sum(iim[iic])==0) iim <- iic
   iicsm <- which(iic & iis & iim)
   y <- as.matrix(wdl[[k]][, 7:ncol(wdl[[k]])])[iicsm[1], ]
   iiy <- which(y>0)
   y <- y[iiy]
   Date <- Date[iiy]
-  dy <- diff(c(0, y))
-  r <- dy; r[dy<0] <- 0
-  s <- gam(y ~ s(x), poisson(), 
-           list(x=1:length(y), y=r))$fitted
+    dy <- diff(c(0, y))
+    r <- dy; r[dy<0] <- 0
+    s <- gam(y ~ s(x), poisson(), 
+             list(x=1:length(y), y=r))$fitted
   ly <- log(y, 10)
   ldy <- dy  
   ldy[dy<0] <- -log(abs(dy[dy<0]), 10)
@@ -66,24 +101,6 @@ renderPlot({
   ldy[dy==0] <- 0
   ldy[dy>0] <- log(dy[dy>0], 10)
   ldy[dy==1] <- 0.15
-  l0 <- log(c(1, 3), 10)
-  ll <- vector('list', 5)
-  ll[[5]]$y <- c(rep(-8:-1, each=2)-rev(l0), -l0[2], 
-                 -0.15, 0, 0.15, l0[2],
-                rep(1:8, each=2)+l0)
-  ll[[5]]$l <- paste0(c(rep(c(-300, -100, -30, -10, -3, -1), 3), 0, 
-                      rep(c(1, 3, 10,30, 100,300), 3)), 
-                     rep(c('M', 'K', '', 'K', 'M'), c(6, 6, 13, 6, 6)))
-  ll[[4]] <- lapply(ll[[5]], function(x) x[seq(2, length(x), 2)])
-  ll[[3]] <- lapply(ll[[5]], function(x) x[seq(1, length(x), 3)])
-  l0 <- log(c(1, 2, 5), 10)
-  ll[[2]] <- list(y=c(rep(-8:-1, each=3)-rev(l0), 
-                  -l0[3:2], -0.15, 0, 0.15, l0[2:3],
-                  rep(1:8, each=3)+l0))
-  ll0 <- c(1, 2, 5, 10, 20, 50, 100, 200, 500)
-  ll[[2]]$l <- paste0(c(rep(-rev(ll0), 3), 0, rep(ll0, 3)), 
-                      rep(c('M', 'K', '', 'K', 'M'), 
-                      c(9, 9, 19, 9, 9)))
   if (input$log10) {
     y.plot <- ldy
     s.plot <- log(s, 10)
@@ -135,11 +152,11 @@ renderPlot({
     l <- round(10^sx)
     axis(1, log(l, 10), l)
   }
-    observe({
-        if(input$Exit > 0){
-            stopApp(NULL)
-        }
-    })
+  observe({
+    if(input$Exit > 0) {
+      stopApp(NULL)
+    }
+  })
  }, 
  width = 500, height=500
  )
