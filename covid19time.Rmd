@@ -1,5 +1,5 @@
 ---
-title: "COVID19 time"
+title: "Visualização temporal de dados de COVID19."
 author: "Elias T Krainski"
 output: html_document
 runtime: shiny
@@ -9,6 +9,8 @@ runtime: shiny
 knitr::opts_chunk$set(echo = TRUE)
 library(mgcv)
 load('data/wdl.RData')
+wc.names <- unique(as.character(wdl[[1]]$Country.Region))
+st.names <- unique(as.character(wdl[[1]]$Province.State)) 
 cn <- colnames(wdl[[1]])
 Date <- as.Date(cn[7:length(cn)], 'X%Y%m%d')
 lastday <- tail(Date, 1)
@@ -19,9 +21,9 @@ if (lastday<(Sys.Date()-1))
 ```{r covid19time, echo=FALSE}
 sidebarLayout(
   sidebarPanel(
-  radioButtons("data", "Dado:",
-               c("Casos confirmados" = "casos",
-                 "Obitos" = "óbitos")),
+  radioButtons("data", "Dado de COVID a ser visualizado:",
+               c("Casos confirmados" = 1,
+                 "Obitos" = 2)),
   selectInput(inputId = 'country', 
               label = 'País', 
               choices = wc.names, 
@@ -40,17 +42,26 @@ sidebarLayout(
   actionButton("Exit", "Exit")
 ), 
 renderPlot({
-  k <- 1L
+  k <- input$data
   iic <- wdl[[k]]$Country==input$country
   st.names <- unique(as.character(
     wdl[[k]]$Province.State[which(iic)]))
   iis <- wdl[[k]]$Province.State==input$state
   y <- unlist(wdl[[k]][which(iic & iis), 7:ncol(wdl[[k]])])
   dy <- diff(c(0, y))
-  s <- gam(y ~ x, poisson(), list(x=1:length(x), y=dy))$fitted
-  par(mfrow=c(2,2), mar=c(2, 3, 0.1, 0.5), mgp=c(1, 0.5, 0))
-  plot(Date, dy)
-  lines(Date, s)
-})
+  r <- dy; r[dy<0] <- 0
+  s <- gam(y ~ x, poisson(), list(x=1:length(y), y=r))$fitted
+  if (input$log10) {
+    yplot <- log(ifelse(dy==0, 0.5, dy), 10)
+    splot <- log(s, 10)
+  } else {
+    yplot <- dy
+    splot <- s
+  }
+  par(mfrow=c(1,1), mar=c(2, 3, 0.1, 0.5), mgp=c(1, 0.5, 0))
+  plot(Date, yplot, pch=19, xlab='', ylab=c('Casos', 'Óbotos')[k])
+  lines(Date, splot, lwd=2)
+}, 
+width = 500, heigth=500)
 )
 ```
