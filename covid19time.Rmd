@@ -78,9 +78,9 @@ renderPlot({
   k <- as.integer(input$data)
   iic <- wdl[[k]]$Country==input$country
   iis <- wdl[[k]]$Province.State==input$state
-##  if (sum(iic[iis])==0) iis <- iic
+  if (sum(iic[iis])==0) iis <- iic
   iim <- wdl[[k]]$City==input$city
-  ##if (sum(iic[iim])==0) iim <- iic
+  if (sum(iic[iim])==0) iim <- iic
   iim <- wdl[[k]]$City==input$city
   iicsm <- which((iic+iis+iim)==3)
   y <- as.matrix(wdl[[k]][, 7:ncol(wdl[[k]])])[iicsm[1], ]
