@@ -119,20 +119,22 @@ uf <- c(SE = "SERGIPE", MA = "MARANHÃO", ES = "ESPÍRITO SANTO",
 ufuf <- dbr$state[pmatch(rownames(wbr.mu[[1]]),
                          dbr$city_ibge_code)]
 
-stnam <- uf[pmatch(ufuf, names(uf), duplicates.ok=TRUE)]
+stnam.uf <- uf[pmatch(rownames(wbr.uf[[1]]), 
+                      names(uf), duplicates.ok=TRUE)]
+stnam.mu <- uf[pmatch(ufuf, names(uf), duplicates.ok=TRUE)]
 
 for (k in 1:2) {
     wdl[[k]] <- rbind(
         wdl[[k]],
         data.frame(code='', City='',
-                   Province.State=rownames(wbr.uf[[k]]),
+                   Province.State=stnam.uf, 
                    Country.Region='Brazil', Lat=NA, Long=NA,
                    aux[1:27, ], wbr.uf[[k]]))
     wdl[[k]] <- rbind(
         wdl[[k]],
         data.frame(code=rownames(wbr.mu[[k]]),
                    City=munam,
-                   Province.State=stnam, 
+                   Province.State=stnam.mu, 
                    Country.Region='Brazil', Lat=NA, Long=NA,
                    aux, wbr.mu[[k]]))
     rownames(wdl[[k]]) <- 1:nrow(wdl[[k]])

@@ -40,9 +40,9 @@ if (lastday<(Sys.Date()-1)) {
   Date <- as.Date(cn[7:length(cn)], 'X%Y%m%d')
   lastday <- tail(Date, 1)
 }
-wc.names <- unique(as.character(wdl[[1]]$Country.Region))
-st.names <- unique(as.character(wdl[[1]]$Province.State)) 
-mu.names <- unique(as.character(wdl[[1]]$City)) 
+wc.names <- levels(wdl[[1]]$Country.Region)
+st.names <- levels(wdl[[1]]$Province.State)
+mu.names <- levels(wdl[[1]]$City)
 ```
 
 ```{r covid19time, echo=FALSE}
@@ -73,27 +73,31 @@ sidebarLayout(
     ),
   checkboxInput("log10", label = "Log 10", value = TRUE),
   actionButton("Exit", "Exit")
-), 
+),  
 renderPlot({
   k <- as.integer(input$data)
   iic <- wdl[[k]]$Country==input$country
-  st.names <- unique(as.character(
-        wdl[[k]]$Province.State[which(iic)]))
   iis <- wdl[[k]]$Province.State==input$state
-  if (sum(iis[iic])==0) iis <- iic
-  mu.names <- unique(as.character(
-        wdl[[k]]$City[which(iic & iis)]))
   iim <- wdl[[k]]$City==input$city
-  if (sum(iim[iic])==0) iim <- iic
-  iicsm <- which(iic & iis & iim)
+  iicsm <- which((iic+iis+iim)==3)
   y <- as.matrix(wdl[[k]][, 7:ncol(wdl[[k]])])[iicsm[1], ]
-  iiy <- which(y>0)
+  if (sum(y)<1) stop('Sem dados!')
+  iiy <- which(y>0)[1]:length(y)
   y <- y[iiy]
   Date <- Date[iiy]
-    dy <- diff(c(0, y))
-    r <- dy; r[dy<0] <- 0
-    s <- gam(y ~ s(x), poisson(), 
-             list(x=1:length(y), y=r))$fitted
+  dy <- diff(c(0, y))
+  r <- dy; r[dy<0] <- 0
+  s <- gam(y ~ s(x), poisson(), 
+           list(x=1:length(r), y=r))$fitted
+  xlm <- as.Date(input$dateRange, '%d/%m/%y')
+  if (diff(xlm)<3) stop('Selecione 3 ou mais dias!')
+  iip <- which((Date>=xlm[1]) & (Date<=xlm[2]))
+  if (length(iip)<3) stop('Selecione 3 ou mais dias!')
+  Date <- Date[iip]
+  y <- y[iip]
+  dy <- dy[iip]
+  n.obs <- sum(dy) 
+  s <- s[iip]
   ly <- log(y, 10)
   ldy <- dy  
   ldy[dy<0] <- -log(abs(dy[dy<0]), 10)
@@ -104,54 +108,57 @@ renderPlot({
   if (input$log10) {
     y.plot <- ldy
     s.plot <- log(s, 10)
+    s.plot[s<2] <- s[s<2]*0.15
   } else {
     y.plot <- dy
     s.plot <- s
   }
-  xlm <- as.Date(input$dateRange, '%d/%m/%y')
-  iip <- which((Date>=xlm[1]) & (Date<=xlm[2]))
-  Date <- Date[iip]
-  y.plot <- y.plot[iip]
-  s.plot <- s.plot[iip]
-  s <- s[iip]
-  ly <- ly[iip]
-  ldy <- ldy[iip]
   ll[[1]] <- list(y=unique(sort(ldy))) 
-  ll[[1]]$l <- round(10^ll[[1]]$y)
-  par(mfrow=c(2,2), mar=c(2, 3, 0.1, 1), mgp=c(2, 0.5, 0))
+  ll[[1]]$l <- 10^ll[[1]]$y
+  ll[[1]]$l[ll[[1]]$y==(-0.15)] <- -1
+  ll[[1]]$l[ll[[1]]$y==(0)] <- 0
+  ll[[1]]$l[ll[[1]]$y==(0.15)] <- 1
+  if (n.obs>9) {
+     par(mfrow=c(2,2), mar=c(2, 3, 0.1, 1), mgp=c(2, 0.5, 0))
+  } else {
+     par(mfrow=c(1,1), mar=c(2, 3, 1, 1), mgp=c(2, 0.5, 0))
+  }
   plot(Date, y.plot, pch=19, axes=FALSE, 
        xlab='', ylab=c('Casos', 'Óbitos')[k])
   axis(1, pretty(Date), format(pretty(Date), '%d %b'))
   nll <- findInterval(
       sum(findInterval(ll[[5]]$y, par()$usr[3:4])==1), 
-      c(-0.5, 3.5, 9.5, 19.5, 29.5))
+      c(-0.5, 2.5, 9.5, 19.5, 29.5))
   if (input$log10) {
     axis(2, ll[[nll]]$y, ll[[nll]]$l, las=1)
   } else {
     axis(2, las=1)
   }
   lines(Date, s.plot, lwd=2)
-
-  plot(Date, c(NA, diff(s)), type='l', lwd=2, las=1, 
-       xlab='', ylab='Velocidade de crescimento')  
-
-  plot(Date, 100*c(NA, diff(s))/s, type='l', lwd=2, las=1,
-       xlab='', ylab='Crescimento relativo (%)')  
-  abline(h=0)
-  
-  plot(ly, ldy, pch=19, axes=FALSE, las=1,
-       xlab='Acumulados', ylab='Novos')
-  axis(2, ll[[nll]]$y, ll[[nll]]$l, las=1)
-  nllx <- findInterval(
-    sum(findInterval(ll[[5]]$y, par()$usr[1:2])==1),
-    c(-0.5, 3.5, 9.5, 19.5, 29.5))
-  if (nllx>1) {
-    axis(1, ll[[nllx]]$y, ll[[nllx]]$l)
-  } else {
-    sx <- seq(par()$usr[1], par()$usr[2], length=5)
-    l <- round(10^sx)
-    axis(1, log(l, 10), l)
+  if (n.obs>9) { 
+ #   plot(Date, c(NA, diff(s)), type='l', lwd=2, las=1, 
+  #       xlab='', ylab='Velocidade de crescimento')  
+    plot(iicsm)
+    plot(Date, 100*c(NA, diff(s))/s, type='l', lwd=2, las=1,
+         xlab='', ylab='Crescimento relativo (%)')  
+    abline(h=0)
+    plot(ly, ldy, pch=19, axes=FALSE, las=1,
+         xlab='Acumulados', ylab='Novos')
+    axis(2, ll[[nll]]$y, ll[[nll]]$l, las=1)
+    nllx <- findInterval(
+      sum(findInterval(ll[[5]]$y, par()$usr[1:2])==1),
+      c(-0.5, 2.5, 9.5, 19.5, 29.5))
+    if (nllx>1) {
+      axis(1, ll[[nllx]]$y, ll[[nllx]]$l)
+    } else {
+      sx <- seq(par()$usr[1], par()$usr[2], length=5)
+      l <- round(10^sx)
+      axis(1, log(l, 10), l)
+    }
   }
+  #observe({
+   #     updateSelectInput(session, "city", choices = mu.names) 
+  #})  
   observe({
     if(input$Exit > 0) {
       stopApp(NULL)
