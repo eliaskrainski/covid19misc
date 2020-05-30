@@ -13,14 +13,21 @@ naFix <- function(x) {
 
 source('rcode/getdata.R')
 
-wdl <- list(
-    cases=data.frame(
-        code='', City='', 
-        read.csv('data/confirmed_global.csv')), 
-    deaths=data.frame(
-        code='', City='',
-        read.csv('data/deaths_global.csv'))
-)
+wwfun <- function(fl) {
+    m <- read.csv(fl)
+    np <- table(m$Country)
+    np <- np[np>1]
+    aux <- data.frame(code='', City='', Province.State='',
+                      Country.Region=names(np), Lat=NA, Long=NA) 
+    cs <- sapply(names(np), function(x)
+        colSums(m[which(m$Country==x), 5:ncol(m)]))
+    rbind(data.frame(aux, t(cs)), 
+          data.frame(code='', City='', m))
+                                                              
+}
+
+wdl <- lapply(c(confirmed='data/confirmed_global.csv',
+                deaths='data/deaths_global.csv'), wwfun)
 
 for (k in 1:2) {
     dtmp <- as.Date(colnames(wdl[[k]])[7:ncol(wdl[[k]])],
