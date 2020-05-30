@@ -136,9 +136,8 @@ renderPlot({
   }
   lines(Date, s.plot, lwd=2)
   if (n.obs>9) { 
- #   plot(Date, c(NA, diff(s)), type='l', lwd=2, las=1, 
-  #       xlab='', ylab='Velocidade de crescimento')  
-    plot(iicsm)
+    plot(Date, c(NA, diff(s)), type='l', lwd=2, las=1, 
+         xlab='', ylab='Velocidade de crescimento')  
     plot(Date, 100*c(NA, diff(s))/s, type='l', lwd=2, las=1,
          xlab='', ylab='Crescimento relativo (%)')  
     abline(h=0)
