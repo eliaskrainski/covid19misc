@@ -7,6 +7,7 @@ runtime: shiny
 
 ```{r setup, include=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 l0 <- log(c(1, 3), 10)
 ll <- vector('list', 5)
 ll[[5]]$y <- c(rep(-8:-1, each=2)-rev(l0), -l0[2], 
@@ -26,6 +27,7 @@ ll[[2]]$l <- paste0(c(rep(-rev(ll0), 3), 0, rep(ll0, 3)),
                     rep(c('M', 'K', '', 'K', 'M'), 
                     c(9, 9, 19, 9, 9)))
 library(mgcv)
+
 if (file.exists('data/wdl.RData')) {
   load('data/wdl.RData') 
 } else {
@@ -34,63 +36,106 @@ if (file.exists('data/wdl.RData')) {
 cn <- colnames(wdl[[1]])
 Date <- as.Date(cn[7:length(cn)], 'X%Y%m%d')
 lastday <- tail(Date, 1)
+
 if (lastday<(Sys.Date()-1)) {
   source('rcode/wdata-update.R')
   cn <- colnames(wdl[[1]])
   Date <- as.Date(cn[7:length(cn)], 'X%Y%m%d')
   lastday <- tail(Date, 1)
 }
+
 wc.names <- levels(wdl[[1]]$Country.Region)
 st.names <- levels(wdl[[1]]$Province.State)
 mu.names <- levels(wdl[[1]]$City)
+iisel <- which(wdl[[1]]$Province.State=='') 
+nn.show <- sapply(wdl, function(m) 
+  sum(m[iisel, ncol(m)], na.rm=TRUE))
+lb.n <- list(1, 2); names(lb.n) <- 
+  c(paste0('Casos (', nn.show[1], ')'), 
+    paste0('Óbitos (', nn.show[2], ')')) 
+    
 ```
 
 ```{r covid19time, echo=FALSE}
 sidebarLayout(
   sidebarPanel(
-  radioButtons("data", "Dado a ser visualizado:",
-               choices=list("Casos confirmados" = 1,
-                 "Obitos" = 2), 
-               selected = 1),
-  selectInput(inputId = 'country', 
-              label = 'País', 
-              choices = wc.names, 
-              selected = 'Brazil'),
-  selectInput(inputId = 'state', 
-              label = 'Estado/Província', 
-              choices = st.names, 
-              selected = 'PARANÁ'),
-  selectInput(inputId = 'city', 
-              label = 'Cidade', 
-              choices = mu.names, 
-              selected = 'Curitiba'),
-  dateRangeInput('dateRange',
+    # checkboxInput(
+    #   inputId = "cases", 
+    #   label = paste0("Casos confirmados (total: ", 
+    #                  sum(wdl[[1]][iisel, ncol(wdl[[1]])]), ')'),
+    #   value = TRUE),
+    # checkboxInput(
+    #   inputId = "deaths", 
+    #   label = paste0("Óbitos confirmados (total: ", 
+    #                  sum(wdl[[2]][iisel, ncol(wdl[[1]])]), ')'),
+    #   value = TRUE),
+    radioButtons(
+      inputId = "data", 
+      label = "Confirmados (Total mundo)", 
+      choices=lb.n, 
+      selected = 1),
+    selectInput(
+      inputId = 'country', 
+      label = 'País', 
+      choices = wc.names, 
+      selected = 'Brazil'),
+    selectInput(
+      inputId = 'state', 
+      label = 'Estado/Província', 
+      choices = st.names, 
+      selected = 'PARANÁ'),
+    selectInput(
+      inputId = 'city', 
+      label = 'Cidade', 
+      choices = mu.names, 
+      selected = 'Curitiba'),
+    dateRangeInput(
+      inputId = 'dateRange',
       label = 'Data (intervalo):',
       start = as.Date('2020-01-20'), 
       end = Sys.Date() - 1, 
       format = "dd/mm/yy", 
-      language = 'pt'
-    ),
-  checkboxInput("log10", label = "Log 10", value = TRUE),
-  actionButton("Exit", "Exit")
+      language = 'pt'),
+    checkboxInput(
+      inputId = "log10", 
+      label = "Log 10", 
+      value = TRUE),
+    actionButton(
+      inputId = "Exit", 
+      label = "Exit")
 ),  
 renderPlot({
+
+ if (FALSE) ### just for test in .R 
+   input <- list(data=1, country='Brazil', state='PARANÁ', city='Curitiba', log10=TRUE, dateRange=c('01/01/20', '01/09/20')) 
+
+  #  kk <- reactive({
+ #   validate(
+  #    need(input$cases | input$deaths, 
+   #        "Favor selecionar casos ou óbitos")
+    #  )
+    #c(input$cases+0, input$deaths+0)
+  #})
+
   k <- as.integer(input$data)
   iic <- wdl[[k]]$Country==input$country
   iis <- wdl[[k]]$Province.State==input$state
   if (sum(iic[iis])==0) iis <- iic
   iim <- wdl[[k]]$City==input$city
   if (sum(iic[iim])==0) iim <- iic
-  iicsm <- which((iic+iis+iim)==3)
-  y <- as.matrix(wdl[[k]][, 7:ncol(wdl[[k]])])[iicsm[1], ]
-  if (sum(y)<1) stop('Sem dados!')
-  iiy <- which(y>0)[1]:length(y)
+  iisel <- which((iic+iis+iim)==3)
+  y <- unlist(wdl[[k]][iisel[1], 7:ncol(wdl[[k]])])
+  iina <- is.na(y)
+  iiy <- which(!iina)[1]:length(y)
   y <- y[iiy]
   Date <- Date[iiy]
   dy <- diff(c(0, y))
-  r <- dy; r[dy<0] <- 0
-  s <- gam(y ~ s(x), poisson(), 
-           list(x=1:length(r), y=r))$fitted
+  r <- dy; r[which(dy<0)] <- 0
+  i.r.na <- which(is.na(r))
+  dtmp <- list(x=setdiff(1:length(r), i.r.na))
+  dtmp$y <- r[dtmp$x]
+  sss <- r
+  sss[dtmp$x] <- gam(y ~ s(x), poisson(), dtmp)$fitted 
   xlm <- as.Date(input$dateRange, '%d/%m/%y')
   if (diff(xlm)<3) stop('Selecione 3 ou mais dias!')
   iip <- which((Date>=xlm[1]) & (Date<=xlm[2]))
@@ -98,23 +143,24 @@ renderPlot({
   Date <- Date[iip]
   y <- y[iip]
   dy <- dy[iip]
-  n.obs <- sum(dy) 
-  s <- s[iip]
+  n.obs <- sum(dy, na.rm=TRUE) 
+  sss <- sss[iip]
   ly <- log(y, 10)
   ldy <- dy  
-  ldy[dy<0] <- -log(abs(dy[dy<0]), 10)
-  ldy[dy==(-1)] <- -0.15
-  ldy[dy==0] <- 0
-  ldy[dy>0] <- log(dy[dy>0], 10)
-  ldy[dy==1] <- 0.15
+  ldy[which(dy<0)] <- -log(abs(dy[which(dy<0)]), 10)
+  ldy[which(dy==(-1))] <- -0.15
+  ldy[which(dy==0)] <- 0
+  ldy[which(dy>0)] <- log(dy[which(dy>0)], 10)
+  ldy[which(dy==1)] <- 0.15
   if (input$log10) {
     y.plot <- ldy
-    s.plot <- log(s, 10)
-    s.plot[s<2] <- s[s<2]*0.15
+    s.plot <- log(sss, 10)
+    s.plot[which(sss<2)] <- sss[which(sss<2)]*0.15
   } else {
     y.plot <- dy
-    s.plot <- s
+    s.plot <- sss
   }
+
   ll[[1]] <- list(y=unique(sort(ldy))) 
   ll[[1]]$l <- 10^ll[[1]]$y
   ll[[1]]$l[ll[[1]]$y==(-0.15)] <- -1
@@ -127,6 +173,9 @@ renderPlot({
   }
   plot(Date, y.plot, pch=19, axes=FALSE, 
        xlab='', ylab=c('Casos', 'Óbitos')[k])
+  text(Date[1], 
+      max(y.plot, na.rm=TRUE), 
+      paste('Total:', n.obs), adj=0)
   axis(1, pretty(Date), format(pretty(Date), '%d %b'))
   nll <- findInterval(
       sum(findInterval(ll[[5]]$y, par()$usr[3:4])==1), 
@@ -137,12 +186,16 @@ renderPlot({
     axis(2, las=1)
   }
   lines(Date, s.plot, lwd=2)
+  
   if (n.obs>9) { 
-    plot(Date, c(NA, diff(s)), type='l', lwd=2, las=1, 
+    plot(Date, c(NA, diff(sss)), type='l', lwd=2, las=1, 
          xlab='', ylab='Velocidade de crescimento')  
-    plot(Date, 100*c(NA, diff(s))/s, type='l', lwd=2, las=1,
+    abline(h=0, lty=2, col=gray(0.5, 0.5))
+    plot(Date, 100*c(NA, diff(sss))/sss, 
+         type='l', lwd=2, las=1, 
+         ylim=range(0, 100*c(NA, diff(sss))/sss, na.rm=TRUE),
          xlab='', ylab='Crescimento relativo (%)')  
-    abline(h=0)
+    abline(h=0, lty=2, col=gray(0.5, 0.5))
     plot(ly, ldy, pch=19, axes=FALSE, las=1,
          xlab='Acumulados', ylab='Novos')
     axis(2, ll[[nll]]$y, ll[[nll]]$l, las=1)
@@ -160,12 +213,14 @@ renderPlot({
   #observe({
    #     updateSelectInput(session, "city", choices = mu.names) 
   #})  
+  
   observe({
     if(input$Exit > 0) {
       stopApp(NULL)
     }
   })
- }, 
+ 
+  }, 
  width = 500, height=500
  )
 )
