@@ -126,6 +126,7 @@ renderPlot({
   iisel <- which((iic+iis+iim)==3)
   y <- unlist(wdl[[k]][iisel[1], 7:ncol(wdl[[k]])])
   iina <- is.na(y)
+  if (all(iina)) stop(safeError('Sem dados na seleção feita!'))
   iiy <- which(!iina)[1]:length(y)
   y <- y[iiy]
   Date <- Date[iiy]
@@ -137,9 +138,9 @@ renderPlot({
   sss <- r
   sss[dtmp$x] <- gam(y ~ s(x), poisson(), dtmp)$fitted 
   xlm <- as.Date(input$dateRange, '%d/%m/%y')
-  if (diff(xlm)<3) stop('Selecione 3 ou mais dias!')
+  if (diff(xlm)<3) stop(safeError('Selecione 3 ou mais dias!'))
   iip <- which((Date>=xlm[1]) & (Date<=xlm[2]))
-  if (length(iip)<3) stop('Selecione 3 ou mais dias!')
+  if (length(iip)<3) stop(safeError('Selecione 3 ou mais dias!'))
   Date <- Date[iip]
   y <- y[iip]
   dy <- dy[iip]
@@ -173,9 +174,9 @@ renderPlot({
   }
   plot(Date, y.plot, pch=19, axes=FALSE, 
        xlab='', ylab=c('Casos', 'Óbitos')[k])
-  text(Date[1], 
-      max(y.plot, na.rm=TRUE), 
-      paste('Total:', n.obs), adj=0)
+  maxyplot <- max(y.plot, na.rm=TRUE)
+  text(Date[1], maxyplot-(par()$usr[4]-maxyplot),  
+       paste('Total:', n.obs), adj=0)
   axis(1, pretty(Date), format(pretty(Date), '%d %b'))
   nll <- findInterval(
       sum(findInterval(ll[[5]]$y, par()$usr[3:4])==1), 
