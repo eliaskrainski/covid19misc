@@ -124,6 +124,7 @@ renderPlot({
   iim <- wdl[[k]]$City==input$city
   if (sum(iic[iim])==0) iim <- iic
   iisel <- which((iic+iis+iim)==3)
+  
   y <- unlist(wdl[[k]][iisel[1], 7:ncol(wdl[[k]])])
   iina <- is.na(y)
   if (all(iina)) stop(safeError('Sem dados na seleção feita!'))
@@ -133,10 +134,16 @@ renderPlot({
   dy <- diff(c(0, y))
   r <- dy; r[which(dy<0)] <- 0
   i.r.na <- which(is.na(r))
+
   dtmp <- list(x=setdiff(1:length(r), i.r.na))
   dtmp$y <- r[dtmp$x]
   sss <- r
-  sss[dtmp$x] <- gam(y ~ s(x), poisson(), dtmp)$fitted 
+    if (length(dtmp$x)>9) {
+      sss[dtmp$x] <- gam(y ~ s(x), poisson(), dtmp)$fitted
+  } else {
+      sss[dtmp$x] <- 0.5*dtmp$y + 0.5*mean(dtmp$y)
+  }
+
   xlm <- as.Date(input$dateRange, '%d/%m/%y')
   if (diff(xlm)<3) stop(safeError('Selecione 3 ou mais dias!'))
   iip <- which((Date>=xlm[1]) & (Date<=xlm[2]))
@@ -164,6 +171,10 @@ renderPlot({
 
   ll[[1]] <- list(y=unique(sort(ldy))) 
   ll[[1]]$l <- 10^ll[[1]]$y
+  if (length(ll[[1]]$y)>9) {
+     ll[[1]]$l <- pretty(ll[[1]]$l)
+     ll[[1]]$y <- log(ll[[1]]$l, 10)
+  }
   ll[[1]]$l[ll[[1]]$y==(-0.15)] <- -1
   ll[[1]]$l[ll[[1]]$y==(0)] <- 0
   ll[[1]]$l[ll[[1]]$y==(0.15)] <- 1
@@ -175,8 +186,11 @@ renderPlot({
   plot(Date, y.plot, pch=19, axes=FALSE, 
        xlab='', ylab=c('Casos', 'Óbitos')[k])
   maxyplot <- max(y.plot, na.rm=TRUE)
-  text(Date[1], maxyplot-(par()$usr[4]-maxyplot),  
-       paste('Total:', n.obs), adj=0)
+  sssmin <- which.min(sss)[1]
+  text(Date[sssmin], 
+       maxyplot-(par()$usr[4]-maxyplot),  
+       paste('Total:', n.obs), 
+       adj=sssmin/length(y.plot))
   axis(1, pretty(Date), format(pretty(Date), '%d %b'))
   nll <- findInterval(
       sum(findInterval(ll[[5]]$y, par()$usr[3:4])==1), 
