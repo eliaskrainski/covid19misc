@@ -26,7 +26,7 @@ ll0 <- c(1, 2, 5, 10, 20, 50, 100, 200, 500)
 ll[[2]]$l <- paste0(c(rep(-rev(ll0), 3), 0, rep(ll0, 3)), 
                     rep(c('M', 'K', '', 'K', 'M'), 
                     c(9, 9, 19, 9, 9)))
-library(mgcv)
+##library(mgcv)
 
 if (file.exists('data/wdl.RData')) {
   load('data/wdl.RData') 
@@ -88,7 +88,7 @@ sidebarLayout(
       inputId = 'city', 
       label = 'Cidade', 
       choices = mu.names, 
-      selected = 'Curitiba'),
+      selected = 'Curitiba/PR'),
     dateRangeInput(
       inputId = 'dateRange',
       label = 'Data (intervalo):',
@@ -139,7 +139,7 @@ renderPlot({
   dtmp$y <- r[dtmp$x]
   sss <- r
     if (length(dtmp$x)>9) {
-      sss[dtmp$x] <- gam(y ~ s(x), poisson(), dtmp)$fitted
+      sss[dtmp$x] <- mgcv:::gam(y ~ s(x), poisson(), dtmp)$fitted
   } else {
       sss[dtmp$x] <- 0.5*dtmp$y + 0.5*mean(dtmp$y)
   }

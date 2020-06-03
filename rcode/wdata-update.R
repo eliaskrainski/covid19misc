@@ -73,78 +73,153 @@ for (k in 1:2) {
 }
 
 
+if (FALSE) {
+
 ### Brasil data
-dbr <- read.csv('data/caso.csv.gv')
+    dbr <- read.csv('data/caso.csv.gv')
+    
 
-i.uf <- which(dbr$place_type=='state')
-i.mu <- which(dbr$place_type=='city')
+}  else {
 
-### Identifica as colunas (y) e (x)
+### data from Wesley Cota 
+    dbr <- read.csv('data/cases-brazil-cities-time.csv')
+
+}
+
 dbr$fdate <- factor(gsub('-', '', dbr$date,
                          fixed=TRUE), alldates)    
 
-jj.y  <- match(c('confirmed', 'deaths'),
-               colnames(dbr))
-jj.x <- match(c('city_ibge_code', 'fdate'),
-              colnames(dbr))
-jj.x.uf <- match(c('state', 'fdate'),
-                 colnames(dbr))
 
-wbr.mu <- lapply(dbr[i.mu, jj.y], tapply,
-                 dbr[i.mu, jj.x], as.integer)
-object.size(wbr.mu)
+if (FALSE) {
 
-wbr.uf <- lapply(dbr[i.uf, jj.y], tapply,
-                 dbr[i.uf, jj.x.uf], as.integer)
-object.size(wbr.uf)
+    i.uf <- which(dbr$place_type=='state')
+    i.mu <- which(dbr$place_type=='city')
 
-for (k in 1:2) {
-    wbr.uf[[k]][is.na(wbr.uf[[k]])] <- 0L
-    dtmp <- as.Date(colnames(wbr.mu[[k]]), '%Y%m%d')
-    if (tail(dtmp, 1)==Sys.Date())
-        wbr.mu[[k]] <- wbr.mu[[k]][, 1:(ncol(wbr.mu[[k]])-1)]
-    wbr.mu[[k]][is.na(wbr.mu[[k]])] <- 0L
-    dtmp <- as.Date(colnames(wbr.uf[[k]]), '%Y%m%d')
-    if (tail(dtmp, 1)==Sys.Date())
-        wbr.uf[[k]] <- wbr.uf[[k]][, 1:(ncol(wbr.uf[[k]])-1)]
+### Identifica as colunas (y) e (x)
+    jj.y  <- match(c('confirmed', 'deaths'),
+                   colnames(dbr))
+    jj.x <- match(c('city_ibge_code', 'fdate'),
+                  colnames(dbr))
+    
+    jj.x.uf <- match(c('state', 'fdate'),
+                     colnames(dbr))
+
+    wbr.mu <- lapply(dbr[i.mu, jj.y], tapply,
+                     dbr[i.mu, jj.x], as.integer)
+    object.size(wbr.mu)
+    
+    wbr.uf <- lapply(dbr[i.uf, jj.y], tapply,
+                     dbr[i.uf, jj.x.uf], as.integer)
+    object.size(wbr.uf)
+    
+    for (k in 1:2) {
+        wbr.uf[[k]][is.na(wbr.uf[[k]])] <- 0L
+        dtmp <- as.Date(colnames(wbr.mu[[k]]), '%Y%m%d')
+        if (tail(dtmp, 1)==Sys.Date())
+            wbr.mu[[k]] <- wbr.mu[[k]][, 1:(ncol(wbr.mu[[k]])-1)]
+        wbr.mu[[k]][is.na(wbr.mu[[k]])] <- 0L
+        dtmp <- as.Date(colnames(wbr.uf[[k]]), '%Y%m%d')
+        if (tail(dtmp, 1)==Sys.Date())
+            wbr.uf[[k]] <- wbr.uf[[k]][, 1:(ncol(wbr.uf[[k]])-1)]
+    }
+    
+    uf <- c(SE = "SERGIPE", MA = "MARANHÃO", ES = "ESPÍRITO SANTO",
+            AM = "AMAZONAS", RR = "RORAIMA", GO = "GOIÁS",
+            AP = "AMAPÁ", RS = "RIO GRANDE DO SUL", PB = "PARAÍBA",
+            PI = "PIAUÍ", SP = "SÃO PAULO", SC = "SANTA CATARINA",
+            PE = "PERNAMBUCO", RJ = "RIO DE JANEIRO",
+            MS = "MATO GROSSO DO SUL", MT = "MATO GROSSO",
+            BA = "BAHIA", MG = "MINAS GERAIS", AL = "ALAGOAS",
+            CE = "CEARÁ", RN = "RIO GRANDE DO NORTE",
+            PR = "PARANÁ", RO = "RONDÔNIA",
+            DF = "DISTRITO FEDERAL", AC = "ACRE",
+            PA = "PARÁ", TO = "TOCANTINS")
+
+    imunam <- pmatch(rownames(wbr.mu[[1]]), dbr$city_ibge_code)
+    munam <- as.character(dbr$city)[imunam]
+    
+    iufuf <- pmatch(rownames(wbr.mu[[1]]), dbr$city_ibge_code)
+    ufuf <- dbr$state[iufuf]
+    
+    stnam.uf <- uf[pmatch(rownames(wbr.uf[[1]]), 
+                          names(uf), duplicates.ok=TRUE)]
+    stnam.mu <- uf[pmatch(ufuf, names(uf), duplicates.ok=TRUE)]
+    
+    for (k in 1:2) {
+        wdl[[k]] <- rbind(
+            wdl[[k]],
+            data.frame(code='', City='',
+                       Province.State=stnam.uf, 
+                       Country.Region='Brazil', Lat=NA, Long=NA,
+                       wbr.uf[[k]]))
+        wdl[[k]] <- rbind(
+            wdl[[k]],
+            data.frame(code=rownames(wbr.mu[[k]]),
+                       City=munam,
+                       Province.State=stnam.mu, 
+                       Country.Region='Brazil', Lat=NA, Long=NA,
+                       wbr.mu[[k]]))
+    }
+
 }
 
-imunam <- pmatch(rownames(wbr.mu[[1]]), dbr$city_ibge_code)
+uf <- data.frame(
+    STATE=c("SERGIPE", "MARANHÃO", "ESPÍRITO SANTO", "AMAZONAS",
+            "RORAIMA", "GOIÁS", "AMAPÁ", "RIO GRANDE DO SUL",
+            "PARAÍBA", "PIAUÍ", "SÃO PAULO", "SANTA CATARINA",
+            "PERNAMBUCO", "RIO DE JANEIRO", "MATO GROSSO DO SUL",
+            "MATO GROSSO", "BAHIA", "MINAS GERAIS", "ALAGOAS",
+            "CEARÁ", "RIO GRANDE DO NORTE", "PARANÁ", "RONDÔNIA",
+            "DISTRITO FEDERAL", "ACRE", "PARÁ", "TOCANTINS"), 
+    UF = c("SE", "MA", "ES", "AM", "RR", "GO", "AP", "RS", "PB",
+           "PI", "SP", "SC", "PE", "RJ", "MS", "MT", "BA", "MG",
+           "AL", "CE", "RN", "PR", "RO", "DF", "AC", "PA", "TO"),
+    row.names=c("28", "21", "32", "13", "14", "52", "16", "43", "25",
+                "22", "35", "42", "26", "33", "50", "51", "29", "31",
+                "27", "23", "24", "41", "11", "53", "12", "15", "17"))
+
+dbr$fcode <- factor(dbr$ibgeID,
+                    sort(as.integer(unique(
+                        c(rownames(uf), dbr$ibgeID)))))
+
+wbr <- lapply(dbr[c('totalCases', 'deaths')], tapply,
+              dbr[c('fcode', 'fdate')], as.integer)
+
+iwm <- which(nchar(rownames(wbr[[1]]))==7)
+iws <- which(nchar(rownames(wbr[[1]]))==2)
+
+wbr.uf <- lapply(wbr, function(x) {
+    aggregate(x[iws,],
+              list(code=substr(rownames(x)[iws], 1, 2)),
+              sum, na.rm=TRUE)
+})
+
+summary(imunam <- pmatch(rownames(wbr[[1]])[iwm], dbr$ibgeID) )
 munam <- as.character(dbr$city)[imunam]
 
-uf <- c(SE = "SERGIPE", MA = "MARANHÃO", ES = "ESPÍRITO SANTO",
-        AM = "AMAZONAS", RR = "RORAIMA", GO = "GOIÁS",
-        AP = "AMAPÁ", RS = "RIO GRANDE DO SUL", PB = "PARAÍBA",
-        PI = "PIAUÍ", SP = "SÃO PAULO", SC = "SANTA CATARINA",
-        PE = "PERNAMBUCO", RJ = "RIO DE JANEIRO",
-        MS = "MATO GROSSO DO SUL", MT = "MATO GROSSO",
-        BA = "BAHIA", MG = "MINAS GERAIS", AL = "ALAGOAS",
-        CE = "CEARÁ", RN = "RIO GRANDE DO NORTE",
-        PR = "PARANÁ", RO = "RONDÔNIA",
-        DF = "DISTRITO FEDERAL", AC = "ACRE",
-        PA = "PARÁ", TO = "TOCANTINS")
-
-iufuf <- pmatch(rownames(wbr.mu[[1]]), dbr$city_ibge_code)
-ufuf <- dbr$state[iufuf]
-
-stnam.uf <- uf[pmatch(rownames(wbr.uf[[1]]), 
-                      names(uf), duplicates.ok=TRUE)]
-stnam.mu <- uf[pmatch(ufuf, names(uf), duplicates.ok=TRUE)]
+stnam.uf <- uf$STATE[pmatch(wbr.uf[[1]]$code, rownames(uf))]
+i.uf.mu <- pmatch(as.character(dbr$state)[imunam],
+                  as.character(uf$UF), duplicates.ok=TRUE)
+table(as.character(dbr$state)[imunam]==as.character(uf$UF)[i.uf.mu])
+stnam.mu <- uf$STATE[i.uf.mu]
 
 for (k in 1:2) {
     wdl[[k]] <- rbind(
         wdl[[k]],
-        data.frame(code='', City='',
+        data.frame(code=wbr.uf[[k]]$code, City='',
                    Province.State=stnam.uf, 
                    Country.Region='Brazil', Lat=NA, Long=NA,
-                   wbr.uf[[k]]))
+                   as.matrix(wbr.uf[[k]][,-1])))
     wdl[[k]] <- rbind(
         wdl[[k]],
-        data.frame(code=rownames(wbr.mu[[k]]),
+        data.frame(code=rownames(wbr[[k]])[iwm],
                    City=munam,
                    Province.State=stnam.mu, 
                    Country.Region='Brazil', Lat=NA, Long=NA,
-                   wbr.mu[[k]]))
+                   wbr[[k]][iwm,]))
+}
+
+for (k in 1:2) {
     rownames(wdl[[k]]) <- 1:nrow(wdl[[k]])
     wdl[[k]] <- as.data.frame(wdl[[k]])
     for (j in 7:ncol(wdl[[k]])) {
