@@ -45,8 +45,8 @@ if (lastday<(Sys.Date()-1)) {
 }
 
 wc.names <- levels(wdl[[1]]$Country.Region)
-st.names <- levels(wdl[[1]]$Province.State)
-mu.names <- levels(wdl[[1]]$City)
+st.names <- setdiff(levels(wdl[[1]]$Province.State), 'total')
+mu.names <- setdiff(levels(wdl[[1]]$City), 'total')
 iisel <- which(wdl[[1]]$Province.State=='') 
 nn.show <- sapply(wdl, function(m) 
   sum(m[iisel, ncol(m)], na.rm=TRUE))

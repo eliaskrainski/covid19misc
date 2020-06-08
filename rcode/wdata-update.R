@@ -15,15 +15,21 @@ source('rcode/getdata.R')
 
 wwfun <- function(fl) {
     m <- read.csv(fl)
-    np <- table(m$Country)
-    np <- np[np>1]
-    aux <- data.frame(code='', City='', Province.State='',
-                      Country.Region=names(np), Lat=NA, Long=NA) 
-    cs <- sapply(names(np), function(x)
-        colSums(m[which(m$Country==x), 5:ncol(m)]))
-    rbind(data.frame(aux, t(cs)), 
-          data.frame(code='', City='', m))
-                                                              
+    co <- as.character(m$Country)
+    prov.bl <- m$Province!=''
+    toSum <- setdiff(
+        co[prov.bl],
+        do.call('intersect', split(co, c('x', 'y')[prov.bl+1])))
+    if (length(toSum)>0) {
+        aux <- data.frame(code='', City='', Province.State='',
+                          Country.Region=toSum, Lat=NA, Long=NA) 
+        cs <- sapply(toSum, function(x)
+            colSums(m[which(m$Country==x), 5:ncol(m)]))
+        return(rbind(data.frame(aux, t(cs)), 
+                     data.frame(code='', City='', m)))
+    } else {
+        return(m)
+    }                                                 
 }
 
 wdl <- lapply(c(confirmed='data/confirmed_global.csv',
@@ -74,21 +80,15 @@ for (k in 1:2) {
 
 
 if (FALSE) {
-
 ### Brasil data
     dbr <- read.csv('data/caso.csv.gv')
-    
-
 }  else {
-
 ### data from Wesley Cota 
     dbr <- read.csv('data/cases-brazil-cities-time.csv')
-
 }
 
-dbr$fdate <- factor(gsub('-', '', dbr$date,
-                         fixed=TRUE), alldates)    
-
+dbr$fdate <- factor(gsub('-', '', dbr$date, 
+                         fixed=TRUE), alldates) 
 
 if (FALSE) {
 
@@ -189,8 +189,8 @@ iwm <- which(nchar(rownames(wbr[[1]]))==7)
 iws <- which(nchar(rownames(wbr[[1]]))==2)
 
 wbr.uf <- lapply(wbr, function(x) {
-    aggregate(x[iws,],
-              list(code=substr(rownames(x)[iws], 1, 2)),
+    aggregate(x[unique(c(iws, iwm)),],
+              list(code=substr(rownames(x)[unique(c(iws, iwm))], 1, 2)),
               sum, na.rm=TRUE)
 })
 
@@ -204,6 +204,14 @@ table(as.character(dbr$state)[imunam]==as.character(uf$UF)[i.uf.mu])
 stnam.mu <- uf$STATE[i.uf.mu]
 
 for (k in 1:2) {
+    wdl[[k]] <- rbind(
+        wdl[[k]],
+        data.frame(code='1', City='total', Province.State='total', 
+                   Country.Region='Brasil (total)',
+                   Lat=NA, Long=NA,
+                   matrix(colSums(wbr.uf[[k]][,-1]), 1,
+                          dimnames=list(
+                              '', colnames(wbr.uf[[k]])[-1]))))
     wdl[[k]] <- rbind(
         wdl[[k]],
         data.frame(code=wbr.uf[[k]]$code, City='',
