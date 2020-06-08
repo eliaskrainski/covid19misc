@@ -11,6 +11,9 @@ naFix <- function(x) {
     return(x) 
 }
 
+if (!any(ls()=='brio'))
+    brio <- TRUE 
+
 source('rcode/getdata.R')
 
 wwfun <- function(fl) {
@@ -78,8 +81,7 @@ for (k in 1:2) {
                    w.us[[k]]))
 }
 
-
-if (FALSE) {
+if (brio) {
 ### Brasil data
     dbr <- read.csv('data/caso.csv.gv')
 }  else {
@@ -90,7 +92,7 @@ if (FALSE) {
 dbr$fdate <- factor(gsub('-', '', dbr$date, 
                          fixed=TRUE), alldates) 
 
-if (FALSE) {
+if (brio) {
 
     i.uf <- which(dbr$place_type=='state')
     i.mu <- which(dbr$place_type=='city')
@@ -148,6 +150,14 @@ if (FALSE) {
     for (k in 1:2) {
         wdl[[k]] <- rbind(
             wdl[[k]],
+            data.frame(code='1', City='total', Province.State='total', 
+                       Country.Region='Brasil (total)',
+                       Lat=NA, Long=NA,
+                       matrix(colSums(wbr.uf[[k]]), 1,
+                              dimnames=list(
+                                  '', colnames(wbr.uf[[k]])))))
+        wdl[[k]] <- rbind(
+            wdl[[k]],
             data.frame(code='', City='',
                        Province.State=stnam.uf, 
                        Country.Region='Brazil', Lat=NA, Long=NA,
@@ -161,71 +171,73 @@ if (FALSE) {
                        wbr.mu[[k]]))
     }
 
+} else {
+
+    uf <- data.frame(
+        STATE=c("SERGIPE", "MARANHÃO", "ESPÍRITO SANTO", "AMAZONAS",
+                "RORAIMA", "GOIÁS", "AMAPÁ", "RIO GRANDE DO SUL",
+                "PARAÍBA", "PIAUÍ", "SÃO PAULO", "SANTA CATARINA",
+                "PERNAMBUCO", "RIO DE JANEIRO", "MATO GROSSO DO SUL",
+                "MATO GROSSO", "BAHIA", "MINAS GERAIS", "ALAGOAS",
+                "CEARÁ", "RIO GRANDE DO NORTE", "PARANÁ", "RONDÔNIA",
+                "DISTRITO FEDERAL", "ACRE", "PARÁ", "TOCANTINS"), 
+        UF = c("SE", "MA", "ES", "AM", "RR", "GO", "AP", "RS", "PB",
+               "PI", "SP", "SC", "PE", "RJ", "MS", "MT", "BA", "MG",
+               "AL", "CE", "RN", "PR", "RO", "DF", "AC", "PA", "TO"),
+        row.names=c("28", "21", "32", "13", "14", "52", "16", "43", "25",
+                    "22", "35", "42", "26", "33", "50", "51", "29", "31",
+                    "27", "23", "24", "41", "11", "53", "12", "15", "17"))
+    
+    dbr$fcode <- factor(dbr$ibgeID,
+                        sort(as.integer(unique(
+                            c(rownames(uf), dbr$ibgeID)))))
+    
+    wbr <- lapply(dbr[c('totalCases', 'deaths')], tapply,
+                  dbr[c('fcode', 'fdate')], as.integer)
+    
+    iwm <- which(nchar(rownames(wbr[[1]]))==7)
+    iws <- which(nchar(rownames(wbr[[1]]))==2)
+    
+    wbr.uf <- lapply(wbr, function(x) {
+        aggregate(x[unique(c(iws, iwm)),],
+                  list(code=substr(rownames(x)[unique(c(iws, iwm))], 1, 2)),
+                  sum, na.rm=TRUE)
+    })
+    
+    summary(imunam <- pmatch(rownames(wbr[[1]])[iwm], dbr$ibgeID) )
+    munam <- as.character(dbr$city)[imunam]
+    
+    stnam.uf <- uf$STATE[pmatch(wbr.uf[[1]]$code, rownames(uf))]
+    i.uf.mu <- pmatch(as.character(dbr$state)[imunam],
+                      as.character(uf$UF), duplicates.ok=TRUE)
+    table(as.character(dbr$state)[imunam]==as.character(uf$UF)[i.uf.mu])
+    stnam.mu <- uf$STATE[i.uf.mu]
+    
+    for (k in 1:2) {
+        wdl[[k]] <- rbind(
+            wdl[[k]],
+            data.frame(code='1', City='total', Province.State='total', 
+                       Country.Region='Brasil (total)',
+                       Lat=NA, Long=NA,
+                       matrix(colSums(wbr.uf[[k]][,-1]), 1,
+                              dimnames=list(
+                                  '', colnames(wbr.uf[[k]])[-1]))))
+        wdl[[k]] <- rbind(
+            wdl[[k]],
+            data.frame(code=wbr.uf[[k]]$code, City='',
+                       Province.State=stnam.uf, 
+                       Country.Region='Brazil', Lat=NA, Long=NA,
+                       as.matrix(wbr.uf[[k]][,-1])))
+        wdl[[k]] <- rbind(
+            wdl[[k]],
+            data.frame(code=rownames(wbr[[k]])[iwm],
+                       City=munam,
+                       Province.State=stnam.mu, 
+                       Country.Region='Brazil', Lat=NA, Long=NA,
+                       wbr[[k]][iwm,]))
+    }
 }
 
-uf <- data.frame(
-    STATE=c("SERGIPE", "MARANHÃO", "ESPÍRITO SANTO", "AMAZONAS",
-            "RORAIMA", "GOIÁS", "AMAPÁ", "RIO GRANDE DO SUL",
-            "PARAÍBA", "PIAUÍ", "SÃO PAULO", "SANTA CATARINA",
-            "PERNAMBUCO", "RIO DE JANEIRO", "MATO GROSSO DO SUL",
-            "MATO GROSSO", "BAHIA", "MINAS GERAIS", "ALAGOAS",
-            "CEARÁ", "RIO GRANDE DO NORTE", "PARANÁ", "RONDÔNIA",
-            "DISTRITO FEDERAL", "ACRE", "PARÁ", "TOCANTINS"), 
-    UF = c("SE", "MA", "ES", "AM", "RR", "GO", "AP", "RS", "PB",
-           "PI", "SP", "SC", "PE", "RJ", "MS", "MT", "BA", "MG",
-           "AL", "CE", "RN", "PR", "RO", "DF", "AC", "PA", "TO"),
-    row.names=c("28", "21", "32", "13", "14", "52", "16", "43", "25",
-                "22", "35", "42", "26", "33", "50", "51", "29", "31",
-                "27", "23", "24", "41", "11", "53", "12", "15", "17"))
-
-dbr$fcode <- factor(dbr$ibgeID,
-                    sort(as.integer(unique(
-                        c(rownames(uf), dbr$ibgeID)))))
-
-wbr <- lapply(dbr[c('totalCases', 'deaths')], tapply,
-              dbr[c('fcode', 'fdate')], as.integer)
-
-iwm <- which(nchar(rownames(wbr[[1]]))==7)
-iws <- which(nchar(rownames(wbr[[1]]))==2)
-
-wbr.uf <- lapply(wbr, function(x) {
-    aggregate(x[unique(c(iws, iwm)),],
-              list(code=substr(rownames(x)[unique(c(iws, iwm))], 1, 2)),
-              sum, na.rm=TRUE)
-})
-
-summary(imunam <- pmatch(rownames(wbr[[1]])[iwm], dbr$ibgeID) )
-munam <- as.character(dbr$city)[imunam]
-
-stnam.uf <- uf$STATE[pmatch(wbr.uf[[1]]$code, rownames(uf))]
-i.uf.mu <- pmatch(as.character(dbr$state)[imunam],
-                  as.character(uf$UF), duplicates.ok=TRUE)
-table(as.character(dbr$state)[imunam]==as.character(uf$UF)[i.uf.mu])
-stnam.mu <- uf$STATE[i.uf.mu]
-
-for (k in 1:2) {
-    wdl[[k]] <- rbind(
-        wdl[[k]],
-        data.frame(code='1', City='total', Province.State='total', 
-                   Country.Region='Brasil (total)',
-                   Lat=NA, Long=NA,
-                   matrix(colSums(wbr.uf[[k]][,-1]), 1,
-                          dimnames=list(
-                              '', colnames(wbr.uf[[k]])[-1]))))
-    wdl[[k]] <- rbind(
-        wdl[[k]],
-        data.frame(code=wbr.uf[[k]]$code, City='',
-                   Province.State=stnam.uf, 
-                   Country.Region='Brazil', Lat=NA, Long=NA,
-                   as.matrix(wbr.uf[[k]][,-1])))
-    wdl[[k]] <- rbind(
-        wdl[[k]],
-        data.frame(code=rownames(wbr[[k]])[iwm],
-                   City=munam,
-                   Province.State=stnam.mu, 
-                   Country.Region='Brazil', Lat=NA, Long=NA,
-                   wbr[[k]][iwm,]))
-}
 
 for (k in 1:2) {
     rownames(wdl[[k]]) <- 1:nrow(wdl[[k]])
