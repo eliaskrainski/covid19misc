@@ -7,7 +7,13 @@ if (FALSE) { ## can manually skip
 }
 
 naFix <- function(x) {
-    x[is.na(x)] <- 0L
+    ii <- which(is.na(x))
+    if (length(ii)>0) {
+        x[ii[1]] <- 0
+        if (length(ii)>1)
+            for (i in ii[-1])
+                x[i] <- x[i-1]
+    }
     return(x) 
 }
 
@@ -119,10 +125,11 @@ if (brio) {
         dtmp <- as.Date(colnames(wbr.mu[[k]]), '%Y%m%d')
         if (tail(dtmp, 1)==Sys.Date())
             wbr.mu[[k]] <- wbr.mu[[k]][, 1:(ncol(wbr.mu[[k]])-1)]
-        wbr.mu[[k]][is.na(wbr.mu[[k]])] <- 0L
+###        wbr.mu[[k]][is.na(wbr.mu[[k]])] <- 0L ## fix later
         dtmp <- as.Date(colnames(wbr.uf[[k]]), '%Y%m%d')
         if (tail(dtmp, 1)==Sys.Date())
             wbr.uf[[k]] <- wbr.uf[[k]][, 1:(ncol(wbr.uf[[k]])-1)]
+        wbr.uf[[k]][wbr.uf[[k]]==0] <- NA 
     }
     
     uf <- c(SE = "SERGIPE", MA = "MARANHÃO", ES = "ESPÍRITO SANTO",
@@ -214,20 +221,22 @@ if (brio) {
     stnam.mu <- uf$STATE[i.uf.mu]
     
     for (k in 1:2) {
-        wdl[[k]] <- rbind(
-            wdl[[k]],
-            data.frame(code='1', City='total', Province.State='total', 
-                       Country.Region='Brasil (total)',
-                       Lat=NA, Long=NA,
-                       matrix(colSums(wbr.uf[[k]][,-1]), 1,
-                              dimnames=list(
-                                  '', colnames(wbr.uf[[k]])[-1]))))
+        wbr.uf[[k]][wbr.uf[[k]]==0] <- NA 
+##        wdl[[k]] <- rbind(
+  ##          wdl[[k]],
+    ##        data.frame(code='1', City='total', Province.State='total', ##
+   ##                    Country.Region='Brasil (total)',
+     ##                  Lat=NA, Long=NA,
+       ##                matrix(colSums(wbr.uf[[k]][,-1]), 1,
+         ##                     dimnames=list(
+           ##                       '', colnames(wbr.uf[[k]])[-1]))))
         wdl[[k]] <- rbind(
             wdl[[k]],
             data.frame(code=wbr.uf[[k]]$code, City='',
                        Province.State=stnam.uf, 
                        Country.Region='Brazil', Lat=NA, Long=NA,
                        as.matrix(wbr.uf[[k]][,-1])))
+        wbr[[k]][wbr[[k]]==0] <- NA 
         wdl[[k]] <- rbind(
             wdl[[k]],
             data.frame(code=rownames(wbr[[k]])[iwm],
@@ -242,9 +251,15 @@ if (brio) {
 for (k in 1:2) {
     rownames(wdl[[k]]) <- 1:nrow(wdl[[k]])
     wdl[[k]] <- as.data.frame(wdl[[k]])
-    for (j in 7:ncol(wdl[[k]])) {
+    wdl[[k]][, 7] <- as.integer(wdl[[k]][, 7])
+    ii <- which(is.na(wdl[[k]][, 7]))
+    if (length(ii)>0) 
+        wdl[[k]][ii, 7] <- 0L
+    for (j in 8:ncol(wdl[[k]])) {
         y <- as.integer(wdl[[k]][,j])
-        y[y==0] <- NA
+        ii <- which(is.na(y))
+        if (length(ii)>0)
+            y[ii] <- wdl[[k]][ii, j-1]
         wdl[[k]][, j] <- y
     }    
 }
