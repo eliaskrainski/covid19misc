@@ -27,11 +27,12 @@ url.br <- paste0('https://data.brasil.io/',
 
 try(download.file(url.br, 'data/caso.csv.gv'), TRUE)
 
-### Brazilian data put together by Wesley Cota
-urlwc <- 'https://raw.githubusercontent.com/wcota/covid19br/master/'
-wc.fl <- 'cases-brazil-cities-time.csv'
-download.file(paste0(urlwc, wc.fl),
-              paste0('data/', wc.fl))
+if (wcota) { ### Brazilian data put together by Wesley Cota
+    urlwc <- 'https://raw.githubusercontent.com/wcota/covid19br/master/'
+    wc.fl <- 'cases-brazil-cities-time.csv'
+    download.file(paste0(urlwc, wc.fl),
+                  paste0('data/', wc.fl))
+}
 
 ### USdata
 us.fl <- 'data/states_daily_4pm_et.csv'

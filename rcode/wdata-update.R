@@ -18,7 +18,13 @@ naFix <- function(x) {
 }
 
 if (!any(ls()=='brio'))
-    brio <- TRUE 
+    brio <- TRUE
+
+if (!any(ls()=='wcota')) {
+    wcota <- !brio
+
+if (!any(ls()=='usems'))
+    usems <- TRUE
 
 source('rcode/getdata.R')
 
@@ -89,14 +95,14 @@ for (k in 1:2) {
 
 if (brio) {
 ### Brasil data
-    dbr <- read.csv('data/caso.csv.gv')
+    system.time(dbr <- read.csv('data/caso.csv.gv'))
 }  else {
 ### data from Wesley Cota 
-    dbr <- read.csv('data/cases-brazil-cities-time.csv')
+    system.time(dbr <- read.csv('data/cases-brazil-cities-time.csv'))
 }
 
 dbr$fdate <- factor(gsub('-', '', dbr$date, 
-                         fixed=TRUE), alldates) 
+                         fixed=TRUE), alldates)
 
 if (brio) {
 

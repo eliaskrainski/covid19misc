@@ -6,21 +6,25 @@ ui <- fluidPage(
   titlePanel("Temporal visualization of COVID19 data"),
   sidebarLayout(
     sidebarPanel(
-      checkboxGroupInput(inputId="variables", 
-                         label = "Variables to show", 
-                         choices = c("Cases (dot)" = 'cases', 
-                                     'Deaths (star)' = 'deaths'), 
-                         selected = 'cases'),
-      selectizeInput(inputId = "local",
-                     label = "Local",
-                     choices = locals,
-                     multiple = TRUE, 
-                     selected = 'NY - US'),
-      dateRangeInput(inputId='dateRange',
-                     label = 'Date (interval):',
-                     start = as.Date('2020-01-20'),
-                     end = Sys.Date(),
-                     format = "dd/mm/yy"),
+      checkboxGroupInput(
+        inputId = "variables", 
+        label = "Variables to show", 
+        choices = c('Cases' = 'cases', 
+                    'Deaths' = 'deaths'), 
+        selected = 'cases'),
+      selectizeInput(
+        inputId = "local",
+        label = "Local",
+        choices = olocals,
+        multiple = TRUE, 
+        selected = c('Curitiba, PARANÁ - Brazil', 
+                     'Nova Scotia - Canada')),
+      dateRangeInput(
+        inputId = 'dateRange',
+        label = 'Date (interval):',
+        start = as.Date('2020-01-20'),
+        end = Sys.Date(),
+        format = "dd/mm/yy"),
       radioButtons(
         inputId = "transf", 
 	      label = "Tranformation", 
@@ -29,8 +33,9 @@ ui <- fluidPage(
 ##	                'log2'='log2', 
 	                'log10'='log10'), 
 	      selected = 'log10'),
-      actionButton(inputId="exit", 
-                   label="Exit"),
+      actionButton(
+        inputId="exit", 
+        label="Exit"),
     width = 3),
     mainPanel(
       plotOutput("plot"),
