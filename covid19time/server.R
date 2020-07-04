@@ -21,15 +21,14 @@ server <- function(input, output) {
         sdata <- prepareData(
           input$local)
 
-        par(mfrow=c(2, 1), mar=c(0, 3.5, 0, 0), mgp=c(2.5, 0.5, 0))
+        par(mfrow=c(2, 1), mar=c(0, 3.5, 0, 0.5), mgp=c(2.5, 0.5, 0))
         data2plot(d=sdata, 
                   variables=input$variables,
                   dateRange=input$dateRange, 
-                  transf=input$transf)
-    ##    if (length(vv)==2)
-      ##    legend('topleft', c('Cases', 'Deaths'), 
-        ##         pch=c(19, 8), ncol = 2, bty='n')    
-        
+                  showPoints=input$showPoints,
+                  transf=input$transf, 
+                  legpos=input$legend)
+
         })
     
 }

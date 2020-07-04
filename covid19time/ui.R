@@ -8,7 +8,7 @@ ui <- fluidPage(
     sidebarPanel(
       checkboxGroupInput(
         inputId = "variables", 
-        label = "Variables to show", 
+        label = NULL, #"Variables to show", 
         choices = c('Cases' = 'cases', 
                     'Deaths' = 'deaths'), 
         selected = 'cases'),
@@ -17,22 +17,32 @@ ui <- fluidPage(
         label = "Local",
         choices = olocals,
         multiple = TRUE, 
-        selected = c('Curitiba, PARANÁ - Brazil', 
-                     'Nova Scotia - Canada')),
+        selected = c('PARANÁ - Brazil', 
+                     'Brazil', 'NY - US', 'US')),
       dateRangeInput(
         inputId = 'dateRange',
         label = 'Date (interval):',
         start = as.Date('2020-01-20'),
         end = Sys.Date(),
         format = "dd/mm/yy"),
+      checkboxInput(
+        inputId = 'showPoints',
+        label = 'Show points',
+        value = TRUE
+      ),
+      radioButtons(
+        inputId = "legend", 
+        label = "Legend position", 
+        choices = c('Right' = 'right', 
+                    'Top' = 'top'), 
+        selected = 'top'),
       radioButtons(
         inputId = "transf", 
-	      label = "Tranformation", 
-	      choices=c('none'='none', 
-	                'sqrt'='sqrt', 
-##	                'log2'='log2', 
-	                'log10'='log10'), 
-	      selected = 'log10'),
+        label = "Y-axis tranformation", 
+        choices=c('none'='none', 
+                  'sqrt'='sqrt', 
+                  'log10'='log10'), 
+        selected = 'log10'),
       actionButton(
         inputId="exit", 
         label="Exit"),

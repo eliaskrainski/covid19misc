@@ -20,7 +20,7 @@ naFix <- function(x) {
 if (!any(ls()=='brio'))
     brio <- TRUE
 
-if (!any(ls()=='wcota')) {
+if (!any(ls()=='wcota')) 
     wcota <- !brio
 
 if (!any(ls()=='usems'))
