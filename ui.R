@@ -27,6 +27,10 @@ ui <- fluidPage(
         end = Sys.Date(),
         format = "dd/mm/yy", 
         language = 'pt'),
+      checkboxInput(
+        inputId = 'showPoints',
+        label = 'Mostrar pontos',
+        value = TRUE),
       radioButtons(
         inputId = "transf", 
 	      label = "Tranformação", 
@@ -39,7 +43,7 @@ ui <- fluidPage(
         label = "Legenda (posição)", 
         choices = c('À direita' = 'right', 
                     'Acima' = 'top'), 
-        selected = 'right'),
+        selected = 'top'),
       actionButton(
         inputId="exit", 
         label="Exit"),

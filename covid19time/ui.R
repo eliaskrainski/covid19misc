@@ -28,8 +28,7 @@ ui <- fluidPage(
       checkboxInput(
         inputId = 'showPoints',
         label = 'Show points',
-        value = TRUE
-      ),
+        value = TRUE),
       radioButtons(
         inputId = "legend", 
         label = "Legend position", 

@@ -116,6 +116,7 @@ formatB <- function(x, scientific = TRUE) {
     x <- gsub('e+00', '', x, fixed=TRUE)
   } else {
     x <- format(x, scientific=FALSE)
+    x <- gsub(' ', '', x, fixed=TRUE)
     x <- gsub('00000000', 'B', x, fixed=TRUE) 
     x <- gsub('0000000', '0M', x, fixed=TRUE) 
     x <- gsub('0000000', '0M', x, fixed=TRUE) 
@@ -317,23 +318,35 @@ data2plot <- function(d,
         yl$l <- logR(yl$y, base=2, inverse=TRUE)
     }
     if (transf=='log10') {
-        b <- findInterval(diff(yab), 0:6)
-        yl0 <- switch(as.character(b),
-                      '1'=c(1,1.3,1.7,2.2,3,4,5.5,7.5),
-                      '2'=c(1,1.3,1.8,2.5,3.6,5,7),
-                      '3'=c(1,1.4,2,2.8,4,6),
-                      '4'=c(1,1.5,2.3,3.5,5.6),
-                      '5'=c(1,1.6,3,5.5),
-                      '6'=c(1,2,4), 
-                      '7'=c(1,3), 
-                      '8'=1)
-        if (diff(yab)>7) 
-            b <- round(diff(yab))
-        yadd0 <- rep(log(c(yl0), 10), b+2) + 
-            rep(0:(b+1), each=length(yl0))
-        f0 <- floor(ylm[1])
-        yl <- list(y=sort(unique(f0+yadd0, logR(c(-1,1), 10))))
-        yl$l <- round(logR(yl$y, 10, inverse=TRUE))
+      if ((ylm[1])>(-1) & (ylm[2])<1) {
+        yl <- list(l=c(-10, -7, -5, -3:3, 5, 7, 10))
+        yl$y <- logR(yl$l, 10)
+      } else {
+          b <- findInterval(diff(ylm), 0:5)
+          yl0 <- switch(
+            as.character(b),
+            '1'=c(1.3,1.7,2.2,3,4,5.5,7.5),
+            ##'2'=c(1,1.3,1.8,2.5,3.6,5,7),
+            '2'=c(1.5,3,5),##c(1.5,2.5,4,6),##c(1.4,2,2.8,4,6),
+            '3'=c(2,4),
+            ##          '4'=c(1,1.5,2.3,3.5,5.6),
+              ##          '5'=c(1,1.6,3,5.5),
+            '4'=c(2,4), 
+            '5'=3, 
+            '6'=3)
+          if (diff(ylm)>6) {
+            yl <- list(y=floor(yab[1]):ceiling(yab[2]))
+            yl$l <- logR(yl$y, 10, inverse=TRUE)
+          } else {
+              yadd0 <- rep(log(yl0, 10), b+2) + 
+                rep(0:(b+1), each=length(yl0))
+              f0 <- floor(ylm[1])
+              yl <- list(y=unique(sort(c(
+                floor(yab[1]):ceiling(yab[2]), 
+                f0+yadd0))))
+              yl$l <- round(10^yl$y) 
+          }
+        }
     } 
     i.yl <- which(findInterval(yl$y, ylm+c(-1,1)*0.03*diff(ylm))==1)
     axis(2, yl$y[i.yl], formatB(yl$l[i.yl], scientific=FALSE), las=1)
