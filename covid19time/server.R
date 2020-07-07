@@ -21,7 +21,7 @@ server <- function(input, output) {
         sdata <- prepareData(
           input$local)
 
-        par(mfrow=c(2, 1), mar=c(0, 3.5, 0, 0.5), mgp=c(2.5, 0.5, 0))
+        par(mfrow=c(2, 1), mar=c(0, 4.5, 0, 0.5), mgp=c(3.5, 0.5, 0))
         data2plot(d=sdata, 
                   variables=input$variables,
                   dateRange=input$dateRange, 

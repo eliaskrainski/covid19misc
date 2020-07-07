@@ -24,7 +24,8 @@ n.uf <- lapply(w.uf, apply, 1, function(x) {
 
 str(n.uf)
 ss <- lapply(n.uf, apply, 2, function(y)
-    mgcv:::gam(y~s(x), poisson(), list(x=1:length(y), y=y))$fitted)
+    mgcv:::gam(y~s(x), poisson(),
+               list(x=1:length(y), y=y))$fitted)
 str(ss)
 
 plot(ss[[1]][,1], type='l')
@@ -49,25 +50,37 @@ cores <- c('casos'='black', 'óbitos'='red')
 
 png('figures/uf-date-new.png', 600, 600)
 ggplot(uf.long) +
-    geom_point(aes(x=date, y=nCasos, color='casos')) +
-    geom_point(aes(x=date, y=nObitos, color='óbitos')) +
+    geom_point(aes(x=date, y=nCasos, color='casos'), size=0.3) +
+    geom_point(aes(x=date, y=nObitos, color='óbitos'), size=0.3) +
     geom_line(aes(x=date, y=sCasos, color='casos')) +
     geom_line(aes(x=date, y=sObitos, color='óbitos')) +
-        scale_y_log10(breaks=c(1, 10, 100, 1000, 5000),
-                  limits=c(1, 5000)) +
+        scale_y_log10(breaks=c(1, 10, 100, 1000, 5000,30000),
+                  limits=c(1, 30000)) +
     facet_wrap(~uf) + theme_bw() + 
     labs(x='', y='', color='Legenda') + 
     scale_color_manual(values = cores) +
     theme(legend.position=c(0.9,0.1))
 dev.off()
 if (FALSE)
-    system('eog figures/uf-date-new.png &')    
+    system('eog figures/uf-date-new.png &')
+
+ufsel <- c('AC', 'AL', 'AM', 'AP', 'CE',
+           'MA', 'PA', 'PB', 'PE')
+ggplot(uf.long[uf.long$uf%in%ufsel, ]) +
+    geom_point(aes(x=date, y=nCasos, color='casos'), size=0.3) +
+    geom_point(aes(x=date, y=nObitos, color='óbitos'), size=0.3) +
+    geom_line(aes(x=date, y=sCasos, color='casos')) +
+    geom_line(aes(x=date, y=sObitos, color='óbitos')) +
+        scale_y_log10(breaks=c(1, 10, 100, 1000, 5000,30000),
+                  limits=c(1, 30000)) +
+    facet_wrap(~uf) + theme_bw() + 
+    labs(x='', y='', color='Legenda') + 
+    scale_color_manual(values = cores) +
+    theme(legend.position=c(0.71,0.23))
+
 
 d.all$Date <- as.Date(d.all$date)
 d.all <- d.all[order(d.all$Date), ]
-
-
-
 
 ggplot(d.all[which(d.all$place_type=='state'), ]) +
     geom_point(aes(x=Date, y=confirmed, color='casos')) +

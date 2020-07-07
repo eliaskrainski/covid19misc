@@ -1,4 +1,6 @@
 
+pt <- length(grep('MESSAGES=pt', Sys.getlocale())>0)
+
 ### load packages
 library(shiny)
 library(mgcv)
@@ -11,38 +13,72 @@ if (file.exists('data/wdl.RData')) {
     source('rcode/wdata-update.R')
 }
 
-### check if the data is updated up to yesterday data
+### check if the data is more than 6 hours old
+if (difftime(Sys.time(), 
+             attr(wdl, 'Sys.time'), 
+             units='hours')>6) {
+  source('rcode/wdata-update.R')
+}
 cn <- colnames(wdl[[1]])
 Date <- as.Date(cn[7:length(cn)], 'X%Y%m%d')
 lastday <- tail(Date, 1)
-if (lastday<(Sys.Date()-1)) { ### update data 
-    source('rcode/wdata-update.R')
-    cn <- colnames(wdl[[1]])
-    Date <- as.Date(cn[7:length(cn)], 'X%Y%m%d')
-    lastday <- tail(Date, 1)
-}
 
-locals <- paste0(ifelse(wdl[[1]]$City=='', '',
-                        paste0(wdl[[1]]$City, ', ')),
-                 ifelse(wdl[[1]]$Province.State=='', '',
-                        paste0(wdl[[1]]$Province.State, ' - ')),
-                 wdl[[1]]$Country.Region)
+### locals to select. Composed by City, State and Country
+locals <- paste0(ifelse(
+    wdl[[1]]$City=='', '',
+    paste0(wdl[[1]]$City, ', ')),
+    ifelse(
+        wdl[[1]]$Province.State=='', '',
+        paste0(wdl[[1]]$Province.State, ' - ')),
+    wdl[[1]]$Country.Region)
+### Put in alphabetical order 
 olocals <- sort(locals)
 
-llocals <- as.character(wdl[[1]]$Country.Region)
-ib <- which((wdl[[1]]$City=='') & (wdl[[1]]$Province.State!=''))
-llocals[ib] <- paste0(wdl[[1]]$Province.State[ib], ' - ',
-                      wdl[[1]]$Country.Region[ib])
-ibb <- which(nchar(llocals[ib])>25)
-llocals[ib[ibb]] <- paste0(wdl[[1]]$Province.State[ib[ibb]], '\n',
-                           wdl[[1]]$Country.Region[ib[ibb]])
-ib <- which((wdl[[1]]$City!=''))
-llocals[ib] <- paste0(wdl[[1]]$City[ib], ' - ',
-                      wdl[[1]]$Province.State[ib])
-ibb <- which(nchar(llocals[ib])>25)
-llocals[ib[ibb]] <- paste0(wdl[[1]]$City[ib[ibb]], '\n',
-                           wdl[[1]]$Province.State[ib[ibb]])
+### Too wide state + country names separated by '\n'
+llocals <- as.character(
+    wdl[[1]]$Country.Region)
+llwide <- nchar(llocals) ### nchar (for text size legend control) 
+llrow <- rep(1, length(llocals)) ## lines (1+linebreaks), for legend
+ib <- which((wdl[[1]]$City=='') &
+            (wdl[[1]]$Province.State!=''))
+if (length(ib)>0) {
+    llocals[ib] <- paste0(
+        wdl[[1]]$Province.State[ib], ' - ',
+        wdl[[1]]$Country.Region[ib])
+    ibb <- which(nchar(llocals[ib])>20)
+    if (length(ibb)) {
+        llocals[ib[ibb]] <- paste0(
+            wdl[[1]]$Province.State[ib[ibb]], '\n',
+            wdl[[1]]$Country.Region[ib[ibb]])
+        llrow[ib[ibb]] <- 2
+        llwide[ib[ibb]] <- pmax(
+            nchar(paste(wdl[[1]]$Province.State[ib[ibb]])), 
+            nchar(paste(wdl[[1]]$Country.Region[ib[ibb]])))
+        llwide <- nchar(llocals)
+    }
+}
 
+### Too wide city + state names separated by '\n'
+ib <- which((wdl[[1]]$City!=''))
+if (length(ib)) {
+    llocals[ib] <- paste0(
+        wdl[[1]]$City[ib], ' - ',
+        wdl[[1]]$Province.State[ib])
+    ibb <- which(nchar(llocals[ib])>20)
+    if (length(ibb)) {
+        llocals[ib[ibb]] <- paste0(
+            wdl[[1]]$City[ib[ibb]], '\n',
+            wdl[[1]]$Province.State[ib[ibb]])
+        llrow[ib[ibb]] <- 2
+        llwide[ib[ibb]] <- pmax(
+            nchar(paste(wdl[[1]]$City[ib[ibb]])),
+            nchar(paste(wdl[[1]]$Province.State[ib[ibb]])))
+    }
+}
+
+### map real to real as 
+###   y = sqrt(x), if x>0
+###   y = -sqrt(-x), if x<0 
 sqrtR <- function(x, inverse=FALSE) {
   ineg <- which(x<0)
   ipos <- which(x>0)
@@ -56,6 +92,12 @@ sqrtR <- function(x, inverse=FALSE) {
   return(x)
 }
 
+### map real to real as 
+###   y = log(x, base), if x>=a
+###   y = log(1+x, base)/r, if 0<x<a
+###   y = -log(-x, base), if x<(-a)
+###   y = -log(1-x, base)/r, if -a<x<=(-a)
+### r = log(a, base)/log(a+1,base)
 logR <- function(x, base=exp(1), a=2, inverse=FALSE) {
     la <- log(a, base)
     lb <- log(a+1, base)
@@ -92,6 +134,7 @@ logR <- function(x, base=exp(1), a=2, inverse=FALSE) {
     return(x)
 }
 
+### real to real transformation
 xTransf <- function(x, transf) 
   switch(transf, 
          none=x, 
@@ -99,7 +142,10 @@ xTransf <- function(x, transf)
          log2=logR(x, 2, 2, inverse=FALSE), 
          log10=logR(x, 10, 2, inverse=FALSE))
 
+### avoid lots of zeros... or scientific 
 formatB <- function(x, scientific = TRUE) {
+    if (length(grep('.', x))>0)
+        scientific <- TRUE
   if (scientific) {
     x <- format(x, scientific=TRUE)
     x <- gsub('.00e+', 'e+', x, fixed=TRUE)
@@ -128,6 +174,10 @@ formatB <- function(x, scientific = TRUE) {
     return(x)
 }
 
+### select the data for the selected local(s) 
+###   prepare it:
+### 1. differenced series
+### 2. R_t computations 
 prepareData <- function(slocal) {
 
     ii <- pmatch(slocal, locals)
@@ -140,7 +190,11 @@ prepareData <- function(slocal) {
         Date <- Date[ii0[1]:ncol(y)]
         y <- t(y[, ii0[1]:ncol(y), drop=FALSE])
     } else {
-        stop(safeError('Sem dados na seleção feita!'))
+        if (pt) {
+            stop(safeError('Sem dados na seleção feita!'))
+        } else {
+            stop(safeError('No data in the selection made!'))
+        }
     }
     
     d <- list(x=Date, y=y, o=o)
@@ -160,6 +214,7 @@ prepareData <- function(slocal) {
 
 }
 
+### spline smooth series of non-negative data
 sfit <- function(y) {
   y[y<0] <- NA
   ii <- which(!is.na(y))
@@ -170,7 +225,8 @@ sfit <- function(y) {
   return(r)
 }
 
-Rtfit <- function(d) {
+### do the R_t computations 
+Rtfit <- function(d, a=0.5, b=1) {
 
   pw <- pgamma(0:14, shape=(5/3)^2, scale=3^2/5)
   w <- diff(pw)/sum(diff(pw))
@@ -179,14 +235,15 @@ Rtfit <- function(d) {
   nl <- ncol(d$dy)
   yy <- array(0L, c(n1, nl, 2))
   yy[,,1] <- d$dy
-  yy[,,2] <- d$do
+    yy[,,2] <- d$do
+    yy[yy<0] <- 0
 
   ee <- array(0, c(n0 + n1, nl, 2))
   ##  ee[1:n0] <- (1-w)*dtmp$y[1:n0] * exp(-(1:n0))/exp(-1)
   for (k in 1:2)
     for (l in 1:nl) {
       y0 <- yy[, l, k]
-      y0[y0<0] <- 0
+##      y0[y0<0] <- 0
       for (i in 1:n1) 
         ee[i+1:n0, l, k] <- ee[i+1:n0, l, k] + y0[i] * w 
     }
@@ -201,18 +258,20 @@ Rtfit <- function(d) {
                  data=list(
                    x = ii, y = yy[ii,l,k]), 
                  offset = log(ee[ii,l,k]))
-      d$Rt[ii, l, k] <- exp(predict(fRt))
+      ytmp <- exp(predict(fRt))*ee[1:n1,l,k]
+      ### consider gamma(a+y, b+E) with a=2, b=1
+      d$Rt[ii, l, k] <- (ytmp + a)/(ee[1:n1,l,k] + b)
       d$Rt[1:n0, l, k] <- NA
     }
   }
   d$Rt[c(d$dy, d$do)<0] <- NA
 
+    ### IC consider gamma(a+y, b+E) with a=2, b=1
   for (k in 1:2) {
     for (l in 1:nl) {
-      d$Rtlow[,l,k] <- qgamma(
-        0.025, d$Rt[, l, k]*ee[1:n1, l, k], 1)/ee[1:n1, l, k]
-      d$Rtupp[,l,k] <- qgamma(
-        0.975, d$Rt[, l, k]*ee[1:n1, l, k], 1)/ee[1:n1, l, k]
+        ytmp <- d$Rt[,l,k]*ee[1:n1,l,k]
+        d$Rtlow[,l,k] <- qgamma(0.025, ytmp+a, ee[1:n1,l,k]+b)
+        d$Rtupp[,l,k] <- qgamma(0.975, ytmp+a, ee[1:n1,l,k]+b)
     }
   }
 
@@ -220,6 +279,7 @@ Rtfit <- function(d) {
 
 }
 
+## display the data and R_t
 data2plot <- function(d,
                       variables,
                       dateRange, 
@@ -228,20 +288,37 @@ data2plot <- function(d,
                       legpos) {
 
     if (length(variables)<1)
-        stop(safeError(
-            'Please select at least one variable!'))
+        if (pt) {
+            stop(safeError(
+                'Favor selecionar pelo menos uma variável!'))
+        } else {
+            stop(safeError(
+                'Please select at least one variable!'))
+        }
     v <- pmatch(
         variables, 
         c('cases', 'deaths'))
 
     sxlm <- as.Date(dateRange, '%d/%m/%y')
-    if (diff(sxlm)<3) 
-        stop(safeError('Too narrow time window!'))
+    if (diff(sxlm)<3) {
+        if (pt) {
+            stop(safeError(
+                'A janela temporal selecionada é muito pequena!'))
+        } else {
+            stop(safeError('Too narrow time window selected!'))
+        }
+    }
 
     nd0 <- length(d)
     nl <- ncol(d[[2]])
-    if (nl>100) 
-      stop(safeError('Too many places!'))
+    if (nl>100) {
+        if (pt) {
+            stop(safeError('Muitos lugares selecionados!'))
+        } else {
+            stop(safeError('Too many places!'))
+        }
+    }
+    
     for (j in 1:4) {
         d[[length(d)+1]] <- d[[3+j]]
         for (l in 1:nl) {
@@ -254,17 +331,37 @@ data2plot <- function(d,
 
     jj <- which((d$x>=sxlm[1]) & 
                 (d$x<=sxlm[2]))
-    if (length(jj)<1)
-        stop(safeError('No data in this time window!'))
+    if (length(jj)<1) {
+        if (pt) {
+            stop(safeError('Sem dados nessa janela temporal!'))
+        } else {
+            stop(safeError('No data in this time window!'))
+        }
+    }
+    
     xlm <- xlm0 <- range(d$x[jj])
     if (legpos=='right') {
       xlm[2] <- xlm0[2] + 0.35*diff(xlm0)
-      y.ex <- 1.00
+      y.ex <- 0.00
       leg.ncols <- 1
     } else {
       legpos <- 'topleft'
       leg.ncols <- 4
-      y.ex <- 1 + log(2+(nl%/%leg.ncols), 10)/2
+      y.ex <- 0.00 + (nl%/%leg.ncols)/5
+    }
+
+    if (pt) {
+        ylabs <- list(c(
+            'Contagem diária',
+            'Número diário de casos',
+            'Número diário de óbitos'),
+            'Número de reprodução')
+    } else {
+        ylabs <- list(
+            c('Daily counts',
+              'Daily number of cases',
+              'Daily number of deaths'),
+            'Reproduction number')
     }
   
   if (length(v)==2) {
@@ -274,10 +371,10 @@ data2plot <- function(d,
          d$dy.plot[,1], 
          axes=FALSE,
          xlim=xlm, 
-         ylim=ylm*c(1, y.ex), 
-         type = 'n', 
-         xlab='', 
-         ylab='Daily counts')
+         ylim=c(ylm[1], ylm[2]+diff(ylm)*y.ex), 
+         type = 'n',
+         xlab='',
+         ylab=ylabs[[1]][1]) 
   } else {
     if (v==1) {
       ylm <- range(d$dy.plot[jj, ])
@@ -285,29 +382,28 @@ data2plot <- function(d,
            d$dy.plot[,1], 
            axes=FALSE, 
            xlim=xlm,
-           ylim=ylm*c(1, y.ex), 
+           ylim=c(ylm[1], ylm[2]+diff(ylm)*y.ex), 
            type = 'n', 
            xlab='', 
-           ylab='Daily number of cases')
+           ylab=ylabs[[1]][2])
     } else {
       ylm <- range(d$do.plot[jj, ])
       plot(d$x, 
            d$do.plot[,1], 
            axes=FALSE, 
            xlim=xlm,
-           ylim=ylm*c(1, y.ex), 
+           ylim=c(ylm[1], ylm[2]+diff(ylm)*y.ex), 
            type = 'n', 
            xlab='', 
-           ylab='Daily number of deaths')
+           ylab=ylabs[[1]][3])
     }
   }
-
-    xl <- list(x=pretty(d$x))
+    
+    xl <- list(x=pretty(d$x[(d$x>=xlm[1]) & (d$x<=xlm[2])], 15))
     xl$l <- format(xl$x, '%b,%d')
     yab <- par()$usr[3:4]
     if (transf=='none') {
-        yl <- list(y=pretty(yab))
-        yl$l <- yl$y
+        yl <- list(y=pretty(yab), l=pretty(yab))
     }
     if (transf=='sqrt') {
         yl <- list(y=pretty(yab)) 
@@ -318,38 +414,63 @@ data2plot <- function(d,
         yl$l <- logR(yl$y, base=2, inverse=TRUE)
     }
     if (transf=='log10') {
-      if ((ylm[1])>(-1) & (ylm[2])<1) {
-        yl <- list(l=c(-10, -7, -5, -3:3, 5, 7, 10))
-        yl$y <- logR(yl$l, 10)
-      } else {
-          b <- findInterval(diff(ylm), 0:5)
-          yl0 <- switch(
-            as.character(b),
-            '1'=c(1.3,1.7,2.2,3,4,5.5,7.5),
-            ##'2'=c(1,1.3,1.8,2.5,3.6,5,7),
-            '2'=c(1.5,3,5),##c(1.5,2.5,4,6),##c(1.4,2,2.8,4,6),
-            '3'=c(2,4),
-            ##          '4'=c(1,1.5,2.3,3.5,5.6),
-              ##          '5'=c(1,1.6,3,5.5),
-            '4'=c(2,4), 
-            '5'=3, 
-            '6'=3)
-          if (diff(ylm)>6) {
-            yl <- list(y=floor(yab[1]):ceiling(yab[2]))
-            yl$l <- logR(yl$y, 10, inverse=TRUE)
-          } else {
-              yadd0 <- rep(log(yl0, 10), b+2) + 
-                rep(0:(b+1), each=length(yl0))
-              f0 <- floor(ylm[1])
-              yl <- list(y=unique(sort(c(
-                floor(yab[1]):ceiling(yab[2]), 
-                f0+yadd0))))
-              yl$l <- round(10^yl$y) 
-          }
+        if ((ylm[1])>=(-2) & (ylm[2])<=2) {
+            if (diff(ylm)>2) {
+                yl <- list(l=c(-100, -40, -20, -10,
+                               -2:2, 10, 20, 40, 100))
+            } else {
+                yl <- list(l=c(-100, -70, -50, -30, -20, -10, -7, -5,
+                               -3:3, 5, 7, 10, 20, 30, 50, 70, 100))
+            }
+            yl$y <- logR(yl$l, 10)
+        } else {
+            if (diff(ylm)>6) {
+                yl <- list(y=floor(yab[1]):ceiling(yab[2]))
+                yl$l <- logR(yl$y, 10, inverse=TRUE)
+            } else {
+                b <- findInterval(diff(ylm),
+                                  c(0, 0.3, 0.5, 1, 2, 3, 4, 5))
+                if (b==1) {
+                    yl <- list(l=pretty(logR(yab, 10, inverse=TRUE), 15))
+                    yl$y <- logR(yl$l, 10)
+                }
+                if (b==2) {
+                    yl0 <- log(c(1.1, 1.2, 1.3, 1.4, 1.6, 1.8, 
+                                 2.0, 2.3, 2.6, 2.9, 3.3, 3.7, 
+                                 4.2, 4.8, 5.4, 6.2, 7.0, 7.7, 8.8), 10)
+                }
+                if (b>2) {
+                    b <- b-2
+                    yl0 <- log(switch(
+                        as.character(b),
+                        '1'=c(1.3,1.7,2.2,3,4,5.5,7.5),
+                        ##'2'=c(1,1.3,1.8,2.5,3.6,5,7),
+                        '2'=c(1.5,2.5,4,6),##c(1.4,2,2.8,4,6),
+                        '3'=c(2,4),  ## '4'=c(1,1.5,2.3,3.5,5.6),
+                        '4'=c(2,4), ##  '5'=c(1,1.6,3,5.5), 
+                        '5'=3,  '6'=3), 10)
+                    nyl0 <- length(yl0)
+                    yl <- list(y=floor(yab[1]):ceiling(yab[2]))
+                    f0 <- floor(ylm[1])
+                    if (f0<0) {
+                        b0 <- length(f0:(-1))
+                        yaux <- (1-yl0) + rep(f0:(-1), each=nyl0)
+                        yl$y <- c(yl$y, yaux[yaux<0]) 
+                        b <- b - b0; f0 <- 0 
+                    } 
+                    if (b>0) {
+                        yaux <- yl0 + rep(f0:(b+2), each=nyl0) 
+                        yl$y <- c(yl$y, yaux)
+                    }
+                    yl <- list(y=unique(sort(yl$y))) 
+                    yl$l <- logR(yl$y, 10, inverse=TRUE) 
+                }
+            }
         }
-    } 
-    i.yl <- which(findInterval(yl$y, ylm+c(-1,1)*0.03*diff(ylm))==1)
-    axis(2, yl$y[i.yl], formatB(yl$l[i.yl], scientific=FALSE), las=1)
+    }
+    i.yl <- which(findInterval(
+        yl$y, ylm+c(-1,1)*0.03*diff(ylm))==1)
+    axis(2, yl$y[i.yl], yl$l[i.yl], las=1)
     segments(rep(xlm0[1], length(i.yl)), yl$y[i.yl],
              rep(xlm0[2], length(i.yl)), yl$y[i.yl],
              lty=2, col=gray(0.7, 0.5))
@@ -394,17 +515,18 @@ data2plot <- function(d,
            col=scol[oloc], lty=1, lwd=5,
            bty='n', xpd=TRUE,
            y.intersp=1+max(nnll)/4,
+           cex=1-log(1+max(nnll), 10)/2,
            ncol=leg.ncols, bg=gray(0.69))
     
-    par(mar=c(2, 3.5, 0, 0.5))
+    par(mar=c(2, 4.5, 0, 0.5))
     ylm <- range(1, d$Rtlow[jj,,v], 
                  d$Rtupp[jj,,v], na.rm=TRUE)
     plot(d$x,
          d$Rt[,1,1], 
          xlim=xlm,
-         ylim=ylm*c(1, y.ex), 
+         ylim=c(ylm[1], ylm[2]+diff(ylm)*y.ex), 
          type='n', xlab='', las=1,
-         ylab='Reproduction number',
+         ylab=ylabs[[2]], 
          axes=FALSE)
 
     if (nl==1) {
@@ -431,7 +553,7 @@ data2plot <- function(d,
                         d$Rtlow[idx[1],l,k]), 
                       col=shad.col[l], border=shad.col[l])
           }
-          lines(d$x, d$Rt[, l, k], col=scol[l], lwd=2)
+          lines(d$x, d$Rt[, l, k], col=scol[l], lwd=2, lty=k)
       }
     }
 
@@ -439,7 +561,7 @@ data2plot <- function(d,
     xl$x <- xl$x[which(xl$x<=xlm0[2])]
     axis(1, xl$x, 
          format(xl$x, '%b,%d'))
-    ylr <- pretty(par()$usr[3:4])
+    ylr <- pretty(ylm)
     axis(2, ylr, las=1)
     segments(rep(xlm0[1], length(ylr)), ylr,
              rep(xlm0[2], length(ylr)), ylr,
@@ -454,23 +576,26 @@ data2plot <- function(d,
     }
 
     ix <- tail(idx, 1)
-    llr <- paste0(sprintf('%1.2f', d$Rt[ix, , v[1]]), '(',
-                  sprintf('%1.2f', d$Rtlow[ix, , v[1]]), ', ',
-                  sprintf('%1.2f', d$Rtupp[ix, , v[1]]), ')')
-    if (length(v)==2)
-        llr <- paste('C: ', llr, '\nD:',
-                     paste0(sprintf('%1.2f', d$Rt[ix, , v[2]]), '(',
-                            sprintf('%1.2f', d$Rtlow[ix, , v[2]]), '-',
-                            sprintf('%1.2f', d$Rtupp[ix, , v[2]]), ')'))
     oloc.r <- order(d$Rt[ix, , v[1]], decreasing=TRUE)
-    legend(legpos, llr[oloc.r], inset = c(0, -0.05),
-           col=scol[oloc.r], lty=1, lwd=5,
-           bty='n', xpd=TRUE,
-           y.intersp=1+log(max(nnll)+length(v)+1,10), 
-           ncol=leg.ncols, bg=gray(0.69))
+    llr <- paste0(sprintf('%1.2f', d$Rt[ix, , v[1]]), '(',
+                   sprintf('%1.2f', d$Rtlow[ix, , v[1]]), ', ',
+                   sprintf('%1.2f', d$Rtupp[ix, , v[1]]), ')'
+                  )[oloc.r]
+    if (length(v)==2) {
+      llr <- c(llr, 
+               paste0(sprintf('%1.2f', d$Rt[ix, , v[2]]), '(',
+                      sprintf('%1.2f', d$Rtlow[ix, , v[2]]), ', ',
+                      sprintf('%1.2f', d$Rtupp[ix, , v[2]]), ')'
+                      )[oloc.r])
+      iill <- rep(1:nl, each=length(v))+rep(c(0, nl), nl)
+      llr <- llr[iill]
+    }
+    legend(legpos, llr, 
+           inset = c(0, -0.05),
+           col=rep(scol[oloc.r], each=length(v)), 
+           lty=rep(1:length(v), nl), lwd=2,
+           bty='n', xpd=TRUE, 
+           ncol=leg.ncols)
   
     return(invisible())
 }
-
-
-

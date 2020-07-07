@@ -24,7 +24,7 @@ if (!any(ls()=='wcota'))
     wcota <- !brio
 
 if (!any(ls()=='usems'))
-    usems <- TRUE
+    usems <- FALSE
 
 source('rcode/getdata.R')
 
@@ -269,5 +269,7 @@ for (k in 1:2) {
         wdl[[k]][, j] <- y
     }    
 }
+
+attr(wdl, 'Sys.time') <- Sys.time()
 
 save('wdl', file='data/wdl.RData')

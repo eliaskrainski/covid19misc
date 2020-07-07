@@ -44,10 +44,8 @@ ui <- fluidPage(
         selected = 'log10'),
       actionButton(
         inputId="exit", 
-        label="Exit"),
-    width = 3),
+        label="Exit")),
     mainPanel(
-      plotOutput("plot"),
-      width = 7)
+      plotOutput("plot"))
     )
 ) # fluidPage

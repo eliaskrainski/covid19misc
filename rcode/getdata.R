@@ -27,6 +27,9 @@ url.br <- paste0('https://data.brasil.io/',
 
 try(download.file(url.br, 'data/caso.csv.gv'), TRUE)
 
+if (!any(ls()=='wcota'))
+    wcota <- TRUE
+
 if (wcota) { ### Brazilian data put together by Wesley Cota
     urlwc <- 'https://raw.githubusercontent.com/wcota/covid19br/master/'
     wc.fl <- 'cases-brazil-cities-time.csv'
