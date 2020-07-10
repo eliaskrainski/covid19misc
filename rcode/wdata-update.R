@@ -261,13 +261,22 @@ for (k in 1:2) {
     ii <- which(is.na(wdl[[k]][, 7]))
     if (length(ii)>0) 
         wdl[[k]][ii, 7] <- 0L
-    for (j in 8:ncol(wdl[[k]])) {
+    nt <- ncol(wdl[[k]])
+    for (j in 8:nt) {
         y <- as.integer(wdl[[k]][,j])
         ii <- which(is.na(y))
         if (length(ii)>0)
             y[ii] <- wdl[[k]][ii, j-1]
         wdl[[k]][, j] <- y
-    }    
+    }
+
+    dlast <- wdl[[k]][, (nt-7):nt]-
+        wdl[[k]][, (nt-8):(nt-1)]
+    mlast <- dlast[, 5:8]<(0.1*rowMeans(dlast[, 1:4]))
+    for (i in which(rowSums(mlast)>0)) {
+        wdl[[k]][i, which(mlast[i, ]) + nt-4] <- NA
+    }
+
 }
 
 attr(wdl, 'Sys.time') <- Sys.time()

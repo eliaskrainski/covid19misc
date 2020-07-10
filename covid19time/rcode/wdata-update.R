@@ -261,13 +261,23 @@ for (k in 1:2) {
     ii <- which(is.na(wdl[[k]][, 7]))
     if (length(ii)>0) 
         wdl[[k]][ii, 7] <- 0L
-    for (j in 8:ncol(wdl[[k]])) {
+    nt <- ncol(wdl[[k]])
+    for (j in 8:nt) {
         y <- as.integer(wdl[[k]][,j])
         ii <- which(is.na(y))
         if (length(ii)>0)
             y[ii] <- wdl[[k]][ii, j-1]
         wdl[[k]][, j] <- y
-    }    
+    }
+    
+    ii <- which(colMeans(wdl[[k]][, (nt-7):(nt-3)])>(c(19, 9)[k]))
+    if (length(ii)>0) {
+        for (i in ii) {
+            j0 <- which(wdl[[k]][i, (nt-2):nt]==0)
+            if (length(j0)>0)
+                wdl[[k]][i, ((nt-2):nt)[j0]] <- NA
+        }
+    }
 }
 
 attr(wdl, 'Sys.time') <- Sys.time()

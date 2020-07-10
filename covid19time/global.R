@@ -98,7 +98,7 @@ sqrtR <- function(x, inverse=FALSE) {
 ###   y = -log(-x, base), if x<(-a)
 ###   y = -log(1-x, base)/r, if -a<x<=(-a)
 ### r = log(a, base)/log(a+1,base)
-logR <- function(x, base=exp(1), a=2, inverse=FALSE) {
+logR <- function(x, base=exp(1), a=1.5, inverse=FALSE) {
     la <- log(a, base)
     lb <- log(a+1, base)
     r <- la/lb
@@ -141,6 +141,93 @@ xTransf <- function(x, transf)
          sqrt=sqrtR(x, inverse=FALSE), 
          log2=logR(x, 2, 2, inverse=FALSE), 
          log10=logR(x, 10, 2, inverse=FALSE))
+
+axTransfTicks <- function(transf, lim) {
+  r <- list(x=pretty(lim, 10))
+  if (length(r$l)<10)
+    r$x <- pretty(lim, 15)
+  r$l <- r$x
+  if (transf=='sqrt') {
+    r$l <- sqrtR(pretty(lim, 10), inverse=TRUE)
+    if (length(r$l)<10)
+      r$l <- sqrtR(pretty(lim, 15), inverse=TRUE)
+    r$x <- sqrtR(r$l)
+  }
+  if (transf=='log2') {
+    if ((lim[1]>=(-6.65)) & (lim[2]<=6.65)) {
+      if (diff(lim)>6.65) {
+        r$l <- c(-100, -40, -15, -5, 
+                 -2:2, 5, 15, 40, 100) 
+      } else {
+        r$l <- c(-100, -60, -30, -15, -8, -4, 
+                 -2:2, 4, 8, 15, 30, 60, 100) 
+      }
+    } else {
+      r$l <- logR(pretty(lim, 10), 2, inverse=TRUE)
+      if (length(r$l)<10)
+        r$l <- logR(pretty(lim, 15), 2, inverse=TRUE)
+      r$x <- logR(r$l, 2)
+    }
+  }
+  if (transf=='log10') {
+    if ((lim[1]>=(-3)) & (lim[2]<=3)) {
+      b <- findInterval(diff(lim), c(0, 1.1, 2.5, 4))
+      if (b==4)
+        r$l <- c(-1000, -100, -10, -1, 0, 1, 10, 100, 1000)
+      if (b==3)
+        r$l <- c(-1000, -300, -100, -30, -10, -3, 
+                 0, 3, 10, 30, 100, 300, 1000)
+      if (b==2)
+        r$l <- c(-1000, -400, -200, -100, -40, -20, -10, -4, 
+                 -2:2, 4, 10, 20, 40, 100, 200, 400, 1000) 
+      if (b==1)
+        r$l <- c(-1000, -700, -500, -300, -200, -100, 
+                 -70, -50, -30, -20, -10, -7, -5, 
+                 -3:3, 5, 7, 10, 20, 30, 50, 70, 100, 
+                 200, 300, 500, 700, 1000)
+      r$x <- logR(r$l, 10)
+    } else {
+      b <- findInterval(
+        diff(lim), c(0, 0.5, 1, 2, 3, 5))
+      x0 <- log(
+          switch(as.character(b),
+                 '1'=c(1.1, 1.2, 1.4, 1.6, 1.8, 
+                       2, 2.2, 2.5, 2.8, 3.1, 3.5, 
+                       4, 4.5, 5, 5.6, 6.3, 7, 8, 9), 
+                 '2'=c(1.2, 1.5, 2, 2.5, 3.2, 4, 5, 6.3, 8),
+                 '3'=c(1.4,1.9,2.6,3.6,5,7), 
+                 '4'=c(2,4), 
+                 '5'=c(3), 
+                 '6'=3), 10)
+      l0 <- floor(lim[1])
+      if (l0<0) {
+          r <- list(x=l0:(-1) + rep(1-x0, each=length(l0:(-1))))
+          b <- b - length(l0:(-1))
+          l0 <- 0
+          r$x <- c(r$x, l0:b + rep(x0, each=length(l0:b)))
+      } else {
+          r <- list(x=l0:b + rep(x0, each=length(l0:b)))
+      }
+      r$x <- unique(sort(c(
+        floor(lim[1]):ceiling(lim[2]), r$x)))
+      r$l <- logR(r$x, 10, inverse=TRUE)
+      if (diff(lim)>6) {
+        r$l <- logR(pretty(lim, 10), 10, inverse=TRUE)
+        if (length(r$l)<10)
+          r$l <- logR(pretty(lim, 15), 10, inverse=TRUE)
+        ll <- (10^pmax(0, nchar(r$l)-1)) * 
+          round(r$l/(10^pmax(0, nchar(r$l)-1)))
+        if (length(unique(sort(ll)))<8) {
+          ll <- (10^pmax(0, nchar(r$l)-2)) * 
+            round(r$l/(10^pmax(0, nchar(r$l)-2)))
+        }
+        r$l <- unique(sort(ll))
+        r$x <- logR(r$l, 10)
+      }
+    }
+  }
+  return(r)
+}
 
 ### avoid lots of zeros... or scientific 
 formatB <- function(x, scientific = TRUE) {
@@ -209,7 +296,7 @@ prepareData <- function(slocal) {
     
     d <- Rtfit(d)
 
-    attr(d, 'llocals') <- llocals[ii]    
+    attr(d, 'ii') <- ii 
     return(d) 
 
 }
@@ -227,56 +314,57 @@ sfit <- function(y) {
 
 ### do the R_t computations 
 Rtfit <- function(d, a=0.5, b=1) {
-
-  pw <- pgamma(0:14, shape=(5/3)^2, scale=3^2/5)
-  w <- diff(pw)/sum(diff(pw))
-  n0 <- length(w)
-  n1 <- nrow(d$dy)
-  nl <- ncol(d$dy)
-  yy <- array(0L, c(n1, nl, 2))
-  yy[,,1] <- d$dy
+    
+    pw <- pgamma(0:14, shape=(5/3)^2, scale=3^2/5)
+    w <- diff(pw)/sum(diff(pw))
+    n0 <- length(w)
+    n1 <- nrow(d$dy)
+    nl <- ncol(d$dy)
+    
+    yy <- array(0L, c(n1, nl, 2))
+    yy[,,1] <- d$dy
     yy[,,2] <- d$do
-    yy[yy<0] <- 0
-
-  ee <- array(0, c(n0 + n1, nl, 2))
-  ##  ee[1:n0] <- (1-w)*dtmp$y[1:n0] * exp(-(1:n0))/exp(-1)
-  for (k in 1:2)
-    for (l in 1:nl) {
-      y0 <- yy[, l, k]
-##      y0[y0<0] <- 0
-      for (i in 1:n1) 
-        ee[i+1:n0, l, k] <- ee[i+1:n0, l, k] + y0[i] * w 
+    yy[yy<0] <- NA
+    
+    ee <- array(0, c(n0 + n1, nl, 2))
+    ##  ee[1:n0] <- (1-w)*dtmp$y[1:n0] * exp(-(1:n0))/exp(-1)
+    for (k in 1:2)
+        for (l in 1:nl) {
+            y0 <- yy[, l, k]
+            ##      y0[y0<0] <- 0
+            for (i in which(!is.na(y0))) 
+                ee[i+1:n0, l, k] <- ee[i+1:n0, l, k] + y0[i] * w 
+        }
+    ee[ee<0.1] <- 0.1
+    ##    ee[1:n1] <- ee[1:n1]*(sum(dtmp$y[1:n1])/sum(ee[1:n1]))
+    d$Rtupp <- d$Rtlow <- d$Rt <- array(NA, c(n1, nl, 2)) 
+    
+    for (k in 1:2) {
+        for (l in 1:nl) {
+            ii <- which(!is.na(yy[, l, k]))
+            fRt <- gam(y~s(x), poisson(), 
+                       data=list(
+                           x = ii, y = yy[ii,l,k]), 
+                       offset = log(ee[ii,l,k]))
+            ytmp <- exp(predict(fRt))*ee[ii,l,k]
+### consider gamma(a+y, b+E) with a=2, b=1
+            d$Rt[ii, l, k] <- (ytmp + a)/(ee[ii,l,k] + b)
+            d$Rt[1:n0, l, k] <- NA
+        }
     }
-  ee[ee<0.1] <- 0.1
-  ##    ee[1:n1] <- ee[1:n1]*(sum(dtmp$y[1:n1])/sum(ee[1:n1]))
-  d$Rtupp <- d$Rtlow <- d$Rt <- array(NA, c(n1, nl, 2)) 
-
-  for (k in 1:2) {
-    for (l in 1:nl) {
-      ii <- which(yy[, l, k]>=0)
-      fRt <- gam(y~s(x), poisson(), 
-                 data=list(
-                   x = ii, y = yy[ii,l,k]), 
-                 offset = log(ee[ii,l,k]))
-      ytmp <- exp(predict(fRt))*ee[1:n1,l,k]
-      ### consider gamma(a+y, b+E) with a=2, b=1
-      d$Rt[ii, l, k] <- (ytmp + a)/(ee[1:n1,l,k] + b)
-      d$Rt[1:n0, l, k] <- NA
+    d$Rt[c(d$dy, d$do)<0] <- NA
+    
+### IC consider gamma(a+y, b+E) with a=2, b=1
+    for (k in 1:2) {
+        for (l in 1:nl) {
+            ytmp <- d$Rt[,l,k]*ee[1:n1,l,k]
+            d$Rtlow[,l,k] <- qgamma(0.025, ytmp+a, ee[1:n1,l,k]+b)
+            d$Rtupp[,l,k] <- qgamma(0.975, ytmp+a, ee[1:n1,l,k]+b)
+        }
     }
-  }
-  d$Rt[c(d$dy, d$do)<0] <- NA
-
-    ### IC consider gamma(a+y, b+E) with a=2, b=1
-  for (k in 1:2) {
-    for (l in 1:nl) {
-        ytmp <- d$Rt[,l,k]*ee[1:n1,l,k]
-        d$Rtlow[,l,k] <- qgamma(0.025, ytmp+a, ee[1:n1,l,k]+b)
-        d$Rtupp[,l,k] <- qgamma(0.975, ytmp+a, ee[1:n1,l,k]+b)
-    }
-  }
-
-  return(d) 
-
+    
+    return(d) 
+    
 }
 
 ## display the data and R_t
@@ -329,8 +417,13 @@ data2plot <- function(d,
     names(d)[(nd0+1):length(d)] <-
         paste0(names(d)[4:7], '.plot')
 
-    jj <- which((d$x>=sxlm[1]) & 
-                (d$x<=sxlm[2]))
+    jj0 <- which((d$x>=sxlm[1]) & 
+                 (d$x<=sxlm[2]))
+    rjj <- apply(d$dy, 2, function(x) {
+      range(jj0[which(!is.na(x[jj0]))])
+    })
+    jj <- min(rjj):max(rjj)
+    
     if (length(jj)<1) {
         if (pt) {
             stop(safeError('Sem dados nessa janela temporal!'))
@@ -339,15 +432,23 @@ data2plot <- function(d,
         }
     }
     
+    lll <- llocals[attr(d, 'ii')]
+    nnll <- llrow[attr(d, 'ii')]
+    print(list(ii=attr(d, 'ii'),
+               lll=lll, nnll=nnll))
+    
     xlm <- xlm0 <- range(d$x[jj])
     if (legpos=='right') {
-      xlm[2] <- xlm0[2] + 0.35*diff(xlm0)
-      y.ex <- 0.00
-      leg.ncols <- 1
+      xlm[2] <- xlm0[2] + 0.4*diff(xlm0)
+      y.ex2 <- y.ex1 <- 0.00
+      leg.ncols <- 2
     } else {
       legpos <- 'topleft'
-      leg.ncols <- 4
-      y.ex <- 0.00 + (nl%/%leg.ncols)/5
+      leg.ncols <- 5
+      y.ex1 <- (max(nnll) + length(v)) * 
+        ((nl+leg.ncols-1)%/%leg.ncols)*0.15
+      y.ex2 <- length(v) * 
+        ((nl+leg.ncols+1)%/%(leg.ncols+2))*0.15
     }
 
     if (pt) {
@@ -366,113 +467,53 @@ data2plot <- function(d,
   
   if (length(v)==2) {
       ylm <- range(d$dy.plot[jj,],
-                   d$do.plot[jj,])
+                   d$do.plot[jj,], na.rm=TRUE)
     plot(d$x, 
          d$dy.plot[,1], 
          axes=FALSE,
          xlim=xlm, 
-         ylim=c(ylm[1], ylm[2]+diff(ylm)*y.ex), 
+         ylim=c(ylm[1], ylm[2]+diff(ylm)*y.ex1), 
          type = 'n',
          xlab='',
          ylab=ylabs[[1]][1]) 
   } else {
     if (v==1) {
-      ylm <- range(d$dy.plot[jj, ])
+      ylm <- range(d$dy.plot[jj, ], na.rm=TRUE)
       plot(d$x, 
            d$dy.plot[,1], 
            axes=FALSE, 
            xlim=xlm,
-           ylim=c(ylm[1], ylm[2]+diff(ylm)*y.ex), 
+           ylim=c(ylm[1], ylm[2]+diff(ylm)*y.ex1), 
            type = 'n', 
            xlab='', 
            ylab=ylabs[[1]][2])
     } else {
-      ylm <- range(d$do.plot[jj, ])
+      ylm <- range(d$do.plot[jj, ], na.rm=TRUE)
       plot(d$x, 
            d$do.plot[,1], 
            axes=FALSE, 
            xlim=xlm,
-           ylim=c(ylm[1], ylm[2]+diff(ylm)*y.ex), 
+           ylim=c(ylm[1], ylm[2]+diff(ylm)*y.ex1), 
            type = 'n', 
            xlab='', 
            ylab=ylabs[[1]][3])
     }
   }
     
-    xl <- list(x=pretty(d$x[(d$x>=xlm[1]) & (d$x<=xlm[2])], 15))
+    xl <- list(x=pretty(xlm0, 10))
+    if (length(xl$x)<10)
+      xl <- list(x=pretty(xlm0, 20))
     xl$l <- format(xl$x, '%b,%d')
+    xl$x <- xl$x[which(xl$x<=(xlm0[2] + 1))]
+
+    yl <- axTransfTicks(transf, ylm)
     yab <- par()$usr[3:4]
-    if (transf=='none') {
-        yl <- list(y=pretty(yab), l=pretty(yab))
-    }
-    if (transf=='sqrt') {
-        yl <- list(y=pretty(yab)) 
-        yl$l <- sqrtR(yl$y, inverse=TRUE)
-    }
-    if (transf=='log2') {
-        yl <- list(y=pretty(yab, 10))
-        yl$l <- logR(yl$y, base=2, inverse=TRUE)
-    }
-    if (transf=='log10') {
-        if ((ylm[1])>=(-2) & (ylm[2])<=2) {
-            if (diff(ylm)>2) {
-                yl <- list(l=c(-100, -40, -20, -10,
-                               -2:2, 10, 20, 40, 100))
-            } else {
-                yl <- list(l=c(-100, -70, -50, -30, -20, -10, -7, -5,
-                               -3:3, 5, 7, 10, 20, 30, 50, 70, 100))
-            }
-            yl$y <- logR(yl$l, 10)
-        } else {
-            if (diff(ylm)>6) {
-                yl <- list(y=floor(yab[1]):ceiling(yab[2]))
-                yl$l <- logR(yl$y, 10, inverse=TRUE)
-            } else {
-                b <- findInterval(diff(ylm),
-                                  c(0, 0.3, 0.5, 1, 2, 3, 4, 5))
-                if (b==1) {
-                    yl <- list(l=pretty(logR(yab, 10, inverse=TRUE), 15))
-                    yl$y <- logR(yl$l, 10)
-                }
-                if (b==2) {
-                    yl0 <- log(c(1.1, 1.2, 1.3, 1.4, 1.6, 1.8, 
-                                 2.0, 2.3, 2.6, 2.9, 3.3, 3.7, 
-                                 4.2, 4.8, 5.4, 6.2, 7.0, 7.7, 8.8), 10)
-                }
-                if (b>2) {
-                    b <- b-2
-                    yl0 <- log(switch(
-                        as.character(b),
-                        '1'=c(1.3,1.7,2.2,3,4,5.5,7.5),
-                        ##'2'=c(1,1.3,1.8,2.5,3.6,5,7),
-                        '2'=c(1.5,2.5,4,6),##c(1.4,2,2.8,4,6),
-                        '3'=c(2,4),  ## '4'=c(1,1.5,2.3,3.5,5.6),
-                        '4'=c(2,4), ##  '5'=c(1,1.6,3,5.5), 
-                        '5'=3,  '6'=3), 10)
-                    nyl0 <- length(yl0)
-                    yl <- list(y=floor(yab[1]):ceiling(yab[2]))
-                    f0 <- floor(ylm[1])
-                    if (f0<0) {
-                        b0 <- length(f0:(-1))
-                        yaux <- (1-yl0) + rep(f0:(-1), each=nyl0)
-                        yl$y <- c(yl$y, yaux[yaux<0]) 
-                        b <- b - b0; f0 <- 0 
-                    } 
-                    if (b>0) {
-                        yaux <- yl0 + rep(f0:(b+2), each=nyl0) 
-                        yl$y <- c(yl$y, yaux)
-                    }
-                    yl <- list(y=unique(sort(yl$y))) 
-                    yl$l <- logR(yl$y, 10, inverse=TRUE) 
-                }
-            }
-        }
-    }
     i.yl <- which(findInterval(
-        yl$y, ylm+c(-1,1)*0.03*diff(ylm))==1)
-    axis(2, yl$y[i.yl], yl$l[i.yl], las=1)
-    segments(rep(xlm0[1], length(i.yl)), yl$y[i.yl],
-             rep(xlm0[2], length(i.yl)), yl$y[i.yl],
+        yl$x, ylm+c(-1,1)*0.05*diff(ylm))==1)
+    
+    axis(2, yl$x[i.yl], round(yl$l[i.yl]), las=1)
+    segments(rep(xlm0[1], length(i.yl)), yl$x[i.yl],
+             rep(xlm0[2], length(i.yl)), yl$x[i.yl],
              lty=2, col=gray(0.7, 0.5))
 
     nl <- ncol(d[[2]])
@@ -481,8 +522,8 @@ data2plot <- function(d,
     } else {
         scol <- rgb(1:nl/nl, 1-2*abs(1:nl/nl-0.5), nl:1/nl)
     }
-    nn <- cbind(colSums(d$dy[jj, , drop=FALSE]),
-                colSums(d$do[jj, , drop=FALSE]))
+    nn <- cbind(colSums(d$dy[jj, , drop=FALSE], na.rm=TRUE),
+                colSums(d$do[jj, , drop=FALSE], na.rm=TRUE))
     if (any(v==1)) {
         for (l in 1:nl) {
           lines(d$x, d$sy.plot[,l], col=scol[l], lwd=2)
@@ -502,21 +543,19 @@ data2plot <- function(d,
         oloc <- order(nn[,2], decreasing=TRUE)
     }
 
-    if (legpos=='right') {
-      polygon(c(xlm0[2], xlm[c(2,2)]+5, xlm0[c(2,2)]),
-              ylm[c(1,1,2,2,1)]+c(-1,-1,1,1,-1), 
-              col=gray(.999), border=gray(0.999))
+    if (length(v)==2) {
+      nlab <- paste0(nn[1:nl], ' C, ', 
+                     nn[nl + 1:nl], ' D')
+    } else {
+      nlab <- nn[nl*(v-1) + 1:nl]
     }
-    
-    lll <- attr(d, 'llocals')
-    nnll <- sapply(lll, function(x)
-        length(grep('\n', x, fixed=TRUE)))
+    lll <- paste0(lll, '\n', nlab)
     legend(legpos, lll[oloc], inset = c(0, -0.05),
            col=scol[oloc], lty=1, lwd=5,
            bty='n', xpd=TRUE,
-           y.intersp=1+max(nnll)/4,
-           cex=1-log(1+max(nnll), 10)/2,
-           ncol=leg.ncols, bg=gray(0.69))
+           y.intersp=log(length(v)+max(nnll), 2),
+           cex=1-log(length(v)+max(nnll), 10)/2,
+           ncol=leg.ncols)
     
     par(mar=c(2, 4.5, 0, 0.5))
     ylm <- range(1, d$Rtlow[jj,,v], 
@@ -524,7 +563,7 @@ data2plot <- function(d,
     plot(d$x,
          d$Rt[,1,1], 
          xlim=xlm,
-         ylim=c(ylm[1], ylm[2]+diff(ylm)*y.ex), 
+         ylim=c(ylm[1], ylm[2]+diff(ylm)*y.ex2), 
          type='n', xlab='', las=1,
          ylab=ylabs[[2]], 
          axes=FALSE)
@@ -557,8 +596,6 @@ data2plot <- function(d,
       }
     }
 
-    xl <- list(x=pretty(xlm0))
-    xl$x <- xl$x[which(xl$x<=xlm0[2])]
     axis(1, xl$x, 
          format(xl$x, '%b,%d'))
     ylr <- pretty(ylm)
@@ -569,33 +606,30 @@ data2plot <- function(d,
     segments(xlm0[1], 1, xlm0[2], 1)
     abline(h=par()$usr[4])
 
-    if (legpos=='right') {
-      polygon(c(xlm0[2], xlm[c(2,2)]+5, xlm0[c(2,2)]),
-              ylm[c(1,1,2,2,1)]+c(-1,-1,1,1,-1), 
-              col=gray(.999), border=gray(0.999))
-    }
+    getL <- function(x)  x[tail(which(!is.na(x)))]
+    rt.last <- apply(d$Rt[jj, , , drop=FALSE], 3, apply, 2, getL)
+    rtl.last <- apply(d$Rtlow[jj, , , drop=FALSE], 3, apply, 2, getL)
+    rtu.last <- apply(d$Rtupp[jj, , , drop=FALSE], 3, apply, 2, getL)
 
-    ix <- tail(idx, 1)
-    oloc.r <- order(d$Rt[ix, , v[1]], decreasing=TRUE)
-    llr <- paste0(sprintf('%1.2f', d$Rt[ix, , v[1]]), '(',
-                   sprintf('%1.2f', d$Rtlow[ix, , v[1]]), ', ',
-                   sprintf('%1.2f', d$Rtupp[ix, , v[1]]), ')'
-                  )[oloc.r]
+    llr <- paste0(
+      sprintf('%1.2f', rt.last[, v[1]]), '(',
+      sprintf('%1.2f', rtl.last[, v[1]]), ', ',
+      sprintf('%1.2f', rtu.last[, v[1]]), ')')[oloc]
     if (length(v)==2) {
       llr <- c(llr, 
-               paste0(sprintf('%1.2f', d$Rt[ix, , v[2]]), '(',
-                      sprintf('%1.2f', d$Rtlow[ix, , v[2]]), ', ',
-                      sprintf('%1.2f', d$Rtupp[ix, , v[2]]), ')'
-                      )[oloc.r])
-      iill <- rep(1:nl, each=length(v))+rep(c(0, nl), nl)
+               paste0(sprintf('%1.2f', rt.last[, v[2]]), '(',
+                      sprintf('%1.2f', rtl.last[, v[2]]), ', ',
+                      sprintf('%1.2f', rtu.last[, v[2]]), ')'
+                      )[oloc])
+      iill <- rep(1:nl, each=length(v)) + 
+        rep(c(0, nl), nl)
       llr <- llr[iill]
     }
     legend(legpos, llr, 
-           inset = c(0, -0.05),
-           col=rep(scol[oloc.r], each=length(v)), 
+           col=rep(scol[oloc], each=length(v)), 
            lty=rep(1:length(v), nl), lwd=2,
-           bty='n', xpd=TRUE, 
-           ncol=leg.ncols)
+           bty='n', xpd=TRUE, cex=0.85, 
+           ncol=leg.ncols+2*(legpos!='right'))
   
     return(invisible())
 }
