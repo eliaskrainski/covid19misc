@@ -8,9 +8,8 @@ ui <- fluidPage(
     sidebarPanel(
       checkboxGroupInput(
         inputId = "variables", 
-        label = "Variáveis a visualizar", 
-        choices = c('Casos' = 'cases', 
-                    'Óbitos' = 'deaths'), 
+        label = "Variável (Total Mundo)", 
+        choices=lb.n, 
         selected = 'cases'),
       selectizeInput(
         inputId = "local",

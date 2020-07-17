@@ -23,6 +23,23 @@ cn <- colnames(wdl[[1]])
 Date <- as.Date(cn[7:length(cn)], 'X%Y%m%d')
 lastday <- tail(Date, 1)
 
+### total in the world 
+iisel <- which(wdl[[1]]$Province.State=='') 
+nn.show <- format(sapply(wdl, function(m) 
+  sum(m[iisel, ncol(m)], na.rm=TRUE)), big.mark = ',')
+
+lb.n <- list('cases', 'deaths')
+if (pt) {
+  nn.show <- gsub(',', '.', nn.show, fixed=TRUE)
+  names(lb.n) <- 
+    c(paste0('Casos (', nn.show[1], ')'), 
+      paste0('Óbitos (', nn.show[2], ')')) 
+} else {
+  names(lb.n) <- 
+    c(paste0('Cases (', nn.show[1], ')'), 
+      paste0('Deaths (', nn.show[2], ')')) 
+}
+
 ### locals to select. Composed by City, State and Country
 locals <- paste0(ifelse(
     wdl[[1]]$City=='', '',
@@ -188,7 +205,7 @@ axTransfTicks <- function(transf, lim) {
       r$x <- logR(r$l, 10)
     } else {
       b <- findInterval(
-        diff(lim), c(0, 0.5, 1, 2, 3, 5))
+        diff(lim), c(0, 0.5, 1, 2, 3, 4, 5))
       x0 <- log(
           switch(as.character(b),
                  '1'=c(1.1, 1.2, 1.4, 1.6, 1.8, 
@@ -196,24 +213,25 @@ axTransfTicks <- function(transf, lim) {
                        4, 4.5, 5, 5.6, 6.3, 7, 8, 9), 
                  '2'=c(1.2, 1.5, 2, 2.5, 3.2, 4, 5, 6.3, 8),
                  '3'=c(1.4,1.9,2.6,3.6,5,7), 
-                 '4'=c(2,4), 
-                 '5'=c(3), 
-                 '6'=3), 10)
+                 '4'=c(1.6, 2.5, 3.8, 6),
+                 '5'=c(2,4), 
+                 '6'=c(3), 
+                 '7'=3), 10)
+      nx0 <- length(x0)
       l0 <- floor(lim[1])
       if (l0<0) {
-          r <- list(x=l0:(-1) + rep(1-x0, each=length(l0:(-1))))
           b <- b - length(l0:(-1))
-          l0 <- 0
-          r$x <- c(r$x, l0:b + rep(x0, each=length(l0:b)))
+          r <- list(x=c(rep(l0:(-1), each=nx0)+(1-x0), 
+                        rep(0:b, each=nx0) + x0))
       } else {
-          r <- list(x=l0:b + rep(x0, each=length(l0:b)))
+          r <- list(x=rep(l0+0:b, each=nx0) + x0) 
       }
       r$x <- unique(sort(c(
         floor(lim[1]):ceiling(lim[2]), r$x)))
       r$l <- logR(r$x, 10, inverse=TRUE)
-      if (diff(lim)>6) {
+      if (diff(lim)>7) {
         r$l <- logR(pretty(lim, 10), 10, inverse=TRUE)
-        if (length(r$l)<10)
+        if (length(r$l)<7)
           r$l <- logR(pretty(lim, 15), 10, inverse=TRUE)
         ll <- (10^pmax(0, nchar(r$l)-1)) * 
           round(r$l/(10^pmax(0, nchar(r$l)-1)))
@@ -291,8 +309,9 @@ prepareData <- function(slocal) {
     d$do <- apply(d$o, 2, function(y) 
         diff(c(0, y)))
     
-    d$sy <- apply(d$dy, 2, sfit)
-    d$so <- apply(d$do, 2, sfit)
+    w <- weekdays(d$x)
+    d$sy <- apply(d$dy, 2, sfit, w=w)
+    d$so <- apply(d$do, 2, sfit, w=w)
     
     d <- Rtfit(d)
 
@@ -302,20 +321,21 @@ prepareData <- function(slocal) {
 }
 
 ### spline smooth series of non-negative data
-sfit <- function(y) {
+sfit <- function(y, w) {
   y[y<0] <- NA
   ii <- which(!is.na(y))
-  dtmp <- list(x=ii, r=y[ii]) 
-  sfit <- gam(r ~ s(x), poisson(), data=dtmp)
+  dtmp <- list(tt=ii, r=y[ii], w=w[ii])
+  sfit <- gam(r ~ 0 + w + s(tt), poisson(), data=dtmp)
   r <- y 
-  r[ii] <- exp(predict(sfit))
+  p.t <- predict(sfit, type='terms')
+  r[ii] <- exp(p.t[,2] + mean(p.t[,1]))
   return(r)
 }
 
 ### do the R_t computations 
 Rtfit <- function(d, a=0.5, b=1) {
     
-    pw <- pgamma(0:14, shape=(5/3)^2, scale=3^2/5)
+    pw <- pgamma(0:21, shape=(5.8/4)^2, scale=4^2/5.8)
     w <- diff(pw)/sum(diff(pw))
     n0 <- length(w)
     n1 <- nrow(d$dy)
@@ -342,11 +362,13 @@ Rtfit <- function(d, a=0.5, b=1) {
     for (k in 1:2) {
         for (l in 1:nl) {
             ii <- which(!is.na(yy[, l, k]))
-            fRt <- gam(y~s(x), poisson(), 
+            fRt <- gam(y ~ 0 + w + s(x), poisson(), 
                        data=list(
+                           w = factor(weekdays(d$x[ii])), 
                            x = ii, y = yy[ii,l,k]), 
                        offset = log(ee[ii,l,k]))
-            ytmp <- exp(predict(fRt))*ee[ii,l,k]
+            tpred <- predict(fRt, type='terms', se=TRUE)
+            ytmp <- exp(tpred$fit[, 2] + mean(tpred$fit[,1]))*ee[ii,l,k]
 ### consider gamma(a+y, b+E) with a=2, b=1
             d$Rt[ii, l, k] <- (ytmp + a)/(ee[ii,l,k] + b)
             d$Rt[1:n0, l, k] <- NA
@@ -434,23 +456,22 @@ data2plot <- function(d,
     
     lll <- llocals[attr(d, 'ii')]
     nnll <- llrow[attr(d, 'ii')]
-    print(list(ii=attr(d, 'ii'),
-               lll=lll, nnll=nnll))
     
     xlm <- xlm0 <- range(d$x[jj])
+    leg.cex <- 1 - 0.7 * log(nl, 100)
     if (legpos=='right') {
-      xlm[2] <- xlm0[2] + 0.4*diff(xlm0)
+      leg.ncols <- ceiling(sqrt(nl)/3)
+      xlm[2] <- xlm0[2] + diff(xlm0)*(0.2+log(leg.ncols,2)/10)
       y.ex2 <- y.ex1 <- 0.00
-      leg.ncols <- 2
     } else {
       legpos <- 'topleft'
-      leg.ncols <- 5
-      y.ex1 <- (max(nnll) + length(v)) * 
-        ((nl+leg.ncols-1)%/%leg.ncols)*0.15
+      leg.ncols <- ceiling(sqrt(nl)*2)
+      y.ex1 <- log(max(nnll) + 2, 3) * 
+        ceiling(nl/leg.ncols) * 0.25 * leg.cex
       y.ex2 <- length(v) * 
-        ((nl+leg.ncols+1)%/%(leg.ncols+2))*0.15
+        log(ceiling(nl/leg.ncols)+1, 2) * 0.125 * leg.cex
     }
-
+    
     if (pt) {
         ylabs <- list(c(
             'Contagem diária',
@@ -466,8 +487,13 @@ data2plot <- function(d,
     }
   
   if (length(v)==2) {
+    if (showPoints) {
       ylm <- range(d$dy.plot[jj,],
                    d$do.plot[jj,], na.rm=TRUE)
+    } else {
+      ylm <- range(d$sy.plot[jj,],
+                   d$so.plot[jj,], na.rm=TRUE)
+    }
     plot(d$x, 
          d$dy.plot[,1], 
          axes=FALSE,
@@ -478,7 +504,11 @@ data2plot <- function(d,
          ylab=ylabs[[1]][1]) 
   } else {
     if (v==1) {
-      ylm <- range(d$dy.plot[jj, ], na.rm=TRUE)
+      if (showPoints) {
+        ylm <- range(d$dy.plot[jj, ], na.rm=TRUE)
+      } else {
+        ylm <- range(d$sy.plot[jj, ], na.rm=TRUE)
+      }
       plot(d$x, 
            d$dy.plot[,1], 
            axes=FALSE, 
@@ -488,7 +518,11 @@ data2plot <- function(d,
            xlab='', 
            ylab=ylabs[[1]][2])
     } else {
-      ylm <- range(d$do.plot[jj, ], na.rm=TRUE)
+      if (showPoints) {
+        ylm <- range(d$do.plot[jj, ], na.rm=TRUE)
+      } else {
+        ylm <- range(d$so.plot[jj, ], na.rm=TRUE)
+      }
       plot(d$x, 
            d$do.plot[,1], 
            axes=FALSE, 
@@ -522,8 +556,19 @@ data2plot <- function(d,
     } else {
         scol <- rgb(1:nl/nl, 1-2*abs(1:nl/nl-0.5), nl:1/nl)
     }
-    nn <- cbind(colSums(d$dy[jj, , drop=FALSE], na.rm=TRUE),
-                colSums(d$do[jj, , drop=FALSE], na.rm=TRUE))
+    nn1 <- colSums(d$dy[jj, , drop=FALSE], na.rm=TRUE)
+    nn2 <- colSums(d$do[jj, , drop=FALSE], na.rm=TRUE)
+    if (any(v==2)) {
+      oloc <- order(nn2, decreasing = TRUE)
+    } else {
+      oloc <- order(nn1, decreasing = TRUE)
+    }
+    nn1 <- format(nn1, big.mark = ',')
+    nn2 <- format(nn2, big.mark = ',')
+    if (pt) {
+      nn1 <- gsub(',', '.', nn1, fixed=TRUE)
+      nn2 <- gsub(',', '.', nn2, fixed=TRUE)
+    }
     if (any(v==1)) {
         for (l in 1:nl) {
           lines(d$x, d$sy.plot[,l], col=scol[l], lwd=2)
@@ -531,7 +576,6 @@ data2plot <- function(d,
             points(d$x, d$dy.plot[,l], 
                    cex=1-log(nl,10)/2, pch=19, col=scol[l])
         }        
-        oloc <- order(nn[,1], decreasing=TRUE)
     }
     if (any(v==2)) {
         for (l in 1:nl) {
@@ -540,22 +584,23 @@ data2plot <- function(d,
             points(d$x, d$do.plot[,l], 
                    cex=1-log(nl,10)/2, pch=8, col=scol[l])
         }
-        oloc <- order(nn[,2], decreasing=TRUE)
     }
 
     if (length(v)==2) {
-      nlab <- paste0(nn[1:nl], ' C, ', 
-                     nn[nl + 1:nl], ' D')
+      nlab <- paste0(nn1, ' C, ', nn2, ' D')
     } else {
-      nlab <- nn[nl*(v-1) + 1:nl]
+      if (v==1) {
+        nlab <- nn1 
+      } else {
+        nlab <- nn2 
+      }
     }
     lll <- paste0(lll, '\n', nlab)
     legend(legpos, lll[oloc], inset = c(0, -0.05),
            col=scol[oloc], lty=1, lwd=5,
            bty='n', xpd=TRUE,
-           y.intersp=log(length(v)+max(nnll), 2),
-           cex=1-log(length(v)+max(nnll), 10)/2,
-           ncol=leg.ncols)
+           y.intersp=sqrt(1+max(nnll)),
+           cex=leg.cex, ncol=leg.ncols)
     
     par(mar=c(2, 4.5, 0, 0.5))
     ylm <- range(1, d$Rtlow[jj,,v], 
@@ -606,10 +651,13 @@ data2plot <- function(d,
     segments(xlm0[1], 1, xlm0[2], 1)
     abline(h=par()$usr[4])
 
-    getL <- function(x)  x[tail(which(!is.na(x)))]
-    rt.last <- apply(d$Rt[jj, , , drop=FALSE], 3, apply, 2, getL)
-    rtl.last <- apply(d$Rtlow[jj, , , drop=FALSE], 3, apply, 2, getL)
-    rtu.last <- apply(d$Rtupp[jj, , , drop=FALSE], 3, apply, 2, getL)
+    rtu.last <- rtl.last <- rt.last <- matrix(NA, nl, 2)
+    for (l in 1:nl) {
+      il <- jj[tail(which(!is.na(d$Rt[jj,l,1])),1)]
+      rt.last[l, ] <- d$Rt[il, l, , drop=FALSE]
+      rtl.last[l, ] <- d$Rtlow[il, l, , drop=FALSE]
+      rtu.last[l, ] <- d$Rtupp[il, l, , drop=FALSE]
+    }
 
     llr <- paste0(
       sprintf('%1.2f', rt.last[, v[1]]), '(',
@@ -625,11 +673,16 @@ data2plot <- function(d,
         rep(c(0, nl), nl)
       llr <- llr[iill]
     }
+    if (pt) {
+      llr <- gsub('.', ',', 
+                  gsub(',', ';', llr, 
+                       fixed=TRUE), fixed=TRUE)
+    }
     legend(legpos, llr, 
            col=rep(scol[oloc], each=length(v)), 
            lty=rep(1:length(v), nl), lwd=2,
-           bty='n', xpd=TRUE, cex=0.85, 
-           ncol=leg.ncols+2*(legpos!='right'))
+           bty='n', xpd=TRUE, cex=leg.cex*1.2, 
+           ncol=leg.ncols)
   
     return(invisible())
 }
