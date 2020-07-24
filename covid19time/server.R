@@ -20,15 +20,27 @@ server <- function(input, output) {
 
         sdata <- prepareData(
           input$local)
-
-        par(mfrow=c(2, 1), mar=c(0.5, 4.5, 0.5, 0.5), mgp=c(3.5, 0.5, 0))
+        
+        if (length(input$plots)<1)
+          if (pt) {
+            stop(safeError(
+              'Favor selecionar pelo menos um gráfico a ser mostrado!'))
+          } else {
+            stop(safeError(
+              'Please select at least one plot to be shown!'))
+          }
+        
+        par(mfrow=c(length(input$plots), 1), 
+            mar=c(0.5, 4.5, 0.5, 0.5), mgp=c(3.5, 0.5, 0))
+        
         data2plot(d=sdata, 
                   variables=input$variables,
                   dateRange=input$dateRange, 
+                  plots=input$plots,
                   showPoints=input$showPoints,
                   transf=input$transf, 
                   legpos=input$legend)
 
-        })
+    })
     
 }

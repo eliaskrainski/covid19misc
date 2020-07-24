@@ -16,9 +16,9 @@ ui <- fluidPage(
         label = "Local",
         choices = olocals,
         multiple = TRUE, 
-        selected = c('Curitiba, PARANÁ - Brazil', 
-                     'PARANÁ - Brazil', 
-                     'Brazil', 'NY - US', 'US')),
+        selected = c('Curitiba, PR - Brasil', 
+                     'PR - Brasil', 
+                     'Brasil', 'NY - US', 'US')),
       dateRangeInput(
         inputId = 'dateRange',
         label = 'Data (intervalo):',
@@ -26,6 +26,11 @@ ui <- fluidPage(
         end = Sys.Date(),
         format = "dd/mm/yy", 
         language = 'pt'),
+      checkboxGroupInput(
+        inputId = "plots", 
+        label = 'Para mostrar', 
+        choices = pls, 
+        selected = pls),
       checkboxInput(
         inputId = 'showPoints',
         label = 'Mostrar pontos',
@@ -45,11 +50,9 @@ ui <- fluidPage(
         selected = 'top'),
       actionButton(
         inputId="exit", 
-        label="Exit"),
-    width = 3),
+        label="Exit")),
     mainPanel(
-      plotOutput("plot"),
-      width = 7)
+      plotOutput("plot"))
     ),
   includeHTML("../GLOBAL/footer.html")
 ) # fluidPage

@@ -8,9 +8,8 @@ ui <- fluidPage(
     sidebarPanel(
       checkboxGroupInput(
         inputId = "variables", 
-        label = NULL, #"Variables to show", 
-        choices = c('Cases' = 'cases', 
-                    'Deaths' = 'deaths'), 
+        label = 'Variable (Total world)', 
+        choices=lb.n, 
         selected = 'cases'),
       selectizeInput(
         inputId = "local",
@@ -25,6 +24,11 @@ ui <- fluidPage(
         start = as.Date('2020-01-20'),
         end = Sys.Date(),
         format = "dd/mm/yy"),
+      checkboxGroupInput(
+        inputId = "plots", 
+        label = 'To show', 
+        choices = pls, 
+        selected = pls),
       checkboxInput(
         inputId = 'showPoints',
         label = 'Show points',
