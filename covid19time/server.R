@@ -18,7 +18,7 @@ server <- function(input, output) {
             
         }
 
-        sdata <- prepareData(
+        sdata <- dataPrepare(
           input$local)
         
         if (length(input$plots)<1)
