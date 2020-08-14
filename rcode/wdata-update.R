@@ -1,10 +1,11 @@
 
 if (FALSE) { ## can manually skip
 
-    options(width=70)
     setwd('..')
 
 }
+
+options(width=70)
 
 if (!any(ls()=='brio'))
     brio <- TRUE
@@ -47,8 +48,9 @@ tail(Date)
 for (k in 1:2) {
     dtmp <- as.Date(colnames(wdl[[k]])[7:ncol(wdl[[k]])],
                     'X%m.%d.%y')
-    if (tail(dtmp, 1)!=Sys.Date())
-        wdl[[k]] <- data.frame(wdl[[k]][, 1:ncol(wdl[[k]])], new=NA)
+    if (tail(dtmp, 1)!=Sys.Date()) 
+        wdl[[k]] <- data.frame(wdl[[k]][, 1:ncol(wdl[[k]])],
+                               new=NA)
 }
 
 ##Date <- unique(c(as.Date(colnames(wdl[[1]])[7:ncol(wdl[[1]])],
@@ -120,19 +122,7 @@ if (brio) {
     wbr.uf <- lapply(dbr[i.uf, jj.y], tapply,
                      dbr[i.uf, jj.x.uf], as.integer)
     object.size(wbr.uf)
-    
-    for (k in 1:2) {
-##        wbr.uf[[k]][is.na(wbr.uf[[k]])] <- 0L
-        dtmp <- as.Date(colnames(wbr.mu[[k]]), '%Y%m%d')
-##        if (tail(dtmp, 1)==Sys.Date())
-  ##          wbr.mu[[k]] <- wbr.mu[[k]][, 1:(ncol(wbr.mu[[k]])-1)]
-###        wbr.mu[[k]][is.na(wbr.mu[[k]])] <- 0L ## fix later
-        dtmp <- as.Date(colnames(wbr.uf[[k]]), '%Y%m%d')
-    ##    if (tail(dtmp, 1)==Sys.Date())
-      ##      wbr.uf[[k]] <- wbr.uf[[k]][, 1:(ncol(wbr.uf[[k]])-1)]
-##        wbr.uf[[k]][wbr.uf[[k]]==0] <- NA 
-    }
-    
+        
     uf <- c(SE = "SERGIPE", MA = "MARANHÃO", ES = "ESPÍRITO SANTO",
             AM = "AMAZONAS", RR = "RORAIMA", GO = "GOIÁS",
             AP = "AMAPÁ", RS = "RIO GRANDE DO SUL", PB = "PARAÍBA",
@@ -251,7 +241,7 @@ if (brio) {
 sapply(wdl,dim)
 tail(wdl[[1]][, 1:10],2)
 
-if (usems) {
+if (usems & file.exists('data/HIST_PAINEL_COVIDBR.csv')) {
 
     system.time(dbrms <- read.csv('data/HIST_PAINEL_COVIDBR.csv'))
     dbrms$fdate <- factor(gsub('-', '', as.Date(dbrms$data, '%m-%d-%y'),
@@ -273,6 +263,28 @@ if (usems) {
                     dbr.m[, c('codmun', 'fdate')], as.integer)) 
     str(wbr.m)
     wbr.m[[1]][1:5, ncol(wbr.m[[1]])-3:0]
+
+    if (brio) {
+
+        i2i.mm <- pmatch(rownames(wbr.m[[1]]),
+                         substr(rownames(wbr.mu[[1]]),1,6)) 
+        c(nrow(wbr.mu[[1]]), nrow(wbr.m[[1]]), length(i2i.mm))
+
+        i2na <- is.na(i2i.mm)
+        table(rownames(wbr.m[[1]])[!i2na]==
+              substr(rownames(wbr.mu[[1]])[i2i.mm[!i2na]], 1, 6))
+        
+        jj2 <- 1:(which(colSums(wbr.m[[1]])>0)[1]-1)
+        tail(jj2)
+        colSums(wbr.m[[1]][, max(jj2)+0:3], na.rm=TRUE)
+        colSums(wbr.mu[[1]][, max(jj2)+0:3], na.rm=TRUE)
+
+        for (k in 1:2) {
+            wbr.m[[k]][!i2na, jj2] <- 
+                wbr.mu[[k]][i2i.mm[!i2na], jj2]
+        }
+
+    }
 
     iiuf <- which(is.na(dbrms$codmun) &
                   (dbrms$estado!=''))
@@ -296,8 +308,10 @@ if (usems) {
         as.integer(substr(dbrms$coduf,1,1))]
 
     dbr.r <- aggregate(
-        dbrms[is.na(dbrms$codmun), c('casosAcumulado', 'obitosAcumulado')],
-        dbrms[is.na(dbrms$codmun), c('Região', 'fdate')], sum, na.rm=TRUE)
+        dbrms[is.na(dbrms$codmun),
+              c('casosAcumulado', 'obitosAcumulado')],
+        dbrms[is.na(dbrms$codmun),
+              c('Região', 'fdate')], sum, na.rm=TRUE)
 
     wbr.r <- lapply(
         dbr.r[c('casosAcumulado', 'obitosAcumulado')], tapply,
@@ -371,13 +385,15 @@ for (k in 1:2) {
     }
 }
 
-k <- 1
-dlast <- wdl[[k]][, (nt-7):nt]-
-    wdl[[k]][, (nt-8):(nt-1)]
-mlast <- dlast[, 5:8]<(0.1*rowMeans(dlast[, 1:4]))
-for (i in which(rowSums(mlast)>0)) {
-    wdl[[k]][i, which(mlast[i, ]) + nt-4] <- NA
-    wdl[[k+1]][i, which(mlast[i, ]) + nt-4] <- NA
+if (FALSE) {
+    k <- 1
+    dlast <- wdl[[k]][, (nt-7):nt]-
+        wdl[[k]][, (nt-8):(nt-1)]
+    mlast <- dlast[, 5:8]<(0.01*rowMeans(dlast[, 1:4]))
+    for (i in which(rowSums(mlast)>0)) {
+        wdl[[k]][i, which(mlast[i, ]) + nt-4] <- NA
+        wdl[[k+1]][i, which(mlast[i, ]) + nt-4] <- NA
+    }
 }
 
 attr(wdl, 'Sys.time') <- Sys.time()

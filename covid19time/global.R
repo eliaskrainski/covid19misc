@@ -191,28 +191,16 @@ axTransfTicks <- function(transf, lim) {
     r$x <- pretty(lim, 15)
   r$l <- r$x
   if (transf=='sqrt') {
-    r$l <- sqrtR(pretty(lim, 10), inverse=TRUE)
-    if (length(r$l)<10)
-      r$l <- sqrtR(pretty(lim, 15), inverse=TRUE)
-    r$x <- sqrtR(r$l)
-  }
-  if (transf=='log2') {
-    if ((lim[1]>=(-6.65)) & (lim[2]<=6.65)) {
-      if (diff(lim)>6.65) {
-        r$l <- c(-100, -40, -15, -5, 
-                 -2:2, 5, 15, 40, 100) 
-      } else {
-        r$l <- c(-100, -60, -30, -15, -8, -4, 
-                 -2:2, 4, 8, 15, 30, 60, 100) 
-      }
-    } else {
-      r$l <- logR(pretty(lim, 10), 2, inverse=TRUE)
-      if (length(r$l)<10)
-        r$l <- logR(pretty(lim, 15), 2, inverse=TRUE)
-      r$x <- logR(r$l, 2)
-    }
+    r$l <- sqrtR(r$x, inverse = TRUE)
   }
   if (transf=='log10') {
+    if (diff(lim)<1.2) {
+      r <- list(l=pretty(logR(lim, 10, inverse=TRUE), 10))
+      if (length(r$l)<5)
+        r <- list(l=pretty(logR(lim, 10, inverse=TRUE), 15))
+      r$x <- logR(r$l, 10)
+      return(r)
+    }
     if ((lim[1]>=(-3)) & (lim[2]<=3)) {
       b <- findInterval(diff(lim), c(0, 1.1, 2.5, 4))
       if (b==4)
@@ -239,7 +227,7 @@ axTransfTicks <- function(transf, lim) {
                        4, 4.5, 5, 5.6, 6.3, 7, 8, 9), 
                  '2'=c(1.2, 1.5, 2, 2.5, 3.2, 4, 5, 6.3, 8),
                  '3'=c(1.4,1.9,2.6,3.6,5,7), 
-                 '4'=c(1.6, 2.5, 3.8, 6),
+                 '4'=c(1.7, 3, 5), ##6, 2.5, 3.8, 6),
                  '5'=c(2,4), 
                  '6'=c(3), 
                  '7'=3), 10)
@@ -271,38 +259,6 @@ axTransfTicks <- function(transf, lim) {
     }
   }
   return(r)
-}
-
-### avoid lots of zeros... or scientific 
-formatB <- function(x, scientific = TRUE) {
-    if (length(grep('.', x))>0)
-        scientific <- TRUE
-  if (scientific) {
-    x <- format(x, scientific=TRUE)
-    x <- gsub('.00e+', 'e+', x, fixed=TRUE)
-    x <- gsub('.0e+', 'e+', x, fixed=TRUE)
-    x <- gsub('e+09', 'B', x, fixed=TRUE) 
-    x <- gsub('e+08', '00M', x, fixed=TRUE) 
-    x <- gsub('e+07', '0M', x, fixed=TRUE) 
-    x <- gsub('e+06', 'M', x, fixed=TRUE) 
-    x <- gsub('e+05', '00K', x, fixed=TRUE) 
-    x <- gsub('e+04', '0K', x, fixed=TRUE)
-    x <- gsub('e+03', 'K', x, fixed=TRUE)
-    x <- gsub('e+02', '00', x, fixed=TRUE)
-    x <- gsub('e+01', '0', x, fixed=TRUE)
-    x <- gsub('e+00', '', x, fixed=TRUE)
-  } else {
-    x <- format(x, scientific=FALSE)
-    x <- gsub(' ', '', x, fixed=TRUE)
-    x <- gsub('00000000', 'B', x, fixed=TRUE) 
-    x <- gsub('0000000', '0M', x, fixed=TRUE) 
-    x <- gsub('0000000', '0M', x, fixed=TRUE) 
-    x <- gsub('000000', 'M', x, fixed=TRUE) 
-    x <- gsub('00000', '00K', x, fixed=TRUE) 
-    x <- gsub('0000', '0K', x, fixed=TRUE)
-    x <- gsub('000', 'K', x, fixed=TRUE)
-  }
-    return(x)
 }
 
 ### select the data for the selected local(s) 
@@ -364,24 +320,26 @@ Rtfit <- function(d, a=0.5, b=1) {
     pw <- pgamma(0:21, shape=(5.8/4)^2, scale=4^2/5.8)
     w <- diff(pw)/sum(diff(pw))
     n0 <- length(w)
-    n1 <- nrow(d$dy)
-    nl <- ncol(d$dy)
+    n1 <- nrow(d$sy)
+    nl <- ncol(d$so)
     
-    yy <- array(0L, c(n1, nl, 2))
+    ys <- yy <- array(0L, c(n1, nl, 2))
     yy[,,1] <- d$dy
     yy[,,2] <- d$do
     yy[yy<0] <- NA
+    ys[,,1] <- d$sy
+    ys[,,2] <- d$so
     
     d$ee <- array(0, c(n0 + n1, nl, 2))
     ##  ee[1:n0] <- (1-w)*dtmp$y[1:n0] * exp(-(1:n0))/exp(-1)
     for (k in 1:2)
         for (l in 1:nl) {
-            y0 <- yy[, l, k]
+            y0 <- ys[, l, k]
             ##      y0[y0<0] <- 0
             for (i in which(!is.na(y0))) 
                 d$ee[i+1:n0, l, k] <- d$ee[i+1:n0, l, k] + y0[i] * w 
         }
-    d$ee[d$ee<0.1] <- 0.1
+    d$ee[d$ee<0.01] <- 0.01
     ##    ee[1:n1] <- ee[1:n1]*(sum(dtmp$y[1:n1])/sum(ee[1:n1]))
     d$Rtupp <- d$Rtlow <- d$Rt <- array(NA, c(n1, nl, 2)) 
     
@@ -390,16 +348,21 @@ Rtfit <- function(d, a=0.5, b=1) {
             i1 <- which(yy[, l, k]>0)[1]
             ii <- which(!is.na(yy[, l, k]))
             ii <- ii[ii>=i1]
-            fRt <- gam(y ~ 0 + w + s(x), poisson(), 
-                       data=list(
+            if (length(ii)>19) {
+              fRt <- gam(y ~ 0 + w + s(x), poisson(), 
+                         data=list(
                            w = factor(weekdays(d$x[ii])), 
                            x = ii, y = yy[ii,l,k]), 
-                       offset = log(d$ee[ii,l,k]))
-            tpred <- predict(fRt, type='terms', se=TRUE)
-            ytmp <- exp(tpred$fit[, 2] + 
-                          mean(tpred$fit[,1]))*d$ee[ii,l,k]
-### consider gamma(a+y, b+E) with a=2, b=1
-            d$Rt[ii, l, k] <- (ytmp + a)/(d$ee[ii,l,k] + b)
+                         offset = log(d$ee[ii,l,k]))
+              tpred <- predict(fRt, type='terms', se=TRUE)
+              ytmp <- exp(tpred$fit[, 2] + 
+                            mean(tpred$fit[,1]))*d$ee[ii,l,k]
+              ### consider gamma(a+y, b+E) with a=2, b=1
+              d$Rt[ii, l, k] <- (ytmp + a)/(d$ee[ii,l,k] + b)
+            } else {
+              d$Rt[ii, l, k] <- 
+                mean(yy[ii, l, k])/mean(d$e[ii,l,k])
+            }
             d$Rt[1:n0, l, k] <- NA
         }
     }
@@ -474,6 +437,14 @@ data2plot <- function(d,
 
     jj0 <- which((d$x>=sxlm[1]) & 
                  (d$x<=sxlm[2]))
+    if (length(jj0)==0) {
+      if (pt) {
+        stop(safeError('Sem dados na seleção!'))
+      } else {
+        stop(safeError('No data in the selection!'))
+      }
+    }
+      
     rjj <- apply(d$dy, 2, function(x) {
       range(jj0[which(!is.na(x[jj0]))])
     })
@@ -609,7 +580,7 @@ data2plot <- function(d,
     yl <- axTransfTicks(transf, ylm)
     yab <- par()$usr[3:4]
     i.yl <- which(findInterval(
-        yl$x, yab+c(-1,1)*0.01*diff(ylm))==1)
+        yl$x, ylm+c(-1,1)*0.1*diff(ylm))==1)
 
     axis(2, yl$x[i.yl], round(yl$l[i.yl]), las=1)
     segments(rep(xlm0[1], length(i.yl)), yl$x[i.yl],
@@ -664,13 +635,13 @@ data2plot <- function(d,
     if (length(plots)<3)
       par(mar=c(2, 4.5, 0, 0.5))
     
-    ylm <- range(0:1, d$Rtlow[jj,,v], 
+    ylm <- range(1, d$Rtlow[jj,,v], 
                  d$Rtupp[jj,,v], na.rm=TRUE)
     if (showPoints) {
       rtobs <- array(NA, c(nrow(d$dy), nl, 2))
       rtobs[,,1] <- d$dy[,]/d$ee[1:nrow(d$do),,1]
       rtobs[,,2] <- d$do[,]/d$ee[1:nrow(d$do),,2]
-      ylm <- range(0:1, rtobs[jj, , v], na.rm=TRUE)
+      ylm <- range(1, rtobs[jj, , v], na.rm=TRUE)
     }
 
     plot(d$x,
@@ -721,11 +692,15 @@ data2plot <- function(d,
     abline(h=par()$usr[4])
 
     rtu.last <- rtl.last <- rt.last <- matrix(NA, nl, 2)
-    for (l in 1:nl) {
-      il <- jj[tail(which(!is.na(d$Rt[jj,l,1])),1)]
-      rt.last[l, ] <- d$Rt[il, l, , drop=FALSE]
-      rtl.last[l, ] <- d$Rtlow[il, l, , drop=FALSE]
-      rtu.last[l, ] <- d$Rtupp[il, l, , drop=FALSE]
+    for (k in 1:2) {
+      for (l in 1:nl) {
+        il <- jj[tail(which(!is.na(d$Rt[jj,l,k])),1)]
+        if (length(il)>0) {
+          rt.last[l, k] <- d$Rt[il, l, k, drop=FALSE]
+          rtl.last[l, k] <- d$Rtlow[il, l, k, drop=FALSE]
+          rtu.last[l, k] <- d$Rtupp[il, l, k, drop=FALSE]
+        }
+      }
     }
 
     llr <- paste0(
