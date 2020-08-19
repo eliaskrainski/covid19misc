@@ -20,8 +20,8 @@ if (difftime(Sys.time(),
   source('rcode/wdata-update.R')
 }
 cn <- colnames(wdl[[1]])
-Date <- as.Date(cn[7:length(cn)], 'X%Y%m%d')
-lastday <- tail(Date, 1)
+vecDate <- as.Date(cn[7:length(cn)], 'X%Y%m%d')
+lastday <- tail(vecDate, 1)
 
 ### total in the world
 iisel <- which(wdl[[1]]$Province.State=='')
@@ -261,6 +261,24 @@ axTransfTicks <- function(transf, lim) {
   return(r)
 }
 
+### fix the accumulated series 
+### to avoid negative differences
+accMax <- function(x) {
+  x[is.na(x)] <- 0
+  for (j in 2:length(x)) {
+    if (is.na(x[j])) {
+      x[j] <- x[j-1]
+    } else {
+      if (x[j]<x[j-1]) {
+        a <- x[j] 
+        x[j] <- x[j-1]
+        x[j-1] <- a
+      }
+    }
+  }
+  return(cummax(x))
+}
+
 ### select the data for the selected local(s) 
 ###   prepare it:
 ### 1. differenced series
@@ -268,35 +286,48 @@ axTransfTicks <- function(transf, lim) {
 dataPrepare <- function(slocal) {
 
     ii <- pmatch(slocal, locals)
+    nl <- length(ii)
     jj <- 7:ncol(wdl[[1]])
     y <- as.matrix(wdl[[1]][ii, jj, drop=FALSE])
     ii0 <- which(colSums(y>0)>0)
     
-    if (length(ii0)>0) {
-        o <- t(wdl[[2]][ii, jj[ii0[1]:ncol(y)]])
-        Date <- Date[ii0[1]:ncol(y)]
-        y <- t(y[, ii0[1]:ncol(y), drop=FALSE])
-    } else {
-        if (pt) {
-            stop(safeError('Sem dados na seleção feita!'))
-        } else {
-            stop(safeError('No data in the selection made!'))
-        }
+    if (length(ii0)==0) {
+      if (pt) {
+        stop(safeError('Sem dados na seleção feita!'))
+      } else {
+        stop(safeError('No data in the selection made!'))
+      }
     }
     
-    d <- list(x=Date, y=y, o=o)
+    d <- list(x=vecDate[ii0[1]:ncol(y)])
+    d$y <- t(y[, ii0[1]:ncol(y), drop=FALSE])
+    d$o <- t(wdl[[2]][ii, jj[ii0[1]:ncol(y)], drop=FALSE])
     
     d$dy <- apply(d$y, 2, function(y) 
         diff(c(0, y)))
     d$do <- apply(d$o, 2, function(y) 
         diff(c(0, y)))
     
-    w <- weekdays(d$x)
-    d$sy <- apply(d$dy, 2, sfit, w=w)
-    d$so <- apply(d$do, 2, sfit, w=w)
-    
-    d <- Rtfit(d)
+    yy <- array(NA, c(dim(d$y), 2))
+    yy[,,1] <- d$dy
+    yy[,,2] <- d$do
 
+    for (l in 1:nl) {
+      if (any(yy[, l, 1]<0, na.rm=TRUE)) { 
+        yy[, l, 1] <- diff(c(0, accMax(d$y[,l])))
+      } 
+      if (any(yy[, l, 2]<0, na.rm=TRUE)) { 
+        yy[, l, 2] <- diff(c(0, accMax(d$o[,l])))
+      } 
+    }
+
+    w <- weekdays(d$x)
+    d$sy <- apply(yy[,,1, drop=FALSE], 2, sfit, w=w)
+    d$so <- apply(yy[,,2, drop=FALSE], 2, sfit, w=w)
+
+    d$yy <- yy
+    d <- Rtfit(d)
+    
     attr(d, 'ii') <- ii 
     return(d) 
 
@@ -323,10 +354,9 @@ Rtfit <- function(d, a=0.5, b=1) {
     n1 <- nrow(d$sy)
     nl <- ncol(d$so)
     
-    ys <- yy <- array(0L, c(n1, nl, 2))
-    yy[,,1] <- d$dy
-    yy[,,2] <- d$do
-    yy[yy<0] <- NA
+    yy <- ys <- d$yy
+    yy[,,1] <- d$yy[,,1]
+    yy[,,2] <- d$yy[,,2]
     ys[,,1] <- d$sy
     ys[,,2] <- d$so
     
@@ -337,7 +367,8 @@ Rtfit <- function(d, a=0.5, b=1) {
             y0 <- ys[, l, k]
             ##      y0[y0<0] <- 0
             for (i in which(!is.na(y0))) 
-                d$ee[i+1:n0, l, k] <- d$ee[i+1:n0, l, k] + y0[i] * w 
+                d$ee[i+1:n0, l, k] <- 
+                d$ee[i+1:n0, l, k] + y0[i] * w 
         }
     d$ee[d$ee<0.01] <- 0.01
     ##    ee[1:n1] <- ee[1:n1]*(sum(dtmp$y[1:n1])/sum(ee[1:n1]))
@@ -416,7 +447,7 @@ data2plot <- function(d,
     }
 
     nd0 <- length(d)
-    nl <- ncol(d[[2]])
+    nl <- ncol(d$y) 
     if (nl>100) {
         if (pt) {
             stop(safeError('Muitos lugares selecionados!'))
@@ -424,7 +455,7 @@ data2plot <- function(d,
             stop(safeError('Too many places!'))
         }
     }
-    
+
     for (j in 1:4) {
         d[[length(d)+1]] <- d[[3+j]]
         for (l in 1:nl) {
@@ -432,6 +463,7 @@ data2plot <- function(d,
                 d[[3+j]][, l], transf)
         }
     }
+
     names(d)[(nd0+1):length(d)] <-
         paste0(names(d)[4:7], '.plot')
 
@@ -512,10 +544,16 @@ data2plot <- function(d,
         0.3+0.7*(nl:1/nl), 0.5)
     }
     
-    nn1 <- colSums(
-      d$dy[jj, , drop=FALSE], na.rm=TRUE)
-    nn2 <- colSums(
-      d$do[jj, , drop=FALSE], na.rm=TRUE)
+    getNc <- function(x) {
+      x <- c(0, x) 
+      for (j in 2:length(x))
+        if (is.na(x[j]))
+          x[j] <- x[j-1]
+      x[jj[length(jj)]+1] - x[jj[1]]
+    }
+    nn1 <- apply(d$y, 2, getNc)
+    nn2 <- apply(d$o, 2, getNc)
+
     if (any(v==2)) {
       oloc <- order(
         nn2, decreasing = TRUE)

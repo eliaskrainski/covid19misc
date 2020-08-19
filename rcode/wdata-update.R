@@ -63,7 +63,7 @@ colnames(wdl[[1]])[7:ncol(wdl[[1]])] <-
 
 
 ### US data
-us.d <- read.csv('data/states_daily_4pm_et.csv')
+us.d <- read.csv('data/daily.csv')
 
 us.d$date <- factor(us.d$date, alldates)
 
@@ -385,16 +385,19 @@ for (k in 1:2) {
     }
 }
 
-if (FALSE) {
-    k <- 1
-    dlast <- wdl[[k]][, (nt-7):nt]-
-        wdl[[k]][, (nt-8):(nt-1)]
-    mlast <- dlast[, 5:8]<(0.01*rowMeans(dlast[, 1:4]))
-    for (i in which(rowSums(mlast)>0)) {
-        wdl[[k]][i, which(mlast[i, ]) + nt-4] <- NA
-        wdl[[k+1]][i, which(mlast[i, ]) + nt-4] <- NA
-    }
+##if (FALSE) {
+
+k <- 1
+dlast <- wdl[[k]][, (nt-5):nt]-
+    wdl[[k]][, (nt-6):(nt-1)]
+mlast <- dlast[, 5:6]<(0.01*rowMeans(dlast[, 1:4]))
+for (i in which(rowSums(mlast)>0)) {
+    wdl[[k]][i, which(mlast[i, ]) + nt-2] <- NA
+    wdl[[k+1]][i, which(mlast[i, ]) + nt-2] <- NA
 }
+
+##}
+
 
 attr(wdl, 'Sys.time') <- Sys.time()
 

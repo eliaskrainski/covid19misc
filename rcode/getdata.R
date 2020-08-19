@@ -38,8 +38,7 @@ if (wcota) { ### Brazilian data put together by Wesley Cota
 }
 
 ### USdata
-us.fl <- 'data/states_daily_4pm_et.csv'
-us.url <- paste0('https://raw.githubusercontent.com/',
-                 'COVID19Tracking/covid-tracking-data/master/',
-                 us.fl)
+us.fl <- 'data/daily.csv'
+us.url <- paste0('https://api.covidtracking.com/v1/states/',
+                 'daily.csv')
 download.file(us.url, us.fl)
