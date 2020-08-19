@@ -649,7 +649,11 @@ data2plot <- function(d,
       nn2x <- gsub(',', '.', nn2x, fixed=TRUE)
     }
     if (length(v)==2) {
-      nlab <- paste0(nn1x, ' C, ', nn2x, ' D')
+      if (nl>1) {
+        nlab <- paste0(nn1x, ' C, ', nn2x, ' D')
+      } else {
+        nlab <- c(nn1x, nn2x)
+      }
     } else {
       if (v==1) {
         nlab <- nn1x 
@@ -657,12 +661,27 @@ data2plot <- function(d,
         nlab <- nn2x 
       }
     }
-    legend(legpos, paste0(lll, '\n', nlab)[oloc], 
-           ##inset = c(0, -0.05),
-           col=scol[oloc], lty=1, lwd=5,
-           bty='n', xpd=TRUE,
-           y.intersp=sqrt(1+max(nnll)),
-           cex=leg.cex, ncol=leg.ncols)
+    if (nl>1) {
+      legend(legpos, paste0(lll, '\n', nlab)[oloc], 
+             ##inset = c(0, -0.05),
+             col=scol[oloc], lty=1, lwd=5,
+             bty='n', xpd=TRUE,
+             y.intersp=sqrt(1+max(nnll)),
+             cex=leg.cex, ncol=leg.ncols)
+    } else {
+      if (pt) {
+        llg <- paste(c('Casos', 'Óbitos'), ':', nlab)
+      } else {
+        llg <- paste(c('Cases', 'Deaths'), ':', nlab)
+      }
+      if (showPoints) {
+        legend(legpos, llg[v], bty='n', 
+               pch=c(19,8)[v], lty=v, lwd=2)
+      } else {
+        legend(legpos, llg[v], bty='n', 
+               lty=v, lwd=2)
+      }
+    }
     if (length(plots)<2)
       axis(1, xl$x, format(xl$x, '%b,%d'))
   }
