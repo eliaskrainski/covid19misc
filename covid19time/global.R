@@ -1,5 +1,6 @@
 
 pt <- length(grep('MESSAGES=pt', Sys.getlocale())>0)
+npretty <- 7
 
 ### load packages
 library(shiny)
@@ -185,10 +186,10 @@ xTransf <- function(x, transf, inverse=FALSE)
          log2=logR(x, 2, 2, inverse=inverse), 
          log10=logR(x, 10, 2, inverse=inverse))
 
-axTransfTicks <- function(transf, lim) {
-  r <- list(x=pretty(lim, 10))
-  if (length(r$l)<10)
-    r$x <- pretty(lim, 15)
+axTransfTicks <- function(transf, lim, n=npretty) {
+  r <- list(x=pretty(lim, n))
+  if (length(r$l)<(0.5*n))
+    r$x <- pretty(lim, ceiling(1.5*n))
   r$l <- r$x
   if (transf=='sqrt') {
     r$l <- sqrtR(r$x, inverse = TRUE)
@@ -220,17 +221,25 @@ axTransfTicks <- function(transf, lim) {
     } else {
       b <- findInterval(
         diff(lim), c(0, 0.5, 1, 2, 3, 4, 5))
+      lpx0 <- list(
+        '1'=c(1.1, 1.2, 1.4, 1.6, 1.8, 
+              2, 2.2, 2.5, 2.8, 3.1, 3.5, 
+              4, 4.5, 5, 5.6, 6.3, 7, 8, 9), 
+         '2'=c(1.2, 1.5, 2, 2.5, 3.2, 4, 5, 6.3, 8),
+         '3'=c(1.4,1.9,2.6,3.6,5,7), 
+         '4'=c(1.7, 3, 5), ##6, 2.5, 3.8, 6),
+         '5'=c(2,4), 
+         '6'=c(3), 
+         '7'=3)
       x0 <- log(
           switch(as.character(b),
-                 '1'=c(1.1, 1.2, 1.4, 1.6, 1.8, 
-                       2, 2.2, 2.5, 2.8, 3.1, 3.5, 
-                       4, 4.5, 5, 5.6, 6.3, 7, 8, 9), 
-                 '2'=c(1.2, 1.5, 2, 2.5, 3.2, 4, 5, 6.3, 8),
-                 '3'=c(1.4,1.9,2.6,3.6,5,7), 
-                 '4'=c(1.7, 3, 5), ##6, 2.5, 3.8, 6),
-                 '5'=c(2,4), 
-                 '6'=c(3), 
-                 '7'=3), 10)
+                 '1'=lpx0[[2]],
+                 '2'=lpx0[[3]], 
+                 '3'=lpx0[[4]],
+                 '4'=lpx0[[5]],
+                 '5'=lpx0[[6]], 
+                 '6'=lpx0[[7]], 
+                 '7'=lpx0[[7]]), 10)
       nx0 <- length(x0)
       l0 <- floor(lim[1])
       if (l0<0) {
@@ -529,21 +538,19 @@ data2plot <- function(d,
             'Fatality rate (%)')
     }
 
-    nl <- ncol(d[[2]])
+    nl <- ncol(d$y)
     if (nl==1) {
-      scol <- 'black'
-      shad.col <- gray(0.7, 0.5)
+      scol <- rgb(.1,.1,.1,.7)
+      shad.col <- rgb(.5,.5,.5,.35)
     } else {
-      scol <- rgb(
-        0:(nl-1)/(nl-1), 
-        1-2*abs(0:(nl-1)/(nl-1)-0.5), 
-        (nl-1):0/(nl-1))
-      shad.col <- rgb(
-        0.3+0.7*(1:nl/nl),
-        0.3+0.7*(1-2*abs(1:nl/nl-0.5)),
-        0.3+0.7*(nl:1/nl), 0.5)
+      ucol <- 1:nl/nl
+      gcol <- 1-2*abs(ucol-mean(ucol))
+      scol <- rgb(ucol, gcol, 1-ucol, 0.7)
+      shad.col <- rgb(0.3+0.7*ucol, 
+                      0.3+0.7*gcol, 
+                      0.3+0.7*(1-ucol), 0.35)
     }
-    
+
     getNc <- function(x) {
       x <- c(0, x) 
       for (j in 2:length(x))
@@ -635,7 +642,8 @@ data2plot <- function(d,
     }
     if (any(v==2)) {
         for (l in 1:nl) {
-          lines(d$x, d$so.plot[,l], col=scol[l], lty=2, lwd=3)
+          lines(d$x, d$so.plot[,l], col=scol[l], 
+                lty=length(v), lwd=3)
           if (showPoints)
             points(d$x, d$do.plot[,l], 
                    cex=1-log(nl,10)/2, pch=8, col=scol[l])
@@ -666,7 +674,7 @@ data2plot <- function(d,
              ##inset = c(0, -0.05),
              col=scol[oloc], lty=1, lwd=5,
              bty='n', xpd=TRUE,
-             y.intersp=sqrt(1+max(nnll)),
+             y.intersp=sqrt(0.5+max(nnll)),
              cex=leg.cex, ncol=leg.ncols)
     } else {
       if (pt) {
@@ -679,7 +687,7 @@ data2plot <- function(d,
                pch=c(19,8)[v], lty=v, lwd=2)
       } else {
         legend(legpos, llg[v], bty='n', 
-               lty=v, lwd=2)
+               lty=1:length(v), lwd=2)
       }
     }
     if (length(plots)<2)

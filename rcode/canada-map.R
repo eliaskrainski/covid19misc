@@ -1,3 +1,5 @@
+if (FALSE)
+    setwd("..")
 
 if (FALSE) {
 
@@ -11,6 +13,25 @@ if (FALSE) {
     unzip(paste0('maps/', flz), exdir='maps/')
     dir('maps')
 }
+
+if (file.exists('maps/canada-sp.RData')) {
+
+    load('maps/canada-sp.RData')
+
+} else {
+
+    library(maps)
+    ca <- map("world", "Canada", fill=TRUE,
+              col="transparent", plot=FALSE)
+    IDs <- sapply(strsplit(ca$names, ":"), function(x) x[1])
+    ca.sp <- map2SpatialPolygons(
+        ca, IDs=IDs,
+        proj4string=CRS("+proj=longlat +datum=WGS84"))
+
+    save('ca.sp', file='maps/canada-sp.RData', compress='xz')
+
+}
+
 
 if (file.exists('maps/caprovs.RData')) {
     load('maps/caprovs.RData')

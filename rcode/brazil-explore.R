@@ -66,9 +66,10 @@ if (FALSE)
 
 ufsel <- c('AC', 'AL', 'AM', 'AP', 'CE',
            'MA', 'PA', 'PB', 'PE')
+
 ggplot(uf.long[uf.long$uf%in%ufsel, ]) +
-    geom_point(aes(x=date, y=nCasos, color='casos'), size=0.3) +
-    geom_point(aes(x=date, y=nObitos, color='óbitos'), size=0.3) +
+    geom_point(aes(x=date, y=nCasos, color='casos'), size=0.7) +
+    geom_point(aes(x=date, y=nObitos, color='óbitos'), size=0.7) +
     geom_line(aes(x=date, y=sCasos, color='casos')) +
     geom_line(aes(x=date, y=sObitos, color='óbitos')) +
         scale_y_log10(breaks=c(1, 10, 100, 1000, 5000,30000),
@@ -76,7 +77,7 @@ ggplot(uf.long[uf.long$uf%in%ufsel, ]) +
     facet_wrap(~uf) + theme_bw() + 
     labs(x='', y='', color='Legenda') + 
     scale_color_manual(values = cores) +
-    theme(legend.position=c(0.71,0.23))
+    theme(legend.position=c(0.071,0.923))
 
 
 d.all$Date <- as.Date(d.all$date)
