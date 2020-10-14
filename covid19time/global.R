@@ -568,7 +568,7 @@ data2plot <- function(d,
       oloc <- order(
         nn1, decreasing = TRUE)
     }
-    
+
   if (any(plots==1)) {
     if (length(plots)<2)
       par(mar=c(2, 4.5, 0, 0.5))

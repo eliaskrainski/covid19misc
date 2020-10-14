@@ -36,18 +36,18 @@ ui <- fluidPage(
         label = 'Mostrar pontos',
         value = TRUE),
       radioButtons(
+        inputId = "legend",
+        label = "Legenda (posição)",
+        choices = c('À direita' = 'right',
+                    'Acima' = 'top'),
+        selected = 'top'),
+      radioButtons(
         inputId = "transf", 
 	      label = "Tranformação", 
 	      choices=c('Nenhuma'='none', 
 	                'sqrt'='sqrt', 
 	                'log10'='log10'), 
         selected = 'log10'),
-      radioButtons(
-        inputId = "legend", 
-        label = "Legenda (posição)", 
-        choices = c('À direita' = 'right', 
-                    'Acima' = 'top'), 
-        selected = 'top'),
       actionButton(
         inputId="exit", 
         label="Exit")),

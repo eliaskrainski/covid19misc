@@ -11,12 +11,22 @@ server <- function(input, output) {
             
             input <- list(
                 variables='cases',
-                dateRange=c('01/01/20', '10/10/20'), 
-                transf='log10',
-                local='NY - US')
+                local=c('Curitiba, PR - Brasil', 
+                     'PR - Brasil', 
+                     'Brasil', 'NY - US', 'US'),
+                dateRange=c('01/01/20', '10/10/20'),
+                plots=c("Daily counts",
+                        "Reproduction number",
+                        "Fatality rate (%)")[1:2],
+                showPoints=TRUE,
+                legend='top',
+                transf='log10')
+            
             source("global.R")
             
         }
+
+##        stop(safeError('testing'))
 
         sdata <- dataPrepare(
           input$local)

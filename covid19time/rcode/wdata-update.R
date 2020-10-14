@@ -1,10 +1,11 @@
 
 if (FALSE) { ## can manually skip
 
-    options(width=70)
     setwd('..')
 
 }
+
+options(width=70)
 
 if (!any(ls()=='brio'))
     brio <- TRUE
@@ -13,7 +14,9 @@ if (!any(ls()=='wcota'))
     wcota <- !brio
 
 if (!any(ls()=='usems'))
-    usems <- TRUE
+    usems <- FALSE
+
+usefnd <- !usems
 
 source('rcode/getdata.R')
 
@@ -47,8 +50,9 @@ tail(Date)
 for (k in 1:2) {
     dtmp <- as.Date(colnames(wdl[[k]])[7:ncol(wdl[[k]])],
                     'X%m.%d.%y')
-    if (tail(dtmp, 1)!=Sys.Date())
-        wdl[[k]] <- data.frame(wdl[[k]][, 1:ncol(wdl[[k]])], new=NA)
+    if (tail(dtmp, 1)!=Sys.Date()) 
+        wdl[[k]] <- data.frame(wdl[[k]][, 1:ncol(wdl[[k]])],
+                               new=NA)
 }
 
 ##Date <- unique(c(as.Date(colnames(wdl[[1]])[7:ncol(wdl[[1]])],
@@ -61,7 +65,7 @@ colnames(wdl[[1]])[7:ncol(wdl[[1]])] <-
 
 
 ### US data
-us.d <- read.csv('data/states_daily_4pm_et.csv')
+us.d <- read.csv('data/daily.csv')
 
 us.d$date <- factor(us.d$date, alldates)
 
@@ -120,19 +124,7 @@ if (brio) {
     wbr.uf <- lapply(dbr[i.uf, jj.y], tapply,
                      dbr[i.uf, jj.x.uf], as.integer)
     object.size(wbr.uf)
-    
-    for (k in 1:2) {
-##        wbr.uf[[k]][is.na(wbr.uf[[k]])] <- 0L
-        dtmp <- as.Date(colnames(wbr.mu[[k]]), '%Y%m%d')
-##        if (tail(dtmp, 1)==Sys.Date())
-  ##          wbr.mu[[k]] <- wbr.mu[[k]][, 1:(ncol(wbr.mu[[k]])-1)]
-###        wbr.mu[[k]][is.na(wbr.mu[[k]])] <- 0L ## fix later
-        dtmp <- as.Date(colnames(wbr.uf[[k]]), '%Y%m%d')
-    ##    if (tail(dtmp, 1)==Sys.Date())
-      ##      wbr.uf[[k]] <- wbr.uf[[k]][, 1:(ncol(wbr.uf[[k]])-1)]
-##        wbr.uf[[k]][wbr.uf[[k]]==0] <- NA 
-    }
-    
+        
     uf <- c(SE = "SERGIPE", MA = "MARANHÃO", ES = "ESPÍRITO SANTO",
             AM = "AMAZONAS", RR = "RORAIMA", GO = "GOIÁS",
             AP = "AMAPÁ", RS = "RIO GRANDE DO SUL", PB = "PARAÍBA",
@@ -251,75 +243,170 @@ if (brio) {
 sapply(wdl,dim)
 tail(wdl[[1]][, 1:10],2)
 
-if (usems & file.exists('data/HIST_PAINEL_COVIDBR.csv')) {
+r.pt <- c("Norte", "Nordeste", "Sudeste", "Sul", "Centro-Oeste")
 
-    system.time(dbrms <- read.csv('data/HIST_PAINEL_COVIDBR.csv'))
-    dbrms$fdate <- factor(gsub('-', '', as.Date(dbrms$data, '%m-%d-%y'),
+if (usefnd) {
+
+    library(covid19br)
+    
+##    brl <- c('brazil', 'regions', 'states', 'cities')
+    system.time(dbrms <- as.data.frame(
+                    covid19br:::downloadBR('en', 'cities')))
+
+    head(dbrms,2)
+
+    dbrms$fdate <- factor(gsub('-', '', as.character(dbrms$date),
                                fixed=TRUE), alldates)
+
+    ynams <- c('accumCases', 'accumDeaths')
+    xnams <- c('fdate', 'city_code')
+    mnam <- 'city'
+    rsnam <- 'healthRegion'
+    rscod <- 'healthRegion_code'
+    snam <- 'state'
+    scod <- 'state_code'
+
+    r.en <- c('North', 'Northeast', 'Southeast', 'South', 'Midwest')
+    dbrms$regiao <- factor(dbrms$region, r.en, r.pt)
+    rnam <- 'regiao'
+    
+    iiuf <- which((substring(dbrms[, xnams[2]], 3)=='0000') &
+                  (dbrms[,snam]!=''))
+    str(iiuf)
+
+}
+
+if (usems & file.exists('data/HIST_PAINEL_COVIDBR.csv')) {
+    
+    system.time(dbrms <- read.csv2('data/HIST_PAINEL_COVIDBR.csv'))
+    dbrms$fdate <- factor(gsub(
+        '-', '', as.Date(dbrms$data, '%Y-%m-%d'),
+        fixed=TRUE), alldates)
+    
+    ynams <- c('casosAcumulado', 'obitosAcumulado')
+    xnams <- c('fdate', 'codmun')
+    mnam <- 'municipio'
+    rsnam <- 'nomeRegiaoSaude'
+    rscod <- 'codRegiaoSaude'
+    snam <- 'estado'
+    scod <- 'coduf'
+    rnam <- 'regiao'
+    
+    iiuf <- which(is.na(dbrms[xnams[2]])[,1] &
+                  (dbrms[snam][,1]!=''))
+    str(iiuf)
+    
+}
+
+if (usefnd | usems) {
+
     head(dbrms,2)
     tail(dbrms,2)
 
-    iimm <- which(!is.na(dbrms$codmun) & (dbrms$municipio!=''))
+    iimm <- which(!is.na(dbrms[xnams[2]]) &
+                  (dbrms[,mnam]!=''))
     str(iimm)
 
-    system.time(dbr.m <- aggregate(
-        dbrms[iimm, c('casosAcumulado', 'obitosAcumulado')],
-        dbrms[iimm, c('fdate', 'codmun')], sum))
-    head(dbr.m, 2)
+    if (TRUE) {
+        
+        system.time(wbr.m <- lapply(
+                        dbrms[iimm, ynams], 
+                        tapply,
+                        dbrms[iimm, rev(xnams)], as.integer))
+
     
-    system.time(wbr.m <- lapply(
-                    dbr.m[, c('casosAcumulado', 'obitosAcumulado')],
-                    tapply,
-                    dbr.m[, c('codmun', 'fdate')], as.integer)) 
+    } else {
+
+        system.time(dbr.m <- aggregate(
+                        dbrms[iimm, ynams],
+                        dbrms[iimm, xnams], sum))
+        head(dbr.m, 2)
+        
+        system.time(wbr.m <- lapply(
+                        dbr.m[, ynams], 
+                        tapply,
+                        dbr.m[, rev(xnams)], as.integer)) 
+
+    }
+    
     str(wbr.m)
     wbr.m[[1]][1:5, ncol(wbr.m[[1]])-3:0]
 
-    iiuf <- which(is.na(dbrms$codmun) &
-                  (dbrms$estado!=''))
-    system.time(dbr.uf <- aggregate(
-        dbrms[iiuf, c('casosAcumulado', 'obitosAcumulado')],
-        dbrms[iiuf, c('fdate', 'estado')], sum))
-    head(dbr.uf, 2)
-    dbr.uf$estado <- as.character(dbr.uf$estado)
+    if (brio) {
 
-    system.time(
-        wbr.uf <- lapply(
-            dbr.uf[, c('casosAcumulado', 'obitosAcumulado')], tapply,
-            dbr.uf[, c('estado', 'fdate')], as.integer))
-    sapply(wbr.uf, dim)
+        i2i.mm <- pmatch(rownames(wbr.m[[1]]),
+                         substr(rownames(wbr.mu[[1]]),1,6)) 
+        c(nrow(wbr.mu[[1]]), nrow(wbr.m[[1]]), length(i2i.mm))
 
-    head(dbrms,2)
-    table(substr(dbrms$coduf,1,1))
-    table(substr(dbrms$codmun,1,1))
-    dbrms$Região <- c("Norte", "Nordeste", "Sudeste", "Sul",
-                      "Centro-Oeste", "", "")[
-        as.integer(substr(dbrms$coduf,1,1))]
+        i2na <- is.na(i2i.mm)
+        table(rownames(wbr.m[[1]])[!i2na]==
+              substr(rownames(wbr.mu[[1]])[i2i.mm[!i2na]], 1, 6))
+        
+        jj2 <- 1:(which(colSums(wbr.m[[1]])>0)[1]-1)
+        tail(jj2)
+        colSums(wbr.m[[1]][, max(jj2)+0:3], na.rm=TRUE)
+        colSums(wbr.mu[[1]][, max(jj2)+0:3], na.rm=TRUE)
 
-    dbr.r <- aggregate(
-        dbrms[is.na(dbrms$codmun), c('casosAcumulado', 'obitosAcumulado')],
-        dbrms[is.na(dbrms$codmun), c('Região', 'fdate')], sum, na.rm=TRUE)
+        for (k in 1:2) {
+            wbr.m[[k]][!i2na, jj2] <- 
+                wbr.mu[[k]][i2i.mm[!i2na], jj2]
+        }
 
-    wbr.r <- lapply(
-        dbr.r[c('casosAcumulado', 'obitosAcumulado')], tapply,
-        dbr.r[c('Região', 'fdate')], as.integer) 
+    }
 
-    sapply(wbr.r, dim)
-    wbr.r[[1]][, 1:5]
-    wbr.r[[1]][, -3:0+ncol(wbr.r[[1]])]
+    irs <- pmatch(rownames(wbr.m[[1]]),
+                  dbrms[, xnams[2]][iimm])
+    
+    wbr.rs <- lapply(wbr.m, function(m) {
+        r <- aggregate(
+            m,
+            by=list(RS=dbrms[irs,rscod]),
+            sum)
+        rn <- r[,1]
+        r <- as.matrix(r[,-1])
+        rownames(r) <- rn
+        r
+    })
+    
+    wbr.uf <- lapply(wbr.m, function(m) {
+        r <- aggregate(
+            m,
+            by=list(UF=substr(rownames(m),1,2)),
+            sum)
+        rn <- r[,1]
+        r <- as.matrix(r[,-1])
+        rownames(r) <- rn
+        r
+    })
+    
+    wbr.r <- lapply(wbr.m, function(m) {
+        r <- aggregate(
+            m,
+            by=list(Re=substr(rownames(m),1,1)),
+            sum, na.rm=TRUE)
+        r <- as.matrix(r[,-1])
+        r <- rbind(r, colSums(r))
+        rownames(r) <- c(r.pt, '')
+        r
+    })
 
     sapply(wbr.m, dim)
+    sapply(wbr.rs, dim)
     sapply(wbr.uf, dim)
     sapply(wbr.r, dim)
-    
+
     sapply(wbr.m, function(x) colSums(x[, -3:0+ncol(x)], na.rm=TRUE))
+    sapply(wbr.rs, function(x) colSums(x[, -3:0+ncol(x)], na.rm=TRUE))
     sapply(wbr.uf, function(x) colSums(x[, -3:0+ncol(x)], na.rm=TRUE))
     sapply(wbr.r, function(x) colSums(x[, -3:0+ncol(x)], na.rm=TRUE))  
 
-    id.m <- pmatch(rownames(wbr.m[[1]]), dbrms$codmun)
-    id.uf <- pmatch(rownames(wbr.uf[[1]]), dbrms$estado)
-    id.r <- pmatch(rownames(wbr.r[[1]]), dbrms$Região)
+    id.m <- pmatch(rownames(wbr.m[[1]]), dbrms[,xnams[2]])
+    id.rs <- pmatch(rownames(wbr.rs[[1]]), dbrms[,rscod])
+    id.uf <- pmatch(rownames(wbr.uf[[1]]), dbrms[,scod])
+    id.r <- pmatch(rownames(wbr.r[[1]]), dbrms[,rnam])
 
     summary(id.m)
+    summary(id.rs)
     summary(id.uf)
     summary(id.r)
 
@@ -329,25 +416,37 @@ if (usems & file.exists('data/HIST_PAINEL_COVIDBR.csv')) {
     for (k in 1:2) {
         wdl[[k]] <- rbind(
             wdl[[k]],
-            data.frame(code=rownames(wbr.m[[k]]),
-                       City=as.character(dbrms$municipio)[id.m],
-                       Province.State=as.character(dbrms$estado)[id.m], 
-                       Country.Region='Brasil', Lat=NA, Long=NA,
-                       wbr.m[[k]]))
+            data.frame(
+                code=rownames(wbr.m[[k]]),
+                City=as.character(dbrms[, mnam])[id.m],
+                Province.State=as.character(dbrms[, snam])[id.m], 
+                Country.Region='Brasil', Lat=NA, Long=NA,
+                wbr.m[[k]]))
         wdl[[k]] <- rbind(
             wdl[[k]],
-            data.frame(code='', 
-                       City='', 
-                       Province.State=as.character(dbrms$estado)[id.uf], 
-                       Country.Region='Brasil', Lat=NA, Long=NA,
-                       wbr.uf[[k]]))
+            data.frame(
+                code=rownames(wbr.rs[[k]]),
+                City=paste('Regional',
+                           as.character(dbrms[, rsnam])[id.rs]),
+                Province.State=as.character(dbrms[, snam])[id.rs], 
+                Country.Region='Brasil', Lat=NA, Long=NA,
+                wbr.rs[[k]]))
         wdl[[k]] <- rbind(
             wdl[[k]],
-            data.frame(code='', 
-                       City='', 
-                       Province.State=rownames(wbr.r[[k]]),
-                       Country.Region='Brasil', Lat=NA, Long=NA,
-                       wbr.r[[k]]))
+            data.frame(
+                code='', 
+                City='', 
+                Province.State=as.character(dbrms[, snam])[id.uf], 
+                Country.Region='Brasil', Lat=NA, Long=NA,
+                wbr.uf[[k]]))
+        wdl[[k]] <- rbind(
+            wdl[[k]],
+            data.frame(
+                code='', 
+                City='', 
+                Province.State=rownames(wbr.r[[k]]),
+                Country.Region='Brasil', Lat=NA, Long=NA,
+                wbr.r[[k]]))
     }
     
     
@@ -371,14 +470,19 @@ for (k in 1:2) {
     }
 }
 
+##if (FALSE) {
+
 k <- 1
-dlast <- wdl[[k]][, (nt-7):nt]-
-    wdl[[k]][, (nt-8):(nt-1)]
-mlast <- dlast[, 5:8]<(0.1*rowMeans(dlast[, 1:4]))
+dlast <- wdl[[k]][, (nt-5):nt]-
+    wdl[[k]][, (nt-6):(nt-1)]
+mlast <- dlast[, 5:6]<(0.01*rowMeans(dlast[, 1:4]))
 for (i in which(rowSums(mlast)>0)) {
-    wdl[[k]][i, which(mlast[i, ]) + nt-4] <- NA
-    wdl[[k+1]][i, which(mlast[i, ]) + nt-4] <- NA
+    wdl[[k]][i, which(mlast[i, ]) + nt-2] <- NA
+    wdl[[k+1]][i, which(mlast[i, ]) + nt-2] <- NA
 }
+
+##}
+
 
 attr(wdl, 'Sys.time') <- Sys.time()
 
