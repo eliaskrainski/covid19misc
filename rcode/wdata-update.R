@@ -238,6 +238,7 @@ if (brio) {
                        Country.Region='Brazil', Lat=NA, Long=NA,
                        wbr[[k]][iwm,]))
     }
+
 }
 
 sapply(wdl,dim)
@@ -354,13 +355,30 @@ if (usefnd | usems) {
 
     }
 
-    irs <- pmatch(rownames(wbr.m[[1]]),
-                  dbrms[, xnams[2]][iimm])
+##    irs <- pmatch(rownames(wbr.m[[1]]),
+  ##                dbrms[, xnams[2]][iimm])
+    im.rs <- pmatch(rownames(wbr.m[[1]]),
+                    dbrms[iimm, xnams[2]])
+    str(im.rs)
+    summary(im.rs)
+
+    str(wbr.m)
+
+    accFix <- function(x) {
+        x[is.na(x)] <- 0
+        cummax(x)         
+    }
     
-    wbr.rs <- lapply(wbr.m, function(m) {
+    wbr.m.f <- lapply(wbr.m, function(m) {
+        m <- apply(m, 1, accFix)
+        return(t(m))
+    })
+    str(wbr.m.f)
+
+    wbr.rs <- lapply(wbr.m.f, function(m) {
         r <- aggregate(
             m,
-            by=list(RS=dbrms[irs,rscod]),
+            by=list(RS=dbrms[iimm[im.rs],rscod]),
             sum)
         rn <- r[,1]
         r <- as.matrix(r[,-1])
@@ -368,7 +386,7 @@ if (usefnd | usems) {
         r
     })
     
-    wbr.uf <- lapply(wbr.m, function(m) {
+    wbr.uf <- lapply(wbr.m.f, function(m) {
         r <- aggregate(
             m,
             by=list(UF=substr(rownames(m),1,2)),
@@ -379,7 +397,7 @@ if (usefnd | usems) {
         r
     })
     
-    wbr.r <- lapply(wbr.m, function(m) {
+    wbr.r <- lapply(wbr.m.f, function(m) {
         r <- aggregate(
             m,
             by=list(Re=substr(rownames(m),1,1)),
