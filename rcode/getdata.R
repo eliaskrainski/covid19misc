@@ -1,6 +1,8 @@
 if (FALSE)
     setwd('..')
 
+options(timeout=60*5)
+
 ### download the cssegis data (the famous one) 
 ### The base url for the data source 
 url0.csse <- paste0(
@@ -42,3 +44,64 @@ us.fl <- 'data/daily.csv'
 us.url <- paste0('https://api.covidtracking.com/v1/states/',
                  'daily.csv')
 download.file(us.url, us.fl)
+
+if (!any(ls()=='usesesa'))
+    usesesa <- TRUE
+
+if (usesesa) { ### DADOS SESA PR
+
+    ldate <- Sys.Date()
+    ldate
+
+    CAP <- 0
+
+    options(show.error.messages = FALSE)
+
+    repeat {
+        
+        yyyy <- format(ldate, '%Y')
+        mm <- format(ldate, '%m')
+        dd <- format(ldate, '%d')
+
+        fldt <- paste0(yyyy, '-', mm, '/informe_epidemiologico_',
+                       dd, '_', mm, '_g')
+        if (CAP>0)
+            fldt <- toupper(fldt)
+        
+        sesa.fl <- paste0('https://www.saude.pr.gov.br/sites/default/',
+                          'arquivos_restritos/files/documento/',
+                          fldt, 'eral.csv')
+        sesa.fl
+        
+        tmp <- try(download.file(
+                sesa.fl, 'data/sesa-pr-geral.csv'))
+        if (class(tmp)=='try-error') {
+            if (CAP>1) {
+                ldate <- ldate-1
+                CAP <- 0
+            } else {
+                CAP <- CAP + 1
+            }
+        } else {
+            break
+        }
+
+    }
+    options(show.error.messages = TRUE)
+    
+    ## https://www.saude.pr.gov.br/sites/default/arquivos_restritos/files/documento/2020-11/informe_epidemiologico_08_11_geral.csv
+    ## https://www.saude.pr.gov.br/sites/default/arquivos_restritos/files/documento/2020-11/informe_epidemiologico_08_11_obitos_casos_municipio.csv
+    
+    if (FALSE) {
+        
+        ses <- read.csv2('data/sesa-pr-geral.csv')
+        head(ses)
+        
+        table(factor(ses$OBITO, c('Não', 'NÃO', '', 'Sim', 'SIM'),
+                     rep(c('n', 's'), c(3,2))), ses$OBITO)
+        table(factor(ses$OBITO, c('Não', 'NÃO', '', 'Sim', 'SIM'),
+             rep(c('n', 's'), c(3,2))), ses$STATUS)
+        
+    }
+
+}
