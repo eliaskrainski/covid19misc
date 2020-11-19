@@ -2,23 +2,30 @@
 if (FALSE)
     setwd('..')
 
-ufl <- paste0('http://dadosabertos.c3sl.ufpr.br/curitiba/CasosCovid19/',
-              Sys.Date(),
-              '_Casos_Covid_19_-_Base_de_Dados.csv')
-ufl
+u0 <- 'http://dadosabertos.c3sl.ufpr.br/curitiba/CasosCovid19/'
 
-library(RCurl)
-if (url.exists(ufl))
-    download.file(ufl, 'data/cwb_covid.csv')
+k <- 0
+repeat {
+    ufl <- paste0(u0,  Sys.Date() + k,
+                  '_Casos_Covid_19_-_Base_de_Dados.csv')
+    if (class(try(download.file(ufl, 'data/casosCuritibaSM.csv'),
+                  TRUE))=='try-error') {
+        k <- k-1
+    } else {
+        break
+    }
+}
 
-dcwb <- read.csv2('data/cwb_covid.csv', encoding='latin1')
+dcwb <- read.csv2('data/casosCuritibaSM.csv', encoding='latin1')
 head(dcwb)
 
-dcwb$date <- as.Date(dcwb$DATA.INC, '%d/%m/%Y')
+dcwb$date <- as.Date(dcwb[,2], '%d/%m/%Y')
 summary(dcwb$date)
 
 if (!any(ls()=='alldates'))
-    alldates <- gsub('-', '', sort(unique(dcwb$date)))
+    alldates <- gsub('-', '', seq(as.Date('20200122', '%Y%m%d'),
+                    Sys.Date(), 1))
+
 dcwb$fdate <- factor(gsub('-', '', 
                           dcwb$date,
                           fixed=TRUE), alldates)
@@ -29,13 +36,14 @@ str(t3)
 
 t3[, -5:0+ncol(t3)]
 
-(jj <- pmatch(paste0('202011', 14:18), 
+(jj <- pmatch(paste0('202011', 14:19), 
               colnames(t3)))
-t3[1, jj] <- c(715, 750, 758, 879, 914)-t3[2,jj]
-t3[2, jj] <- c(6, 5, 5, 13, 11)
+t3[1, jj] <- c(715, 750, 758, 879, 914, 1381)-t3[2,jj]
+t3[2, jj] <- c(6, 5, 5, 13, 11, 9)
 t3[3, jj] <- c(52084-sum(t3[3, 1:(min(jj)-1)]),
                200, 52438-52084-200,
-               52704-52084, 53342-52704)
+               52704-52084, 53342-52704,
+               54013-52704)
 
 t3[, -5:0+ncol(t3)]
 

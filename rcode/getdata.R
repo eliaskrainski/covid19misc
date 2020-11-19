@@ -15,42 +15,56 @@ url0.csse <- paste0(
 vnames <- c('confirmed', 'deaths', 'recovered')
 
 ### (may or) may not download the files again  
-for (fl in vnames)
-    download.file(paste0(url0.csse, fl, '_global.csv'),
-                  paste0('data/', fl, '_global.csv'))
+system.time(
+    for (fl in vnames)
+        download.file(paste0(url0.csse, fl, '_global.csv'),
+                      paste0('data/', fl, '_global.csv')))
 
 ### the official data from the Brazilian Health Ministry
 ###  is at https://covid.saude.gov.br/ 
 
-### however, time series by municipalities
+### time series by municipalities
 ### area available at brazil.io
-url.br <- paste0('https://data.brasil.io/',
-                 'dataset/covid19/caso.csv.gz')
+if (!any(ls()=='abrio'))
+    abrio <- FALSE
 
-try(download.file(url.br, 'data/caso.csv.gv'), TRUE)
+if (abrio) {
+    
+    url.br <- paste0('https://data.brasil.io/',
+                     'dataset/covid19/caso.csv.gz')
+    
+    system.time(try(download.file(
+        url.br, 'data/caso.csv.gv'), TRUE))
 
-if (!any(ls()=='wcota'))
-    wcota <- TRUE
+}
+
+if (!any(ls()=='awcota'))
+    awcota <- FALSE
 
 if (wcota) { ### Brazilian data put together by Wesley Cota
+
     urlwc <- 'https://raw.githubusercontent.com/wcota/covid19br/master/'
     wc.fl <- 'cases-brazil-cities-time.csv'
-    download.file(paste0(urlwc, wc.fl),
-                  paste0('data/', wc.fl))
+    
+    system.time(
+        download.file(paste0(urlwc, wc.fl),
+                      paste0('data/', wc.fl))
+    )
+    
 }
 
 ### USdata
 us.fl <- 'data/daily.csv'
 us.url <- paste0('https://api.covidtracking.com/v1/states/',
                  'daily.csv')
-download.file(us.url, us.fl)
+system.time(download.file(us.url, us.fl))
 
 ### DEST-UFMG data
-download.file(paste0(
+system.time(download.file(paste0(
     'https://github.com/dest-ufmg/',
     'covid19repo/blob/master/data/',
     'cities.rds?raw=true'),
-    'data/cities.rds')
+    'data/cities.rds'))
 
 if (!any(ls()=='usesesa'))
     usesesa <- TRUE

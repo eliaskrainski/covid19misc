@@ -11,10 +11,10 @@ server <- function(input, output) {
             
             input <- list(
                 variables='cases',
-                local=c('Curitiba, PR - Brasil', 
+                local=c('Curitiba(SM), PR - Brasil', 
                      'PR - Brasil', 
                      'Brasil', 'NY - US', 'US'),
-                dateRange=c('01/01/20', '10/10/20'),
+                dateRange=c('01/01/20', '10/10/21'),
                 plots=c("Daily counts",
                         "Reproduction number",
                         "Fatality rate (%)")[1:2],
