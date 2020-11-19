@@ -45,6 +45,13 @@ us.url <- paste0('https://api.covidtracking.com/v1/states/',
                  'daily.csv')
 download.file(us.url, us.fl)
 
+### DEST-UFMG data
+download.file(paste0(
+    'https://github.com/dest-ufmg/',
+    'covid19repo/blob/master/data/',
+    'cities.rds?raw=true'),
+    'data/cities.rds')
+
 if (!any(ls()=='usesesa'))
     usesesa <- TRUE
 
