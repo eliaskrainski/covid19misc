@@ -34,28 +34,34 @@ tail(dcwb)
 t3 <- table(dcwb$EVOLU, dcwb$fdate)
 str(t3)
 
-t3[, -5:0+ncol(t3)]
-
-(jj <- pmatch(paste0('202011', 14:19), 
-              colnames(t3)))
-t3[1, jj] <- c(715, 750, 758, 879, 914, 1381)-t3[2,jj]
-t3[2, jj] <- c(6, 5, 5, 13, 11, 9)
-t3[3, jj] <- c(52084-sum(t3[3, 1:(min(jj)-1)]),
-               200, 52438-52084-200,
-               52704-52084, 53342-52704,
-               54013-52704)
-
-t3[, -5:0+ncol(t3)]
-
 t3a <- apply(t3, 1, cumsum)
-tail(t3a)
-tail(rowSums(t3a))
 
-wcwb <- list(cumsum(colSums(t3)),
-             cumsum(t3[2,]))
+t3a[-20:0+nrow(t3a), ]
+
+(jj <- pmatch(paste0('202011', 21:25), 
+              colnames(t3)))
+t3a[jj, ]
+
+t3a[jj, ] <- cbind(
+    c(##5705, 6449, 6849, 7449, 7714, 8415, 9131,
+        9647, 10224, 11232, 11500, 12139),
+    c(##1559, 1564, 1569, 1582, 1593, 1602, 1613,
+        1621, 1628, 1638, 1649, 1660),
+    c(##52084, 52238, 52484, 52704, 53342, 54013, 54695,
+        55561, 55951, 56272, 57094, 58041))
+
+if (all((t3a[nrow(t3a),] - 
+         t3a[nrow(t3a)-1,])<0))
+    t3a[nrow(t3a), ] <- t3a[nrow(t3a)-1, ]
+
+tail(t3a, 14)
+tail(rowSums(t3a), 14)
+
+wcwb <- list(casos=rowSums(t3a), 
+             obitos=t3a[,2])
 str(wcwb)
 
 ##plot(diff(c(0,wcwb[[1]])))
 
-print(sapply(wcwb, function(x) tail(x)))
+print(sapply(wcwb, function(x) tail(x, 14)))
 
