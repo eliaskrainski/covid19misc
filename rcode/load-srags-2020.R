@@ -7,7 +7,8 @@ diff(c('0630'=356189, '0707'=393980,
        '0714'=436524, '0721'=476918,
        '0729'=522263, '0803'=540746,
        '0810'=575936,
-       '1102'=882148, '1110'=886836))
+       '1102'=882148, '1110'=886836,
+       '1122'=945461))
 
 fls <- system('ls data/INFLUD*2020.csv', TRUE)
 file <- fls[tail(order(as.Date(substr(
@@ -19,8 +20,9 @@ if (file.exists(rfile)) {
     load(rfile)
 
 } else {
-    
-    system.time(srags20 <- read.csv2(file)) 
+
+    library(readr)
+    system.time(srags20 <- as.data.frame(read_csv2(file)) )
     dim(srags20)
 
     srags20$dSintPrinc <- as.Date(srags20$DT_SIN_PRI, '%d/%m/%Y')
@@ -63,8 +65,8 @@ if (file.exists(rfile)) {
     table(srags20$gIdade10 <- cut(
               srags20$Idade, c(10*(0:8), 100, 199), right=FALSE))
 
-    save('srags20',
-         file=rfile,
-         compress='xz')
+    system.time(save('srags20',
+                     file=rfile,
+                     compress='xz'))
 
 }
