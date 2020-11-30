@@ -16,8 +16,8 @@ ui <- fluidPage(
         label = "Local",
         choices = olocals,
         multiple = TRUE, 
-        selected = c('PARANÁ - Brazil', 
-                     'Brazil', 'NY - US', 'US')),
+        selected = c('Curitiba(SM), PR - BR', 'PR - Brasil', 
+                     'Brasil', 'NY - US', 'US')),
       dateRangeInput(
         inputId = 'dateRange',
         label = 'Date (interval):',

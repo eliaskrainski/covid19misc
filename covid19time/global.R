@@ -17,7 +17,7 @@ if (file.exists('data/wdl.RData')) {
 ### check if the data is more than 6 hours old
 if (difftime(Sys.time(), 
              attr(wdl, 'Sys.time'), 
-             units='hours')>6) {
+             units='hours')>23) {
   source('rcode/wdata-update.R')
 }
 cn <- colnames(wdl[[1]])

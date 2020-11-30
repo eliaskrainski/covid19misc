@@ -154,6 +154,9 @@ if (brio) {
                           names(uf), duplicates.ok=TRUE)]
     stnam.mu <- uf[pmatch(ufuf, names(uf), duplicates.ok=TRUE)]
     
+
+    if (FALSE) {
+  
     for (k in 1:2) {
         wdl[[k]] <- rbind(
             wdl[[k]],
@@ -176,6 +179,8 @@ if (brio) {
                        Province.State=stnam.mu, 
                        Country.Region='Brazil', Lat=NA, Long=NA,
                        wbr.mu[[k]]))
+    
+      }
     }
 
     sapply(wdl, dim)
@@ -222,6 +227,7 @@ if (brio) {
     table(as.character(dbr$state)[imunam]==as.character(uf$UF)[i.uf.mu])
     stnam.mu <- uf$STATE[i.uf.mu]
     
+    if (FALSE){
     for (k in 1:2) {
 ##        wbr.uf[[k]][wbr.uf[[k]]==0] <- NA 
 ##        wdl[[k]] <- rbind(
@@ -247,7 +253,7 @@ if (brio) {
                        Country.Region='Brazil', Lat=NA, Long=NA,
                        wbr[[k]][iwm,]))
     }
-
+    }
 }
 
 sapply(wdl,dim)
@@ -433,7 +439,6 @@ if (usefnd | usems) {
             wbr.u[[k]][, jj2] <- 
                 wbr.uf[[k]][i2i.u, jj2]
         }
-                               
 
     }
 

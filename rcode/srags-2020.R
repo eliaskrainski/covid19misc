@@ -56,17 +56,17 @@ xl$l <- format(xl$x, '%b,%d')
 yl <- list(y=rep(10^(0:5),each=3)*c(1,2,4))
 yl$l <- ifelse(yl$y<1e4, yl$y, paste0(yl$y/1e3, 'K'))
 
-png('figures/casos-srags-datas.png', 600, 400)
+png('figures/casos-srags-datas.png', 1000, 600)
 par(mfrow=c(1,1), mar=c(3,4,0.5,0.5), mgp=c(2.5,0.5,0))
 plot(msDate, n2br[,1],
      type='l', lwd=2, log='y', axes=FALSE, 
      xlab='', ylab='C A S O S',
      xlim=range(as.Date(names(nc.day)))-c(0,1),
-     ylim=range(nc.day, n2br[,1])+1)
+     ylim=pmax(0.7, range(nc.day, n2br[,1])+1))
 lines(msDate, n2s[,1])
 lines(as.Date(names(nc.day)),
      as.integer(nc.day), lwd=3, col=2)
-abline(v=xl$x, h=yl$l, lty=2, col=gray(0.5, 0.5))
+abline(v=xl$x, h=yl$y, lty=2, col=gray(0.5, 0.5))
 axis(1, xl$x, xl$l)
 axis(2, yl$y, yl$l, las=1) 
 ll0 <- c('Divulgação MS (confirmação)',

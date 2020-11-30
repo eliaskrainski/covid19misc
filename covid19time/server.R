@@ -11,7 +11,7 @@ server <- function(input, output) {
             
             input <- list(
                 variables='cases',
-                local=c('Curitiba(SM), PR - Brasil', 
+                local=c('Curitiba(SM), PR - BR', 
                      'PR - Brasil', 
                      'Brasil', 'NY - US', 'US'),
                 dateRange=c('01/01/20', '10/10/21'),
