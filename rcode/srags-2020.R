@@ -11,6 +11,9 @@ n2br <- sapply(wdl, function(m)
     diff(c(0, unlist(m[ibr, 8:ncol(wdl[[1]])]))))
 tail(n2br)
 
+if (any(is.na(n2br[nrow(n2br),])))
+    n2br <- n2br[-nrow(n2br),]
+
 source('rcode/load-srags-2020.R')
 
 dim(srags20)
@@ -78,7 +81,7 @@ dev.off()
 if(FALSE)
     system('eog figures/casos-srags-datas.png &')
 
-png('figures/obitos-data-ocorrencia.png', 600, 400)
+png('figures/obitos-data-ocorrencia.png', 1000, 600)
 par(mfrow=c(1,1), mar=c(3,4,0.5,0.5), mgp=c(2.5,0.5,0))
 plot(msDate, n2br[,2],
      type='l', lwd=2, las=1, 
@@ -92,12 +95,14 @@ lines(as.Date(names(n.dpcr)),
       as.integer(n.dpcr), col=3, lty=2, lwd=3) 
 abline(v=xl$x, h=pretty(par()$usr[3:4],10),
        lty=2, col=gray(0.5, 0.5))
-ll0 <- c('Divulgação MS (confirmação)',
-         'Óbitos por data de ocorrência',
-         'Óbitos por data de PCR')
+ll0 <- c('Confirmação (MS)',
+         'Ocorrência (SRAGs)',
+         'PCR (SRAGs)')
 legend('topleft', bg=gray(0.99), lwd=3,
-       c(ll0), 
-       box.col='transparent', lty=c(1,1,2), col=c(1,2,3), cex=1.2)
+       paste(ll0, ':',
+             round(c(sum(n2s[,2]), sum(n.day), sum(n.dpcr)))), 
+       title='Óbitos por data de', box.col='transparent',
+       lty=c(1,1,2), col=c(1,2,3), cex=1.2)
 dev.off()
 if(FALSE)
     system('eog figures/obitos-data-ocorrencia.png &')
@@ -141,18 +146,18 @@ legend("topleft",
          'Brazil 2020 (atualizado até 29/Julho)'), 
        title='Percentual de óbitos de pacientes', bty='n')
 
-t.evol <- as.numeric(difftime(srags$dEvol, srags$dSintPrinc,
+t.evol <- as.numeric(difftime(srags20$dEvol, srags20$dSintPrinc,
                               units='days'))
 summary(t.evol)
 
-d.evol.pcr <- as.numeric(difftime(srags$dEvol, srags$dPCR, 
+d.evol.pcr <- as.numeric(difftime(srags20$dEvol, srags20$dPCR, 
                                   units='days'))
 summary(d.evol.pcr)
 
-t.dt.nt <- table(srags$dNotifica)
-t.dt.sp <- table(srags$dSintPrinc)
-t.dt.dg <- table(srags$dDigita)
-t.dt.pcr <- table(srags$dPCR)
+t.dt.nt <- table(srags20$dNotifica)
+t.dt.sp <- table(srags20$dSintPrinc)
+t.dt.dg <- table(srags20$dDigita)
+t.dt.pcr <- table(srags20$dPCR)
 
 tail(t.dt.dg,3)
 tail(t.dt.sp,3)
@@ -164,7 +169,7 @@ xlm <- as.Date(c('2020-03-15', tail(names(t.dt.dg),1)))
 png('figures/srag-delay.png', 700, 500)
 par(mfrow=c(2,4), mar=c(3,3,0,0), mgp=c(2,0.5,0))
 d1 <- as.integer(difftime(
-    srags$dSintPrinc, srags$dNotifica, units='days'))
+    srags20$dSintPrinc, srags20$dNotifica, units='days'))
 summary(d1)
 sum(d1>0)
 d1[(d1<(-499)) | (d1>0)] <- NA
@@ -174,7 +179,7 @@ plot(h1, xlim=c(-30, 0), col=gray(0.7), las=1,
 legend('topleft', title='Atraso na notificação',
        'Sintoma principal - notificação', bty='n')
 d2 <- as.integer(difftime(
-    srags$dNotifica, srags$dDigita, units='days'))
+    srags20$dNotifica, srags20$dDigita, units='days'))
 summary(d2)
 sum(d2>0)
 d2[(d2<(-499)) | (d2>0)] <- NA
@@ -184,7 +189,7 @@ plot(h2, xlim=c(-30, 0), col=gray(0.7), las=1,
 legend('topleft', title='Atraso na digitação',
        'Notificação - digitação', bty='n')
 d3 <- as.integer(difftime(
-    srags$dPCR, srags$dDigita, units='days'))
+    srags20$dPCR, srags20$dDigita, units='days'))
 summary(d3)
 d3[(d3<(-199)) | (d3>200)] <- NA
 h3 <- hist(d3, -200:201-0.5, plot=FALSE)
@@ -193,7 +198,7 @@ plot(h3, xlim=c(-30, 30), col=gray(0.7), las=1,
 legend('topleft', title='Diferença', 
        'PCR - digitação', bty='n')
 d4 <- as.integer(difftime(
-    srags$dPCR, srags$dSintPrinc, units='days'))
+    srags20$dPCR, srags20$dSintPrinc, units='days'))
 summary(d4)
 sum(d4<0, na.rm=TRUE)
 d4[(d4<0) | (d4>500)] <- NA
@@ -225,53 +230,53 @@ if (FALSE)
 ### labels da variavel CLASSI_FIN
 lab.cf <- c('NA', 'Influenza', 'ORespir', 
             'OEtiol', 'NEspec', 'COVID19')
-table(is.na(srags$CLASSI_FIN))
-table(srags$CLASSI_FIN)
-srags$Classificação  <- factor(
-    ifelse(is.na(srags$CLASSI_FIN), 0,
-           srags$CLASSI_FIN), c(0:5), lab.cf)
-table(srags$Classificação,
-      ifelse(is.na(srags$CLASSI_FIN), 0, srags$CLASSI_FIN))
+table(is.na(srags20$CLASSI_FIN))
+table(srags20$CLASSI_FIN)
+srags20$Classificação  <- factor(
+    ifelse(is.na(srags20$CLASSI_FIN), 0,
+           srags20$CLASSI_FIN), c(0:5), lab.cf)
+table(srags20$Classificação,
+      ifelse(is.na(srags20$CLASSI_FIN), 0, srags20$CLASSI_FIN))
 
 lab.ev <- c('NA', 'Cura', 'Óbito', 'Indef')
-table(is.na(srags$EVOLUCAO))
-table(srags$EVOLUCAO)
-srags$Evolução <- factor(
-    ifelse(is.na(srags$EVOLUCAO), 0,
-           srags$EVOLUCAO), c(0,1,2,9), lab.ev)
-table(srags$Evolução,
-      ifelse(is.na(srags$EVOLUCAO), 0, srags$EVOLUCAO))
+table(is.na(srags20$EVOLUCAO))
+table(srags20$EVOLUCAO)
+srags20$Evolução <- factor(
+    ifelse(is.na(srags20$EVOLUCAO), 0,
+           srags20$EVOLUCAO), c(0,1,2,9), lab.ev)
+table(srags20$Evolução,
+      ifelse(is.na(srags20$EVOLUCAO), 0, srags20$EVOLUCAO))
 
-tapply(t.evol, srags$Evolução, mean, na.rm=TRUE)
-tapply(t.evol, srags$Evolução, mean, na.rm=TRUE)[1:3]
+tapply(t.evol, srags20$Evolução, mean, na.rm=TRUE)
+tapply(t.evol, srags20$Evolução, mean, na.rm=TRUE)[1:3]
 
-addmargins(table(d.evol.pcr<0, srags$Evolução))
-tapply(d.evol.pcr, list(a=d.evol.pcr<0, e=srags$Evolução),
+addmargins(table(d.evol.pcr<0, srags20$Evolução))
+tapply(d.evol.pcr, list(a=d.evol.pcr<0, e=srags20$Evolução),
        mean, na.rm=TRUE) 
-tapply(d.evol.pcr, list(a=d.evol.pcr<0, e=srags$Evolução),
+tapply(d.evol.pcr, list(a=d.evol.pcr<0, e=srags20$Evolução),
        median, na.rm=TRUE) 
 
-table(is.na(srags$CO_MUN_RES))
-table(ipr <- substr(srags$CO_MUN_RES,1,2)=='41')
+table(is.na(srags20$CO_MUN_RES))
+table(ipr <- substr(srags20$CO_MUN_RES,1,2)=='41')
 
-table(icwb <- substr(srags$CO_MUN_RES,1,6)=='410690')
+table(icwb <- substr(srags20$CO_MUN_RES,1,6)=='410690')
 
-addmargins(with(srags,
+addmargins(with(srags20,
                 table(Classificação, Evolução)))
 
-addmargins(with(srags[ipr,],
+addmargins(with(srags20[ipr,],
                 table(Classificação, Evolução)))
 
-addmargins(with(srags[icwb,],
+addmargins(with(srags20[icwb,],
                 table(Classificação, Evolução)))
 
 ### tempo de hospitalização
-srags$durIntern <- as.numeric(difftime(
-    as.Date(srags$DT_ENCERRA, '%d/%m/%Y'),
-    as.Date(srags$DT_INTERNA, '%d/%m/%Y'), units='days'))
-summary(srags$durIntern)
+srags20$durIntern <- as.numeric(difftime(
+    as.Date(srags20$DT_ENCERRA, '%d/%m/%Y'),
+    as.Date(srags20$DT_INTERNA, '%d/%m/%Y'), units='days'))
+summary(srags20$durIntern)
 
-h.dI <- hist(srags$durIntern,
+h.dI <- hist(srags20$durIntern,
              c(-Inf, 0:90-0.5, Inf), plot=FALSE)
 
 plot(h.dI, xlim=c(0,90))
@@ -284,14 +289,14 @@ sum(h.dI$mid[2:(length(h.dI$mid)-1)]*
     sum(h.dI$count[2:(length(h.dI$mid)-1)])
 
 ###
-table(is.na(srags$SEM_PRI),
-      is.na(srags$SEM_NOT))
-table(srags$SEM_NOT-srags$SEM_PRI)
+table(is.na(srags20$SEM_PRI),
+      is.na(srags20$SEM_NOT))
+table(srags20$SEM_NOT-srags20$SEM_PRI)
 
 ### 
-uf.cl.ev  <- table(substr(srags$CO_MUN_RES,1,2),
-                   srags$Classificação,
-                   srags$Evolução)
+uf.cl.ev  <- table(substr(srags20$CO_MUN_RES,1,2),
+                   srags20$Classificação,
+                   srags20$Evolução)
 dim(uf.cl.ev)
 
 uf.cl.ev[1,,]
@@ -339,37 +344,38 @@ dev.off()
 if (FALSE)
     system("eog figures/mapa-uf-obitos-ne-covid.png &")
 
-table(is.na(srags$DT_NOTIFIC),
-      is.na(srags$DT_SIN_PRI))
+table(is.na(srags20$DT_NOTIFIC),
+      is.na(srags20$DT_SIN_PRI))
 
-summary(as.Date(srags$DT_SIN_PRI, '%d/%m/%Y'))
-summary(as.Date(srags$DT_NOTIFIC, '%d/%m/%Y'))
+summary(as.Date(srags20$DT_SIN_PRI, '%d/%m/%Y'))
+summary(as.Date(srags20$DT_NOTIFIC, '%d/%m/%Y'))
 
-srags$AtrNot <- as.numeric(difftime(
-    as.Date(srags$DT_NOTIFIC, '%d/%m/%Y'),
-    as.Date(srags$DT_SIN_PRI, '%d/%m/%Y'),
+srags20$AtrNot <- as.numeric(difftime(
+    as.Date(srags20$DT_NOTIFIC, '%d/%m/%Y'),
+    as.Date(srags20$DT_SIN_PRI, '%d/%m/%Y'),
     units='days'))
-summary(srags$AtrNot)
+summary(srags20$AtrNot)
 
-srags$tempoPCR <- as.numeric(difftime(
-    as.Date(srags$DT_PCR, '%d/%m/%Y'),
-    as.Date(srags$DT_COLETA, '%d/%m/%Y'),
+srags20$tempoPCR <- as.numeric(difftime(
+    as.Date(srags20$DT_PCR, '%d/%m/%Y'),
+    as.Date(srags20$DT_COLETA, '%d/%m/%Y'),
     units='days'))
-summary(srags$tempoPCR)
-summary(srags$tempoPCR[srags$Classificação=='COVID19'])
+summary(srags20$tempoPCR)
+summary(srags20$tempoPCR[srags20$Classificação=='COVID19'])
 
-table(substr(srags$CO_MUN_RES,1,2))
+table(substr(srags20$CO_MUN_RES,1,2))
 
-summary(as.numeric(as.Date(srags$DT_PCR, '%d/%m/%Y')-
-                   as.Date(srags$DT_NOT, '%d/%m/%Y')))
+summary(as.numeric(as.Date(srags20$DT_PCR, '%d/%m/%Y')-
+                   as.Date(srags20$DT_NOT, '%d/%m/%Y')))
 
-bkt <- -130:160-1e-5
+summary(srags20$tempoPCR)
+bkt <- -300:300-1e-5
 
 par(mfrow=c(9,9), mar=c(0,0,0,0))
-for (uf in sort(unique(substr(srags$CO_MUN_RES,1,2)))) {
-    i <- which(substr(srags$CO_MUN_RES,1,2)==uf &
-               srags$Classificação=='COVID19')
-    h <- hist(srags$tempoPCR[i], bkt, plot=FALSE)
+for (uf in sort(unique(substr(srags20$CO_MUN_RES,1,2)))) {
+    i <- which(substr(srags20$CO_MUN_RES,1,2)==uf &
+               srags20$Classificação=='COVID19')
+    h <- hist(srags20$tempoPCR[i], bkt, plot=FALSE)
     plot(h, xlim=c(0, 30), col=rgb(0.1, 0.5, 0.1),
          xlab='', ylab='', main='', axes=FALSE)
     box(lty=3)
@@ -378,9 +384,9 @@ for (uf in sort(unique(substr(srags$CO_MUN_RES,1,2)))) {
              rep(mean(range(h$counts[ip])), 3))
     legend('topright',
            format(sum((h$counts*h$mids)[ip])/sum(h$counts[ip]), dig=2),
-           title=srags$SG_UF_NOT[i[1]], bty='n', cex=1.5)
-    h <- hist(as.numeric(as.Date(srags$DT_PCR[i], '%d/%m/%Y')-
-                         as.Date(srags$DT_NOT[i], '%d/%m/%Y')),
+           title=srags20$SG_UF_NOT[i[1]], bty='n', cex=1.5)
+    h <- hist(as.numeric(as.Date(srags20$DT_PCR[i], '%d/%m/%Y')-
+                         as.Date(srags20$DT_NOT[i], '%d/%m/%Y')),
               bkt, plot=FALSE)
     plot(h, xlim=c(0, 30), col=rgb(0.5,1,0.5), 
          xlab='', ylab='', main='', axes=FALSE)
@@ -390,9 +396,9 @@ for (uf in sort(unique(substr(srags$CO_MUN_RES,1,2)))) {
              rep(mean(range(h$counts)), 3))
     legend('topright',
            format(sum((h$counts*h$mids)[ip])/sum(h$counts[ip]), dig=2),
-           title=srags$SG_UF_NOT[i[1]], bty='n', cex=1.5)
-    h <- hist(as.numeric(as.Date(srags$DT_PCR[i], '%d/%m/%Y')-
-                         as.Date(srags$DT_SIN_PRI[i], '%d/%m/%Y')),
+           title=srags20$SG_UF_NOT[i[1]], bty='n', cex=1.5)
+    h <- hist(as.numeric(as.Date(srags20$DT_PCR[i], '%d/%m/%Y')-
+                         as.Date(srags20$DT_SIN_PRI[i], '%d/%m/%Y')),
               bkt, plot=FALSE)
     plot(h, xlim=c(0, 30), col=rgb(1,0.5,0.1), 
          xlab='', ylab='', main='', axes=FALSE)
@@ -402,15 +408,15 @@ for (uf in sort(unique(substr(srags$CO_MUN_RES,1,2)))) {
              rep(mean(range(h$counts)), 3))
     legend('topright',
            format(sum((h$counts*h$mids)[ip])/sum(h$counts[ip]), dig=2),
-           title=srags$SG_UF_NOT[i[1]], bty='n', cex=1.5)
+           title=srags20$SG_UF_NOT[i[1]], bty='n', cex=1.5)
 }
 
 par(mfrow=c(7,4), mar=c(0,0,0,0))
-for (uf in sort(unique(substr(srags$CO_MUN_RES,1,2)))) {
-    i <- which(substr(srags$CO_MUN_RES,1,2)==uf &
-               srags$Classificação=='COVID19')
-    h <- hist(as.numeric(as.Date(srags$DT_PCR[i], '%d/%m/%Y')-
-                         as.Date(srags$DT_SIN_PRI[i], '%d/%m/%Y')),
+for (uf in sort(unique(substr(srags20$CO_MUN_RES,1,2)))) {
+    i <- which(substr(srags20$CO_MUN_RES,1,2)==uf &
+               srags20$Classificação=='COVID19')
+    h <- hist(as.numeric(as.Date(srags20$DT_PCR[i], '%d/%m/%Y')-
+                         as.Date(srags20$DT_SIN_PRI[i], '%d/%m/%Y')),
               bkt, plot=FALSE)
     plot(h, xlim=c(0, 30), col=rgb(1,0.5,0.1), 
          xlab='', ylab='', main='', axes=FALSE)
@@ -418,64 +424,64 @@ for (uf in sort(unique(substr(srags$CO_MUN_RES,1,2)))) {
     ip <- h$mids>0
     legend('topright',
            format(sum((h$counts*h$mids)[ip])/sum(h$counts[ip]), dig=2),
-           title=srags$SG_UF_NOT[i[1]], bty='n', cex=1.5)
+           title=srags20$SG_UF_NOT[i[1]], bty='n', cex=1.5)
 }
 
 
-plot(as.Date(srags$DT_NOTIFIC, '%d/%m/%Y'),
-     jitter(srags$AtrNot))
+plot(as.Date(srags20$DT_NOTIFIC, '%d/%m/%Y'),
+     jitter(srags20$AtrNot))
 
-plot(with(srags,
+plot(with(srags20,
           table(SEM_PRI, Evolução)), main='')
 
-srags$Idade <- srags$NU_IDADE_N/
-    (c(365.25, 12, 1)[as.integer(substr(srags$COD_IDADE, 1, 1))])
+srags20$Idade <- srags20$NU_IDADE_N/
+    (c(365.25, 12, 1)[as.integer(substr(srags20$COD_IDADE, 1, 1))])
 
 par(mfrow=c(1,1), mar=c(3,3,0,0), mgp=c(2,0.5,0))
-plot(srags$Idade~factor(srags$SEM_NOT),
+plot(srags20$Idade~factor(srags20$SEM_NOT),
      xlab='Semana de notificação', ylab='Idade', las=1)
-points(tapply(srags$Idade, srags$SEM_NOT, mean, na.rm=TRUE), pch=19)
+points(tapply(srags20$Idade, srags20$SEM_NOT, mean, na.rm=TRUE), pch=19)
 
 
 par(mfrow=c(1,1), mar=c(3,3,0,0), mgp=c(2,0.5,0))
-plot(srags$Idade~factor(srags$Evolução),
+plot(srags20$Idade~factor(srags20$Evolução),
      xlab='Semana de notificação', ylab='Idade', las=1)
-points(tapply(srags$Idade, srags$Evolução, mean, na.rm=TRUE), pch=19)
+points(tapply(srags20$Idade, srags20$Evolução, mean, na.rm=TRUE), pch=19)
 
-table(srags$Evolução)
+table(srags20$Evolução)
 
 par(mfrow=c(2,2), mar=c(3,3,0.5,0.5), mgp=c(1.5, 0.5, 0))
-for (le in levels(srags$Evolução)) {
-    hist(srags$Idade[srags$Evolução==le],
+for (le in levels(srags20$Evolução)) {
+    hist(srags20$Idade[srags20$Evolução==le],
          xlab='', ylab='', main='')
-    abline(v=mean(srags$Idade[srags$Evolução==le]), lwd=2, col=2)
+    abline(v=mean(srags20$Idade[srags20$Evolução==le]), lwd=2, col=2)
     legend('topleft', le, bty='n')
 }
 
 
-table(srags$gIdade <- cut(
-          srags$Idade, c(5*(0:18), 100, 199), right=FALSE))
+table(srags20$gIdade <- cut(
+          srags20$Idade, c(5*(0:18), 100, 199), right=FALSE))
 
-levels(srags$gIdade)
+levels(srags20$gIdade)
 
-gI.ev <- table(srags$gIdade, srags$Evolução)
+gI.ev <- table(srags20$gIdade, srags20$Evolução)
 
 gi.ev.covid <- with(
-    srags[srags$Classificação=='COVID19', ], 
+    srags20[srags20$Classificação=='COVID19', ], 
     table(gIdade, Evolução))
 gi.ev.covid[,3]/rowSums(gi.ev.covid)
 
 
-table(srags$Classificação)
-table(icovid <- srags$Classificação=='COVID19')
+table(srags20$Classificação)
+table(icovid <- srags20$Classificação=='COVID19')
 
 par(mfrow=c(4,5), mar=c(2,2,0.1,0.1), mgp=c(2,0.5,0))
-for (gi in levels(srags$gIdade)) {
-    ii <- icovid & srags$gIdade==gi
-    io <- srags$Evolução=='Óbito'
-    hh <- hist(srags$durIntern[ii & !io],
+for (gi in levels(srags20$gIdade)) {
+    ii <- icovid & srags20$gIdade==gi
+    io <- srags20$Evolução=='Óbito'
+    hh <- hist(srags20$durIntern[ii & !io],
                c(-Inf, 2*(0:50)-0.01, Inf), plot=FALSE)
-    h2 <- hist(srags$durIntern[ii & io], 
+    h2 <- hist(srags20$durIntern[ii & io], 
                c(-Inf, 2*(0:50)-0.01, Inf), plot=FALSE)
     plot(hh, col=rgb(0.5,0.7,1,0.5), border='transparent',
          xlab='', ylab='', main='', axes=FALSE,
@@ -486,23 +492,24 @@ for (gi in levels(srags$gIdade)) {
     jj <- 2:(length(hh$mid)-1)
     m <- sum(hh$mid[jj]*hh$count[jj])/
         sum(hh$count[jj])
-    n.o <- sum(ii & io) 
+    n.i <- sum(ii, na.rm=TRUE)
+    n.o <- sum(ii & io, na.rm=TRUE) 
     legend('topright', title=paste('Idade:', gi), bty='n', 
            c(paste(format(m, dig=2), 'dias'),
-             paste(sum(ii), 'pacientes'),
-             paste(sum(ii&io), 'óbitos (', 
-                   format(100*n.o/sum(ii), digits=3), '%)')))
-    print(median(srags$durIntern[ii], na.rm=TRUE))           
+             paste(n.i, 'pacientes'),
+             paste(n.o, 'óbitos (', 
+                   format(100*n.o/n.i, digits=3), '%)')))
+    print(median(srags20$durIntern[ii], na.rm=TRUE))           
 }
 legend('right', c('óbito', 'não óbito'), bty='n',
        fill=rgb(c(1,0.5), c(0.7,0.7), c(0.5,1), 0.5),
        border=rgb(c(1,0.5), c(0.7,0.7), c(0.5,1), 0.5))
 
 
-table(srags$Classificação,
-      srags$Evolução)
+table(srags20$Classificação,
+      srags20$Evolução)
 
-t.ev.gI <- with(srags, 
+t.ev.gI <- with(srags20, 
                 table(gIdade, Evolução, Classificação))
 sum(t.ev.gI)
 
@@ -530,22 +537,22 @@ legend('topright', dimnames(t.ev.gI)[[3]],
 c2 <- rgb(1:5/5, c(3:4, 5:3)/5, 5:1/5)
 c2s <- rgb(0.5+(1:5/10), 0.5+c(3:4, 5:3)/10, 0.5+ 5:1/10, 0.5)
 
-table(srags$Classificação)
+table(srags20$Classificação)
 
-b1i <- c(0:100-0.5, 106, 150)
+b1i <- c(0:100-0.5, 106, 250)
 m1i <- c(1:100-0.5, 103, 110)
-b1i <- c(5*(0:18), 100, 140)
+b1i <- c(5*(0:18), 100, 240)
 m1i <- c(5*(1:18)-2.5, 95, 110)
 
-srags$g1i <- findInterval(srags$Idade, b1i)
+srags20$g1i <- findInterval(srags20$Idade, b1i)
 
-ng1i <- with(srags, table(g1i, Evolução, Classificação))
+ng1i <- with(srags20, table(g1i, Evolução, Classificação))
 dim(ng1i)
 
 dimnames(ng1i)[-1]
 head(ng1i[,,6])
 
-table(srags$Classificação)
+table(srags20$Classificação)
 
 cores4 <- rgb(1:4/4, 1-2*abs(1:4/4-2/4), 4:1/4)
 c4shad <- rgb(1:4/4, 1-2*abs(1:4/4-2/4), 4:1/4, 0.3)
@@ -566,7 +573,7 @@ for (k in 1:length(kk)) {
     abline(h=10*(0:9), lty=2, col=gray(0.5,0.5))
     lines(m1i, 100*y/n, col=cores4[k])
 }
-legend('topleft', levels(srags$Classificação)[5:6],
+legend('topleft', levels(srags20$Classificação)[5:6],
        col=cores4[1:2], lwd=5, lty=1)
 
 png('figures/obito-SRAG-idade.png', 600, 400)
@@ -593,16 +600,16 @@ dev.off()
 if (FALSE)
     system('eog figures/obito-SRAG-idade.png &')
 
-table(srags$Evolução)
+table(srags20$Evolução)
 
-table(is.na(srags$CO_MUN_RES),
-      is.na(srags$CO_MUN_NOT))
+table(is.na(srags20$CO_MUN_RES),
+      is.na(srags20$CO_MUN_NOT))
 
-table(srags$CO_MUN_RES==srags$CO_MUN_NOT)
-prop.table(table(srags$CO_MUN_RES==srags$CO_MUN_NOT))
+table(srags20$CO_MUN_RES==srags20$CO_MUN_NOT)
+prop.table(table(srags20$CO_MUN_RES==srags20$CO_MUN_NOT))
 
-table(srags$CO_REGIONA==srags$CO_RG_RESI)
-prop.table(table(srags$CO_REGIONA==srags$CO_RG_RESI))
+table(srags20$CO_REGIONA==srags20$CO_RG_RESI)
+prop.table(table(srags20$CO_REGIONA==srags20$CO_RG_RESI))
 
 dt.int <- lapply(alld, function(x)
     as.Date(x$DT_INTERNA, '%d/%m/%Y'))
@@ -668,7 +675,7 @@ tab.idade.evol <- table(idade20class, alld[[8]]$Evolução)
 
 plot(tab.idade.evol, las=1, col=c('blue', 'red', gray(c(0.9,0.5))),
      xlab='Faixa etária',
-     main='Desfecho de SRAGs por faixa etária - 2020')
+     main='Desfecho de Srags20 por faixa etária - 2020')
 
 
 dtF <- function(a, b)
@@ -801,11 +808,11 @@ for (log10 in FALSE) { ##c(FALSE, TRUE)) {
     if (log10) {
         plot(log(1+wc.freq[,1,1], 10), axes=FALSE,
              ylim=range(log(1+wc.freq, 10)),
-             ylab='Número de SRAGs por semana', type='n')
+             ylab='Número de Srags20 por semana', type='n')
     } else {
         plot(wc.freq[,1,1], axes=FALSE,
              ylim=range(wc.freq),
-             ylab='Número de SRAGs por semana', type='n')
+             ylab='Número de Srags20 por semana', type='n')
     }
     yy <- c(prev.y.stats[[1]][1, ],
             rev(prev.y.stats[[1]][6, ]),
@@ -858,14 +865,14 @@ for (log10 in FALSE) { ##c(FALSE, TRUE)) {
     if (log10) {
         plot(log(ifelse(pcr20[1, ]==0, 0.5, pcr20[1, ]), 10), 
              xlab='Semana epidemiológica', axes=FALSE, xlim=c(1,53), 
-             ylab='Número de SRAGs por semana', type='n',
+             ylab='Número de Srags20 por semana', type='n',
          ylim=log(range(pcr20+0.5, na.rm=TRUE), 10))
         axis(1); axis(2, yl$y, yl$ll, las=1)
         abline(h=yl$y, lty=2, col=gray(0.5, 0.5))
     } else {
         plot(pcr20[1, ], type='n', axes=FALSE, 
              xlab='Semana epidemiológica', 
-         ylab='Número de SRAGs por semana', 
+         ylab='Número de Srags20 por semana', 
          xlim=c(1,53), ylim=range(pcr20, na.rm=TRUE)) 
         axis(1); axis(2) 
         abline(h=pretty(par()$usr[3:4]), col=gray(0.5, 0.5))

@@ -20,6 +20,11 @@ system.time(
         download.file(paste0(url0.csse, fl, '_global.csv'),
                       paste0('data/', fl, '_global.csv')))
 
+### US counties data
+download.file(
+    'https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv',
+    'data/us-counties.csv')
+
 ### the official data from the Brazilian Health Ministry
 ###  is at https://covid.saude.gov.br/ 
 

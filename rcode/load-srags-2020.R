@@ -8,12 +8,19 @@ diff(c('0630'=356189, '0707'=393980,
        '0729'=522263, '0803'=540746,
        '0810'=575936,
        '1102'=882148, '1110'=886836,
-       '1122'=945461))
+       '1122'=945461, '3011'=973111))
 
 fls <- system('ls data/INFLUD*2020.csv', TRUE)
-file <- fls[tail(order(as.Date(substr(
-    fls, 13, 22), '%d-%m-%Y')), 1)]
-(rfile <- gsub('.csv', '.RData', file))
+if (length(fls)>0) {
+    file <- fls[tail(order(as.Date(substr(
+        fls, 13, 22), '%d-%m-%Y')), 1)]
+    (rfile <- gsub('.csv', '.RData', file))
+} else {
+    rfls <- system('ls data/INFLUD*2020.RData', TRUE)
+    rfile <- rfls[tail(order(as.Date(substr(
+        rfls, 13, 22), '%d-%m-%Y')), 1)]
+}
+rfile
 
 if (file.exists(rfile)) {
 

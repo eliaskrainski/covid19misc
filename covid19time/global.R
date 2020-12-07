@@ -850,7 +850,7 @@ data2plot <- function(d,
     
       for (l in 1:nl) {
         lines(d$x, srate[,l], col=scol[l], lwd=2)
-        lines(d$x, arate[,l], lty=2, col=scol[l])
+        lines(d$x, arate[,l], lty=2, col=scol[l], lwd=2)
         if (showPoints)
           points(d$x, rate[,l], 
                  cex=1-log(nl,10)/2, pch=19, col=scol[l])

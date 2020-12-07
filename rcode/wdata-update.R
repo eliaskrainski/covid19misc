@@ -18,7 +18,7 @@ if (!any(ls()=='usems'))
 
 usefnd <- !usems
 
-Date <- seq(as.Date('20200122', '%Y%m%d'), Sys.Date(), 1)
+Date <- seq(as.Date('20200120', '%Y%m%d'), Sys.Date(), 1)
 length(Date)
 head(Date)
 tail(Date)
@@ -53,11 +53,19 @@ wwfun <- function(fl) {
 wdl <- lapply(c(confirmed='data/confirmed_global.csv',
                 deaths='data/deaths_global.csv'), wwfun)
 sapply(wdl, dim)
-wdl[[1]][1:3, 1:7]
+
+wdl[[1]][1:3, 1:10]
+wdl[[1]][1:3, -5:0 + ncol(wdl[[1]])]
 
 for (k in 1:2) {
     dtmp <- as.Date(colnames(wdl[[k]])[7:ncol(wdl[[k]])],
                     'X%m.%d.%y')
+    nnt1 <- as.integer(difftime(
+         head(dtmp, 1), Date[1], units='days'))
+    if (nnt1>0) 
+        for (j in 1:nnt1)
+            wdl[[k]] <- data.frame(wdl[[k]][, 1:6], old=NA,
+                                   wdl[[k]][, 7:ncol(wdl[[k]])])
     nnt <- as.integer(difftime(
         Sys.Date(), tail(dtmp,1), units='days'))
     if (nnt>0)
@@ -68,10 +76,9 @@ for (k in 1:2) {
 
 colnames(wdl[[1]])[7:ncol(wdl[[1]])] <-
     colnames(wdl[[2]])[7:ncol(wdl[[2]])] <-
-    paste0('X', gsub('-', '', as.character(Date)))
-
-
-### US data
+    paste0('X', gsub('-','', Date))
+         
+### US states data
 us.d <- read.csv('data/daily.csv')
 
 us.d$date <- factor(us.d$date, alldates)
@@ -97,6 +104,64 @@ for (k in 1:2) {
                    Long=as.numeric(NA),
                    w.us[[k]]))
 }
+
+table((wdl[[1]]$Country=='US'), wdl[[1]]$Prov!='')
+
+colSums(wdl[[1]][which((wdl[[1]]$Country=='US') &
+                       (wdl[[1]]$Prov!='')),
+                 -5:0+ncol(wdl[[1]])])
+
+### US counties data
+usc <- read.csv('data/us-counties.csv')
+
+dim(usc)
+head(usc,3)
+
+if (FALSE) {
+    ssa <- tapply(usc$cases, usc[c('state', 'fdate')], sum)
+    dim(ssa)
+    tail(colSums(ssa))
+    ssa[, -3:0+ncol(ssa)]
+    ssa[rownames(ssa)=='New York', -3:0+ncol(ssa)]
+}
+
+stopifnot(all(table(usc$fips, usc$date)<2))
+
+usc$fdate <- factor(gsub('-', '', usc$date), alldates)
+
+system.time(us.wsa <- lapply(
+                usc[, c('cases', 'deaths')],
+                tapply, usc[, c('fips', 'fdate')], as.integer))
+
+lapply(us.wsa, function(m)
+    colSums(m[, -3:0+ncol(m)], na.rm=TRUE))
+
+str(ij <- pmatch(rownames(us.wsa[[1]]), usc$fips))
+
+for (k in 1:2) {
+    wdl[[k]] <- rbind(
+        wdl[[k]],
+        data.frame(code=rownames(us.wsa[[k]]),
+                   City=usc$county[ij], 
+                   Province.State=usc$state[ij], 
+                   Country.Region='US',
+                   Lat=as.numeric(NA),
+                   Long=as.numeric(NA),
+                   us.wsa[[k]]))
+}
+
+tail(wdl[[1]][, 1:9], 3)
+
+colSums(wdl[[1]][which(substr(wdl[[1]]$Prov, 1, 8)=='New York'),
+                 tail(7:ncol(wdl[[1]]))])
+
+colSums(wdl[[1]][grep('York', wdl[[1]]$Prov),
+                 tail(7:ncol(wdl[[1]]))])
+
+colSums(wdl[[1]][which(wdl[[1]]$Prov=='New York'),
+                 tail(7:ncol(wdl[[1]]))])
+table(wdl[[1]]$Prov=='NY')
+wdl[[1]][wdl[[1]]$Prov=='NY', tail(7:ncol(wdl[[1]]))]
 
 if (brio) {
 ### Brasil data
