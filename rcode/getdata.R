@@ -30,10 +30,10 @@ download.file(
 
 ### time series by municipalities
 ### area available at brazil.io
-if (!any(ls()=='abrio'))
-    abrio <- FALSE
+if (!any(ls()=='brio'))
+    brio <- FALSE
 
-if (abrio) {
+if (brio) {
     
     url.br <- paste0('https://data.brasil.io/',
                      'dataset/covid19/caso.csv.gz')
@@ -43,13 +43,15 @@ if (abrio) {
 
 }
 
-if (!any(ls()=='awcota'))
-    awcota <- FALSE
+if (!any(ls()=='wcota'))
+    wcota <- FALSE
 
 if (wcota) { ### Brazilian data put together by Wesley Cota
 
     urlwc <- 'https://raw.githubusercontent.com/wcota/covid19br/master/'
+    urlwc <- 'https://github.com/wcota/covid19br/raw/master/'
     wc.fl <- 'cases-brazil-cities-time.csv'
+    wc.fl <- 'cases-brazil-cities-time.csv.gz'
     
     system.time(
         download.file(paste0(urlwc, wc.fl),
@@ -65,14 +67,18 @@ us.url <- paste0('https://api.covidtracking.com/v1/states/',
 system.time(download.file(us.url, us.fl))
 
 ### DEST-UFMG data
-system.time(download.file(paste0(
-    'https://github.com/dest-ufmg/',
-    'covid19repo/blob/master/data/',
-    'cities.rds?raw=true'),
-    'data/cities.rds'))
+if (!any(ls()=='usefnd'))
+    usefnd <- FALSE
+
+if (usefnd)
+    system.time(download.file(paste0(
+        'https://github.com/dest-ufmg/',
+        'covid19repo/blob/master/data/',
+        'cities.rds?raw=true'),
+        'data/cities.rds'))
 
 if (!any(ls()=='usesesa'))
-    usesesa <- TRUE
+    usesesa <- FALSE
 
 if (usesesa) { ### DADOS SESA PR
 
@@ -129,5 +135,17 @@ if (usesesa) { ### DADOS SESA PR
              rep(c('n', 's'), c(3,2))), ses$STATUS)
         
     }
+
+}
+
+if (!any(ls()=='gmob'))
+    gmob <- FALSE
+
+if (gmob) {
+### mobility data from Google
+
+    mfl <- 'Global_Mobility_Report.csv'
+    system(paste0('wget https://www.gstatic.com/covid19/mobility/',
+                  mfl, ' -O data/', mfl))
 
 }

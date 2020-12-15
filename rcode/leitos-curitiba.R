@@ -28,6 +28,8 @@ ldl0 <- lapply(ddates, function(d) {
     }
 })
 
+table(sapply(ldl0, class))
+
 i0 <- which(!sapply(ldl0, is.null))[-1]
 ldl <- ldl0[i0]
 

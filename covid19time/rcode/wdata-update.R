@@ -8,7 +8,7 @@ if (FALSE) { ## can manually skip
 options(width=70)
 
 if (!any(ls()=='brio'))
-    brio <- TRUE
+    brio <- FALSE##TRUE
 
 if (!any(ls()=='wcota')) 
     wcota <- !brio
@@ -103,12 +103,16 @@ if (brio) {
     system.time(dbr <- read.csv('data/caso.csv.gv'))
 }  else {
 ### data from Wesley Cota 
-    system.time(dbr <- read.csv('data/cases-brazil-cities-time.csv'))
+    system.time(dbr <- read.csv('data/cases-brazil-cities-time.csv.gz'))
 }
+
+dim(dbr)
+summary(as.Date(dbr$date))
 
 dbr$fdate <- factor(gsub('-', '', dbr$date, 
                          fixed=TRUE), alldates)
 
+head(dbr, 3)
 
 if (brio) {
 
@@ -180,29 +184,35 @@ if (brio) {
 
     sapply(wdl, dim)
     
-} else {
+}
 
-    uf <- data.frame(
-        STATE=c("SERGIPE", "MARANHÃO", "ESPÍRITO SANTO", "AMAZONAS",
-                "RORAIMA", "GOIÁS", "AMAPÁ", "RIO GRANDE DO SUL",
-                "PARAÍBA", "PIAUÍ", "SÃO PAULO", "SANTA CATARINA",
-                "PERNAMBUCO", "RIO DE JANEIRO", "MATO GROSSO DO SUL",
-                "MATO GROSSO", "BAHIA", "MINAS GERAIS", "ALAGOAS",
-                "CEARÁ", "RIO GRANDE DO NORTE", "PARANÁ", "RONDÔNIA",
-                "DISTRITO FEDERAL", "ACRE", "PARÁ", "TOCANTINS"), 
-        UF = c("SE", "MA", "ES", "AM", "RR", "GO", "AP", "RS", "PB",
-               "PI", "SP", "SC", "PE", "RJ", "MS", "MT", "BA", "MG",
-               "AL", "CE", "RN", "PR", "RO", "DF", "AC", "PA", "TO"),
-        row.names=c("28", "21", "32", "13", "14", "52", "16", "43", "25",
-                    "22", "35", "42", "26", "33", "50", "51", "29", "31",
-                    "27", "23", "24", "41", "11", "53", "12", "15", "17"))
-    
+uf <- data.frame(
+    STATE=c("SERGIPE", "MARANHÃO", "ESPÍRITO SANTO", "AMAZONAS",
+            "RORAIMA", "GOIÁS", "AMAPÁ", "RIO GRANDE DO SUL",
+            "PARAÍBA", "PIAUÍ", "SÃO PAULO", "SANTA CATARINA",
+            "PERNAMBUCO", "RIO DE JANEIRO", "MATO GROSSO DO SUL",
+            "MATO GROSSO", "BAHIA", "MINAS GERAIS", "ALAGOAS",
+            "CEARÁ", "RIO GRANDE DO NORTE", "PARANÁ", "RONDÔNIA",
+            "DISTRITO FEDERAL", "ACRE", "PARÁ", "TOCANTINS"), 
+    UF = c("SE", "MA", "ES", "AM", "RR", "GO", "AP", "RS", "PB",
+           "PI", "SP", "SC", "PE", "RJ", "MS", "MT", "BA", "MG",
+           "AL", "CE", "RN", "PR", "RO", "DF", "AC", "PA", "TO"),
+    row.names=c("28", "21", "32", "13", "14", "52", "16", "43", "25",
+                "22", "35", "42", "26", "33", "50", "51", "29", "31",
+                "27", "23", "24", "41", "11", "53", "12", "15", "17"))
+
+r.pt <- c("Norte", "Nordeste", "Sudeste", "Sul", "Centro-Oeste")
+uf$Região <- r.pt[as.integer(substr(rownames(uf), 1, 1))]
+
+if (wcota) {
+
     dbr$fcode <- factor(dbr$ibgeID,
                         sort(as.integer(unique(
                             c(rownames(uf), dbr$ibgeID)))))
     
-    wbr <- lapply(dbr[c('totalCases', 'deaths')], tapply,
-                  dbr[c('fcode', 'fdate')], as.integer)
+    system.time(wbr <- lapply(
+                    dbr[c('totalCases', 'deaths')], tapply,
+                    dbr[c('fcode', 'fdate')], as.integer))
     
     iwm <- which(nchar(rownames(wbr[[1]]))==7)
     iws <- which(nchar(rownames(wbr[[1]]))==2)
@@ -214,14 +224,18 @@ if (brio) {
     })
     
     summary(imunam <- pmatch(rownames(wbr[[1]])[iwm], dbr$ibgeID) )
-    munam <- as.character(dbr$city)[imunam]
-    
-    stnam.uf <- uf$STATE[pmatch(wbr.uf[[1]]$code, rownames(uf))]
+    munam <- sapply(strsplit(as.character(dbr$city)[imunam],
+                             '/'), head, 1)
+
+    head(uf)
+    stnam.uf <- uf$UF[pmatch(wbr.uf[[1]]$code, rownames(uf))]
     i.uf.mu <- pmatch(as.character(dbr$state)[imunam],
                       as.character(uf$UF), duplicates.ok=TRUE)
     table(as.character(dbr$state)[imunam]==as.character(uf$UF)[i.uf.mu])
     stnam.mu <- uf$STATE[i.uf.mu]
-    
+
+    ##if (FALSE) {
+        
     for (k in 1:2) {
 ##        wbr.uf[[k]][wbr.uf[[k]]==0] <- NA 
 ##        wdl[[k]] <- rbind(
@@ -246,6 +260,7 @@ if (brio) {
                        Province.State=stnam.mu, 
                        Country.Region='Brazil', Lat=NA, Long=NA,
                        wbr[[k]][iwm,]))
+##    }
     }
 
 }
@@ -253,7 +268,7 @@ if (brio) {
 sapply(wdl,dim)
 tail(wdl[[1]][, 1:10],2)
 
-r.pt <- c("Norte", "Nordeste", "Sudeste", "Sul", "Centro-Oeste")
+usefnd <- FALSE
 
 if (usefnd) {
 
@@ -590,3 +605,30 @@ for (i in which(rowSums(mlast)>0)) {
 attr(wdl, 'Sys.time') <- Sys.time()
 
 save('wdl', file='data/wdl.RData')
+
+system.time(gmbl <- read.csv(
+                "data/Global_Mobility_Report.csv"))
+
+dim(gmbl)
+
+colnames(gmbl) <- gsub(
+    '_percent_change_from_baseline', '', colnames(gmbl))
+
+gmbl$fdate <- factor(gsub(
+    '-', '', gmbl$date), alldates)
+summary(as.integer(table(gmbl$fdate)))
+
+table(gmbl$country_region_code)
+
+table(as.character(gmbl$sub_region_1[grep('State', gmbl$sub_region_1)]))
+
+gmbl$sub_region_1 <- gsub('State of ', '', gmbl$sug_region_1)
+gmbl$sub_region_2 <- gsub(' County', '', gmbl$sug_region_2)
+
+gmbl$local <- paste(gmbl$sub_region_2,
+                    gmbl$sub_region_1,
+                    gmbl$country_region_code, sep='_')
+table(gmbl$local)[1001:10200]
+
+system.time(wgmbl <- lapply(gmbl[, 9:14], tapply,
+                            gmbl[, c('local', 'fdate')], 
