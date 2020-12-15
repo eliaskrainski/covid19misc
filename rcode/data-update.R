@@ -328,7 +328,7 @@ attr(wdl, 'Sys.time') <- Sys.time()
 
 save('wdl', file='data/wdl.RData')
 
-if (!any(ls()=='gmob')
+if (!any(ls()=='gmob'))
     gmob <- FALSE
 
 if (gmob) {
