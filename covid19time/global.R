@@ -17,6 +17,9 @@ if (file.exists('data/wdl.RData')) {
 if (file.exists('data/wgmbl.RData')) 
   load('data/wgmbl.RData')
 
+if (file.exists('data/wambl.RData')) 
+  load('data/wambl.RData')
+
 ### check if the data is more than 6 hours old
 if (difftime(Sys.time(), 
              attr(wdl, 'Sys.time'), 
@@ -60,24 +63,21 @@ if (pt) {
   ylmob <- 'Mobility'
 }
 
-if (pt) {
-  pls <- c(
-    'Contagem diária',
-    'Número de reprodução', 
-    'Taxa de letalidade (%)')
-  allpls <- c(pls, 'varejo e recreação',
-              'supermercados e farmácias',
-              'parques', 'estações de transporte',
-              'locais de trabalho',
-              'residências')
-} else {
-  pls <- c(
+allpls <- enpls <- c(
     'Daily counts',
     'Reproduction number', 
-    'Fatality rate (%)')
-  allpls <- c(pls, names(wgmbl))
-}
-
+    'Fatality rate (%)',
+    names(wgmbl), names(wambl))
+if (pt) {
+    allpls <- c('Contagem diária',
+                'Número de reprodução', 
+                'Taxa de letalidade (%)',
+                'varejo e recreação',
+                'supermercados e farmácias',
+                'parques', 'estações de transporte',
+                'locais de trabalho', 'residências',
+                'dirigindo', 'trânsito', 'andando')
+} 
 
 ### locals to select. Composed by City, State and Country
 locals <- paste0(ifelse(
@@ -112,6 +112,19 @@ glocals <- sapply(1:length(g_), function(i) {
 })
 
 ulocals <- sort(unique(c(olocals, glocals)))
+
+alocals0 <- lapply(wambl, function(m) attr(m, 'local'))
+alocals <- lapply(alocals0, function(x) {
+    xx <- Reduce('rbind', strsplit(x, '_'))
+    x1 <- ifelse(xx[,1]=='', '', paste0(xx[,1], ', '))
+    x2 <- ifelse(xx[,2]=='', '', paste0(xx[,2], ' - '))
+    paste0(x1, x2, xx[,3])
+})
+
+str(alocals)
+str(lapply(alocals, pmatch, olocals))
+(lapply(alocals, function(x)
+    x[is.na(pmatch(x, olocals))]))
 
 ### Too wide state + country names separated by '\n'
 llocals <- as.character(
@@ -373,21 +386,41 @@ dataPrepare <- function(slocal) {
     d$yy <- yy
     d <- Rtfit(d)
 
+    attr(d, 'ii') <- ii 
+
     iim <- pmatch(slocal, glocals)
     i2i <- pmatch(glocals[iim], locals[ii])
     
     nl <- length(iim)
-    jj <- (1:ncol(wgmbl[[1]]))[ii0[1]:ncol(y)]
+    if (nl>1) {
+        
+        jj <- (1:ncol(wgmbl[[1]]))[ii0[1]:ncol(y)]
+        
+        d$gmob <- lapply(wgmbl, function(m)
+            t(m[iim, jj, drop=FALSE]))
+        
+        d$sgmob <- lapply(d$gmob, function(m)
+            apply(m[, drop=FALSE], 2, SmoothFitG, w=w))
+
+        attr(d, 'iim') <- iim
+        attr(d, 'i2i') <- i2i
+    }
     
-    d$mob <- lapply(wgmbl, function(m)
-        t(m[iim, jj, drop=FALSE]))
+    iam <- pmatch(slocal, alocals)
+    i3i <- pmatch(alocals[iam], locals[ii])    
+    n3 <- length(iam)
 
-    d$smob <- lapply(d$mob, function(m)
-      apply(m[, drop=FALSE], 2, SmoothFitG, w=w))
-
-    attr(d, 'ii') <- ii 
-    attr(d, 'iim') <- iim
-    attr(d, 'i2i') <- i2i
+    if (n3>1) {
+    
+        d$amob <- lapply(wambl, function(m)
+            t(m[iim, , drop=FALSE]))
+        
+        d$samob <- lapply(d$amob, function(m)
+            apply(m[, , drop=FALSE], 2, SmoothFitG, w=w))
+        
+        attr(d, 'iam') <- iam
+        attr(d, 'i3i') <- i3i
+    }
     
     return(d) 
 
@@ -802,7 +835,7 @@ data2plot <- function(d,
                lty=1:length(v), lwd=2)
       }
     }
-    if (all(plots<3))
+    if (all(plots<2))
       axis(1, xl$x, format(xl$x, '%b,%d'))
   }
   abline(v=xl$x, col=gray(0.5, 0.5), lty=2)
@@ -997,69 +1030,74 @@ data2plot <- function(d,
   }
     abline(v=xl$x, col=gray(0.5, 0.5), lty=2)
 
-    if (any(plots>3)) {
+    if (any(plots>3) & any(plots<10)) {
         ##iplot <- iplot + 1
         ##if ((ncwplot==1) & (tail(wplot,1)==iplot))
             par(mar=c(2, 4.5, 0, 0.5))
         i2i <- attr(d, 'i2i')
 
-        print(plots)
-        jjp <- plots[plots>3]-3
-        print(jjp)
-        
-        if (showPoints) {
-            ylm <- range(sapply(
-                d$mob[jjp], function(m)
-                    range(m[jj, ], na.rm=TRUE)), na.rm=TRUE)
-        } else {
-            ylm <- range(sapply(
-                d$smob[jjp], function(m)
-                    range(m[jj, ], na.rm=TRUE)), na.rm=TRUE)
-        }
-        
-        plot(d$x, d$mob[[1]][,1],
-             type='n', axes=FALSE,
-             xlim=xlm, ylim=ylm,
-             ylab=ylmob)
-
-        jjl <- 1:length(jjp)
-        if (length(jjl)>4) {
-            jlty <- rep(1:3, 2)[jjl]
-            jlwd <- rep(1:2, each=3)[jjl]
-        } else {
-            if (length(jjl)>2) {
-                jlty <- rep(1:2, 2)[jjl]
-                jlwd <- rep(1:2, each=2)[jjl]
+        if (length(i2i)>0) {
+            
+            jjp <- plots[plots>3]-3
+            
+            if (showPoints) {
+                ylm <- range(sapply(
+                    d$mob[jjp], function(m)
+                        range(m[jj, ], na.rm=TRUE)), na.rm=TRUE)
             } else {
-                jlty <- 1:2
-                jlwd <- c(2,2)
+                ylm <- range(sapply(
+                    d$smob[jjp], function(m)
+                        range(m[jj, ], na.rm=TRUE)), na.rm=TRUE)
             }
-        }
-        jlwd <- 2*jlwd
-        
-        for (l in 1:ncol(d$mob[[1]])) {
-            for (j in jjl) {
-                if (showPoints)
-                    points(d$x, d$mob[[jjp[j]]][, l],
-                           pch=jjp[j], col=scol[i2i[l]])
-                lines(d$x, d$smob[[jjp[j]]][, l],
-                      lty=jlty[j], lwd=jlwd[j],
-                      col=scol[i2i[l]])
+            
+            plot(d$x, d$mob[[1]][,1],
+                 type='n', axes=FALSE,
+                 xlim=xlm, ylim=ylm,
+                 ylab=ylmob)
+            
+            jjl <- 1:length(jjp)
+            if (length(jjl)>4) {
+                jlty <- rep(1:3, 2)[jjl]
+                jlwd <- rep(1:2, each=3)[jjl]
+            } else {
+                if (length(jjl)>2) {
+                    jlty <- rep(1:2, 2)[jjl]
+                    jlwd <- rep(1:2, each=2)[jjl]
+                } else {
+                    jlty <- 1:2
+                    jlwd <- c(2,2)
+                }
             }
-        }
-        if (showPoints) {
-            legend(legpos, allpls[-(1:3)][jjp],
-                   pch=jjp, lty=jlty, lwd=jlwd, bty='n')
+            jlwd <- 2*jlwd
+            
+            for (l in 1:ncol(d$mob[[1]])) {
+                for (j in jjl) {
+                    if (showPoints)
+                        points(d$x, d$mob[[jjp[j]]][, l],
+                               pch=jjp[j], col=scol[i2i[l]])
+                    lines(d$x, d$smob[[jjp[j]]][, l],
+                          lty=jlty[j], lwd=jlwd[j],
+                          col=scol[i2i[l]])
+                }
+            }
+            if (showPoints) {
+                legend(legpos, allpls[-(1:3)][jjp],
+                       pch=jjp, lty=jlty, lwd=jlwd, bty='n')
+            } else {
+                legend(legpos, allpls[-(1:3)][jjp], 
+                       lty=jlty, lwd=jlwd, bty='n')
+            }
+            axis(1, xl$x, format(xl$x, '%b,%d'))
+            axis(2, las=1)
+            abline(v=xl$x, h=pretty(ylm), 
+                   col=gray(0.5, 0.5), lty=2)
+            abline(h=0)
         } else {
-            legend(legpos, allpls[-(1:3)][jjp], 
-                   lty=jlty, lwd=jlwd, bty='n')
+            warning('no Google mobility data for the selected place!')
         }
-        axis(1, xl$x, format(xl$x, '%b,%d'))
-        axis(2, las=1)
-        abline(v=xl$x, h=pretty(ylm), 
-               col=gray(0.5, 0.5), lty=2)
-        abline(h=0)
     }
+    
+        
     
   
   return(invisible())
