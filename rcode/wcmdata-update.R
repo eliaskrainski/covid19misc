@@ -5,6 +5,8 @@ if (FALSE) { ## can manually skip
 
 }
 
+wcota <- FALSE
+
 options(width=70)
 
 Date <- seq(as.Date('20200121', '%Y%m%d'), Sys.Date(), 1)
@@ -139,13 +141,6 @@ for (k in 1:2) {
                    wuscl[[k]]))
 }
 
-### data from Wesley Cota 
-system.time(dbr <- read.csv(
-                'data/cases-brazil-cities-time.csv.gz'))
-
-dim(dbr)
-summary(as.Date(unique(dbr$date)))
-
 uf <- data.frame(
     STATE=c("SERGIPE", "MARANHÃO", "ESPÍRITO SANTO", "AMAZONAS",
             "RORAIMA", "GOIÁS", "AMAPÁ", "RIO GRANDE DO SUL",
@@ -177,66 +172,143 @@ for (j in which(sapply(uf, is.factor)))
 
 head(uf)
 
-table(nchar(dbr$ibgeID))
+if (wcota) {
 
-unique(dbr$city[nchar(dbr$ibgeID)<5])
+### data from Wesley Cota 
+    system.time(dbr <- read.csv(
+                    'data/cases-brazil-cities-time.csv.gz'))
+    
+    dim(dbr)
+    summary(as.Date(unique(dbr$date)))
+    
+    table(nchar(dbr$ibgeID))
+    
+    unique(dbr$city[nchar(dbr$ibgeID)<5])
+    
+    head(dbr,2)
+    table(dbr$state)
+    
+    for (j in which(sapply(dbr, is.factor)))
+        dbr[, j] <- as.character(dbr[, j])
+    
+    i.mu.l <- which(dbr$city!='TOTAL')
+    i.rg.l <- which(dbr$name_RegiaoDeSaude!='')
+    
+    dbr$fcode <- gsub('CASO SEM LOCALIZAÇÃO DEFINIDA', 'Indefinido',
+                      as.character(dbr$city))
+    
+    grep('Indefinido', unique(dbr$fcode), val=T)
+    
+    dbr$fdate <- factor(gsub('-', '', dbr$date, 
+                             fixed=TRUE), alldates)
+    head(dbr, 3)
+    
+    dbr$Regiao <- uf$Regi[pmatch(dbr$state, uf$UF, duplicates.ok=TRUE)]
+    table(is.na(dbr$Regiao))
+    dbr$Regiao[is.na(dbr$Regiao)] <- ''
+    table(dbr$Regiao)
+    
+    system.time(wbr.mu <- lapply(
+                    dbr[i.mu.l, c('totalCases', 'deaths')], tapply,
+                    dbr[i.mu.l, c('fcode', 'fdate')], as.integer))
+    str(wbr.mu)
+    
+    mun.mun <- sapply(rownames(wbr.mu[[1]]), function(x)
+        substr(x, 1, nchar(x)-3))
+    
+    st.mun <- dbr$state[pmatch(rownames(wbr.mu[[1]]), dbr$city)]
+    table(is.na(st.mun))
+    table(st.mun)
+    mun.mun[is.na(st.mun)]
+    st.mun[is.na(st.mun)] <- substring(names(mun.mun)[is.na(st.mun)], 12)
+    table(is.na(st.mun))
+    
+    system.time(wbr.rg <- lapply(
+                    dbr[i.rg.l, c('totalCases', 'deaths')], tapply,
+                    dbr[i.rg.l, c('name_RegiaoDeSaude', 'fdate')], sum))
+    str(wbr.rg)
+    
+    st.rg <- dbr$state[pmatch(rownames(
+                     wbr.rg[[1]]), dbr$name_RegiaoDeSaude)]
+    table(st.rg)
+    
+    system.time(wbr.uf <- lapply(
+                    dbr[i.mu.l, c('totalCases', 'deaths')], tapply,
+                    dbr[i.mu.l, c('state', 'fdate')], sum))
+    str(wbr.uf)
 
-head(dbr,2)
-table(dbr$state)
-
-for (j in which(sapply(dbr, is.factor)))
-    dbr[, j] <- as.character(dbr[, j])
-
-i.mu.l <- which(dbr$city!='TOTAL')
-i.rg.l <- which(dbr$name_RegiaoDeSaude!='')
-
-dbr$fcode <- gsub('CASO SEM LOCALIZAÇÃO DEFINIDA', 'Indefinido',
-                  as.character(dbr$city))
-
-grep('Indefinido', unique(dbr$fcode), val=T)
-
-dbr$fdate <- factor(gsub('-', '', dbr$date, 
-                         fixed=TRUE), alldates)
-head(dbr, 3)
-
-dbr$Regiao <- uf$Regi[pmatch(dbr$state, uf$UF, duplicates.ok=TRUE)]
-table(is.na(dbr$Regiao))
-dbr$Regiao[is.na(dbr$Regiao)] <- ''
-table(dbr$Regiao)
-
-system.time(wbr.mu <- lapply(
-                dbr[i.mu.l, c('totalCases', 'deaths')], tapply,
-                dbr[i.mu.l, c('fcode', 'fdate')], as.integer))
-str(wbr.mu)
-
-mun.mun <- sapply(rownames(wbr.mu[[1]]), function(x)
-    substr(x, 1, nchar(x)-3))
-
-st.mun <- dbr$state[pmatch(rownames(wbr.mu[[1]]), dbr$city)]
-table(is.na(st.mun))
-table(st.mun)
-mun.mun[is.na(st.mun)]
-st.mun[is.na(st.mun)] <- substring(names(mun.mun)[is.na(st.mun)], 12)
-table(is.na(st.mun))
-
-system.time(wbr.rg <- lapply(
-                dbr[i.rg.l, c('totalCases', 'deaths')], tapply,
-                dbr[i.rg.l, c('name_RegiaoDeSaude', 'fdate')], sum))
-str(wbr.rg)
-
-st.rg <- dbr$state[pmatch(rownames(
-                 wbr.rg[[1]]), dbr$name_RegiaoDeSaude)]
-table(st.rg)
-
-system.time(wbr.uf <- lapply(
-                dbr[i.mu.l, c('totalCases', 'deaths')], tapply,
-                dbr[i.mu.l, c('state', 'fdate')], sum))
-str(wbr.uf)
-
-system.time(wbr.R <- lapply(
-                dbr[c('totalCases', 'deaths')], tapply,
+    system.time(wbr.R <- lapply(
+                    dbr[c('totalCases', 'deaths')], tapply,
                 dbr[c('Regiao', 'fdate')], sum))
-str(wbr.R)
+    str(wbr.R)
+
+}
+
+dms <- !wcota
+
+if (dms) {
+
+    system.time(dbr <- read.csv2(
+                    'data/HIST_PAINEL_COVIDBR.csv'))
+    
+    dim(dbr)
+    head(dbr,2)
+    summary(as.Date(unique(dbr$data)))
+    
+    for (j in which(sapply(dbr, is.factor)))
+        dbr[, j] <- as.character(dbr[, j])
+
+    i.mu.l <- which(dbr$municipio!='')
+    i.rg.l <- which(dbr$nomeRegiaoSaude!='')
+    
+    dbr$fdate <- factor(gsub('-', '', dbr$data, 
+                             fixed=TRUE), alldates)
+    head(dbr, 3)
+
+    dbr$Regiao <- dbr$regiao
+    dbr$Regiao[dbr$regiao=='Brasil'] <- ''
+    table(dbr$Regiao)
+
+    table(table(dbr$mun.uf <- paste(
+                    dbr$municipio, 
+                    dbr$estado, sep='/'),
+                dbr$fdate))
+    table(table(dbr$mun.uf[i.mu.l], dbr$fdate[i.mu.l]))
+    
+    system.time(wbr.mu <- lapply(
+                    dbr[i.mu.l, c('casosAcumulado', 'obitosAcumulado')], tapply,
+                    dbr[i.mu.l, c('mun.uf', 'fdate')], as.integer))
+    str(wbr.mu)
+    
+    mun.mun <- sapply(rownames(wbr.mu[[1]]), function(x)
+        substr(x, 1, nchar(x)-3))
+    
+    st.mun <- sapply(rownames(wbr.mu[[1]]), function(x)
+        substring(x, nchar(x)-1))
+    table(is.na(st.mun))
+    table(st.mun)
+    
+    system.time(wbr.rg <- lapply(
+                    dbr[i.rg.l, c('casosAcumulado', 'obitosAcumulado')], tapply,
+                    dbr[i.rg.l, c('nomeRegiaoSaude', 'fdate')], sum))
+    str(wbr.rg)
+    
+    st.rg <- dbr$estado[pmatch(rownames(
+                     wbr.rg[[1]]), dbr$nomeRegiaoSaude)]
+    table(st.rg)
+    
+    system.time(wbr.uf <- lapply(
+                    dbr[i.mu.l, c('casosAcumulado', 'obitosAcumulado')], tapply,
+                    dbr[i.mu.l, c('estado', 'fdate')], sum))
+    str(wbr.uf)
+
+    system.time(wbr.R <- lapply(
+                    dbr[c('casosAcumulado', 'obitosAcumulado')], tapply,
+                dbr[c('Regiao', 'fdate')], sum))
+    str(wbr.R)
+    
+
+}
 
 source('rcode/dados-curitiba.R')
 
