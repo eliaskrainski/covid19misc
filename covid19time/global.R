@@ -121,11 +121,6 @@ alocals <- lapply(alocals0, function(x) {
     paste0(x1, x2, xx[,3])
 })
 
-str(alocals)
-str(lapply(alocals, pmatch, olocals))
-(lapply(alocals, function(x)
-    x[is.na(pmatch(x, olocals))]))
-
 ### Too wide state + country names separated by '\n'
 llocals <- as.character(
     wdl[[1]]$Country.Region)
@@ -392,7 +387,7 @@ dataPrepare <- function(slocal) {
     i2i <- pmatch(glocals[iim], locals[ii])
     
     nl <- length(iim)
-    if (nl>1) {
+    if (nl>0) {
         
         jj <- (1:ncol(wgmbl[[1]]))[ii0[1]:ncol(y)]
         
@@ -404,19 +399,29 @@ dataPrepare <- function(slocal) {
 
         attr(d, 'iim') <- iim
         attr(d, 'i2i') <- i2i
-    }
-    
-    iam <- pmatch(slocal, alocals)
-    i3i <- pmatch(alocals[iam], locals[ii])    
-    n3 <- length(iam)
 
-    if (n3>1) {
+    }
+   
+    iam <- lapply(alocals, function(x)
+        pmatch(slocal, x))
+    i3i <- lapply(1:length(iam), function(k)
+        pmatch(alocals[[k]][iam[[k]]], locals[ii]))    
+    n3 <- sum(!is.na(unique(unlist(iam))))
+
+    if (n3>0) {
     
-        d$amob <- lapply(wambl, function(m)
-            t(m[iim, , drop=FALSE]))
+        d$amob <- lapply(1:length(iam), function(k) {
+            ia <- iam[[k]]
+            ia <- ia[!is.na(ia)]
+            if (length(ia)>0)
+                return(t(wambl[[k]][ia, , drop=FALSE]))
+            return(NULL)
+        })
         
-        d$samob <- lapply(d$amob, function(m)
-            apply(m[, , drop=FALSE], 2, SmoothFitG, w=w))
+        d$samob <- lapply(d$amob, function(m) {
+            if (is.null(m)) return(NULL)
+            apply(m[, , drop=FALSE], 2, SmoothFitG, w=w)
+        })
         
         attr(d, 'iam') <- iam
         attr(d, 'i3i') <- i3i

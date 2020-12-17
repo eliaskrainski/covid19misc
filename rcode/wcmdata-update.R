@@ -5,15 +5,13 @@ if (FALSE) { ## can manually skip
 
 }
 
-wcota <- FALSE
-
 options(width=70)
 
-Date <- seq(as.Date('20200121', '%Y%m%d'), Sys.Date(), 1)
-
-alldates <- gsub('-', '', as.character(Date))
-
+wcota <- TRUE
 source('rcode/getdata.R')
+
+Date <- seq(as.Date('20200121', '%Y%m%d'), Sys.Date(), 1)
+alldates <- gsub('-', '', as.character(Date))
 
 wwfun <- function(fl) {
     m <- read.csv(fl)
@@ -119,10 +117,18 @@ stopifnot(all(table(paste(uscl$county, uscl$ST), uscl$fdate)<2))
 
 unique(paste(uscl$county, uscl$ST)[is.na(uscl$fips)])
 
+if (FALSE) {
+    grep('ounty', uscl$county,val=T)
+    unique(grep('unicip', uscl$county,val=T))
+    length(unique(grep('city', uscl$county,val=T)))
+    (unique(grep('City', uscl$county,val=T)))
+}
+
 uscl$local <- paste(uscl$county, uscl$ST, 'US', sep='_')
 
-wuscl <- lapply(uscl[, c('cases', 'deaths')], tapply,
-                uscl[, c('local', 'fdate')], sum)
+system.time(wuscl <- lapply(
+                uscl[, c('cases', 'deaths')], tapply,
+                uscl[, c('local', 'fdate')], sum))
 str(wuscl)
 
 wuscl.loc <- strsplit(rownames(wuscl[[1]]), '_')
@@ -416,6 +422,19 @@ if (gmob) {
     
     colnames(gmbl) <- gsub(
         '_percent_change_from_baseline', '', colnames(gmbl))
+
+    for(j in which(sapply(gmbl, is.factor)))
+        gmbl[, j] <- as.character(gmbl[, j])
+
+    unique(grep('municip', gmbl$sub_region_2, val=T))
+    unique(grep('city', gmbl$sub_region_2, val=T))
+    length(unique(grep('City', gmbl$sub_region_2, val=T)))
+
+    table(gmbl$country_region[grep('City', gmbl$sub_region_2)])
+    unique(gmbl$sub_region_2[intersect(
+                    grep('City', gmbl$sub_region_2),
+                    which(gmbl$country_region=='United States'))])
+    unique(grep('County', gmbl$sub_region_2, val=T))
     
     gmbl$fdate <- factor(gsub(
         '-', '', gmbl$date), alldates)
@@ -537,7 +556,7 @@ if (!any(ls()=='amob'))
 
 if (amob) {
 
-    afl <- system('ls data/applemobilitytrends*csv', TRUE)
+    (afl <- system('ls data/applemobilitytrends*csv', TRUE))
     afl <- afl[order(as.Date(substr(afl, 26, 35)), decreasing=TRUE)]
     afl
 
@@ -580,7 +599,8 @@ if (amob) {
     grep('state', wambl0$country, val=T)
 
     wambl0$region <- gsub(' (state)', '', wambl0$region, fixed=TRUE)
-    wambl0$sub.region <- gsub(' (state)', '', wambl0$sub.region, fixed=TRUE)
+    wambl0$sub.region <- gsub(
+        ' (state)', '', wambl0$sub.region, fixed=TRUE)
 
     head(ussabb,2)
     for (j in 1:nrow(ussabb)) {
@@ -630,15 +650,17 @@ if (amob) {
     table(wambl0$geo_type)
     
     for (k in 1:length(wambl)) {
-        tlocal <- paste(ifelse(wambl[[k]]$geo_type %in% c('city', 'county'),
-                               wambl[[k]]$region, ''), 
-                        ifelse(wambl[[k]]$geo_type %in% c('sub-region'), 
-                               wambl[[k]]$region, wambl[[k]]$sub.region), 
-                        ifelse(wambl[[k]]$geo_type %in% c('country/region'), 
-                               wambl[[k]]$region, wambl[[k]]$country), sep='_')
+        tlocal <- paste(
+            ifelse(wambl[[k]]$geo_type %in% c('city', 'county'),
+                   wambl[[k]]$region, ''), 
+            ifelse(wambl[[k]]$geo_type %in% c('sub-region'), 
+                   wambl[[k]]$region, wambl[[k]]$sub.region), 
+            ifelse(wambl[[k]]$geo_type %in% c('country/region'), 
+                   wambl[[k]]$region, wambl[[k]]$country), sep='_')
         wambl[[k]] <- as.matrix(wambl[[k]][, 7:ncol(wambl[[k]])])
         attr(wambl[[k]], 'local') <- tlocal
-        attr(wambl[[k]], 'Date') <- as.Date(colnames(wambl[[k]]), 'X%Y.%m.%d')
+        attr(wambl[[k]], 'Date') <-
+            as.Date(colnames(wambl[[k]]), 'X%Y.%m.%d')
     }
     
     system.time(save(
