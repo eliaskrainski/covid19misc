@@ -11,7 +11,7 @@ brio <- TRUE ### if is to use brazil.io data
 if (file.exists('data/wdl.RData')) {
     load('data/wdl.RData')
 } else {
-    source('rcode/data-update.R')
+    source('rcode/wcmdata-update.R')
 }
 
 if (file.exists('data/wgmbl.RData')) 
@@ -24,7 +24,7 @@ if (file.exists('data/wambl.RData'))
 if (difftime(Sys.time(), 
              attr(wdl, 'Sys.time'), 
              units='hours')>23) {
-  source('rcode/wdata-update.R')
+  source('rcode/wcmdata-update.R')
 }
 cn <- colnames(wdl[[1]])
 vecDate <- as.Date(cn[7:length(cn)], 'X%Y%m%d')
@@ -475,7 +475,11 @@ SmoothFitG <- function(y, w) {
               all(table(dtmp$w)>2)) {
               sfit <- gam(r ~ 0 + w + s(tt), data=dtmp)
               p.t <- predict(sfit, type='terms')
-              r[ii] <- (p.t[,2] + mean(p.t[,1]))
+##              if (nrow(p.t)==length(ii)) {
+                  r[ii] <- (p.t[,2] + mean(p.t[,1]))
+  ##            } else {
+      ##            r[ii] <- mean(dtmp$y)
+    ##          }
           } else {
               sfit <- gam(r ~ 0 + s(tt), data=dtmp)
               r[ii] <- predict(sfit)
@@ -575,12 +579,17 @@ data2plot <- function(d,
         variables, 
         c('cases', 'deaths'))
 
-    print(plots)
     plots <- pmatch(plots, allpls)
-    print(plots)
-    print(plots[plots>3]-3)
-    wplot <- c(plots[plots<4],
-               any(plots>3)*(1+sum(plots<4)))
+    wplot <- integer(4)
+    if (any(plots==1))
+        wplot[1] <- 1
+    if (any(plots==2))
+        wplot[2] <- 2
+    if (any(plots==3))
+        wplot[3] <- 3
+    if (any(plots>3))
+        wplot[4] <- 4
+    wplot <- wplot[wplot>0]
     iplot <- 0
 
     if (length(wplot)==4) {
@@ -1046,19 +1055,27 @@ data2plot <- function(d,
             jjp <- plots[plots>3]-3
             
             if (showPoints) {
-                ylm <- range(sapply(
+                ylm <- range(unlist(lapply(
                     d$mob[jjp], function(m)
-                        range(m[jj, ], na.rm=TRUE)), na.rm=TRUE)
+                        range(c(-15, m[jj, ], 15),
+                              na.rm=TRUE))), na.rm=TRUE)
             } else {
-                ylm <- range(sapply(
+                ylm <- range(unlist(lapply(
                     d$smob[jjp], function(m)
-                        range(m[jj, ], na.rm=TRUE)), na.rm=TRUE)
+                        range(c(-10, m[jj, ], 10),
+                              na.rm=TRUE))), na.rm=TRUE)
             }
-            
-            plot(d$x, d$mob[[1]][,1],
-                 type='n', axes=FALSE,
-                 xlim=xlm, ylim=ylm,
-                 ylab=ylmob)
+            if (all(is.finite(ylm))) {                
+                plot(d$x, ##d$mob[[1]][,1],
+                     type='n', axes=FALSE,
+                     xlim=xlm, ylim=ylm,
+                     ylab=ylmob)
+            } else {
+                plot(d$x,
+                     xlim=xlm, ylim=c(-100,100),
+                     type='n', axes=FALSE,
+                     ylab=ylmob)
+            }
             
             jjl <- 1:length(jjp)
             if (length(jjl)>4) {
@@ -1075,7 +1092,7 @@ data2plot <- function(d,
             }
             jlwd <- 2*jlwd
             
-            for (l in 1:ncol(d$mob[[1]])) {
+            for (l in 1:length(i2i)) { ##ncol(d$mob[[1]])) {
                 for (j in jjl) {
                     if (showPoints)
                         points(d$x, d$mob[[jjp[j]]][, l],
