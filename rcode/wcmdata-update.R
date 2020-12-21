@@ -639,6 +639,13 @@ if (amob) {
                    wambl0$transportation_type)
     sapply(wambl, dim)
 
+    for(k in 1:length(wambl)) {
+        wambl[[k]]$geo_type <- as.character(wambl[[k]]$geo_type)
+        wambl[[k]]$region <- as.character(wambl[[k]]$region)
+        wambl[[k]]$sub.region <- as.character(wambl[[k]]$sub.region)
+        wambl[[k]]$country <- as.character(wambl[[k]]$country)
+    }
+
     wambl0[grep('Curitiba', wambl0$region), 1:7]
     wambl0[grep('Para', wambl0$region), 1:6]
     wambl0[grep('Brazil', wambl0$region), 1:6]
@@ -657,7 +664,11 @@ if (amob) {
                    wambl[[k]]$region, wambl[[k]]$sub.region), 
             ifelse(wambl[[k]]$geo_type %in% c('country/region'), 
                    wambl[[k]]$region, wambl[[k]]$country), sep='_')
-        wambl[[k]] <- as.matrix(wambl[[k]][, 7:ncol(wambl[[k]])])
+        ii <- grep('Curitiba_PR', tlocal)
+        new <- as.matrix(wambl[[k]][ii, 7:ncol(wambl[[k]]), drop=FALSE])
+        rownames(new) <- gsub('Curitiba', 'Curitiba(SM)', rownames(new))
+        wambl[[k]] <- rbind(as.matrix(wambl[[k]][, 7:ncol(wambl[[k]])]),
+                            new)
         attr(wambl[[k]], 'local') <- tlocal
         attr(wambl[[k]], 'Date') <-
             as.Date(colnames(wambl[[k]]), 'X%Y.%m.%d')

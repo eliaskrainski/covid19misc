@@ -1044,15 +1044,14 @@ data2plot <- function(d,
   }
     abline(v=xl$x, col=gray(0.5, 0.5), lty=2)
 
-    if (any(plots>3) & any(plots<10)) {
-        ##iplot <- iplot + 1
-        ##if ((ncwplot==1) & (tail(wplot,1)==iplot))
-            par(mar=c(2, 4.5, 0, 0.5))
+    if (any(plots>3)) {
+        
+        par(mar=c(2, 4.5, 0, 0.5))
         i2i <- attr(d, 'i2i')
-
+        i3i <- attr(d, 'i3i')
+        
         if (length(i2i)>0) {
-            
-            jjp <- plots[plots>3]-3
+            jjp <- plots[(plots>3) & (plots<10)]-3
             
             if (showPoints) {
                 ylm <- range(unlist(lapply(
@@ -1065,6 +1064,12 @@ data2plot <- function(d,
                         range(c(-10, m[jj, ], 10),
                               na.rm=TRUE))), na.rm=TRUE)
             }
+
+            if (any(sapply(i3i, length)>0)) {
+                if (showPoints)
+                    ylm <- range(ylm)
+            } 
+            
             if (all(is.finite(ylm))) {                
                 plot(d$x, ##d$mob[[1]][,1],
                      type='n', axes=FALSE,
@@ -1102,6 +1107,48 @@ data2plot <- function(d,
                           col=scol[i2i[l]])
                 }
             }
+
+        }
+            
+        if (any(plots>9)) {
+            jjp2 <- plots[(plots>9)]-9
+
+            jjl2 <- 1:length(jjp2)
+            if (length(jjl)>2) {
+                jlty2 <- rep(1:2, 2)[jjl]
+                jlwd2 <- rep(1:2, each=2)[jjl]
+            } else {
+                jlty2 <- 1:2
+                jlwd2 <- c(2,2)
+            }
+            jlwd2 <- 2*jlwd2
+
+            for (j in jjl2) {
+                for (l in 1:sum(!is.na(i3i[[j]])))  {
+                    if (showPoints)
+                        points(attr(wambl[[j]], 'Date'),
+                               d$amob[[jjp2[j]]][, l],
+                               pch=6+jjp2[j], col=scol[i3i[[j]][l]])
+                    lines(attr(wambl[[j]], 'Date'),
+                          d$smob[[jjp2[j]]][, l],
+                          lty=jlty2[j], lwd=jlwd2[j],
+                          col=scol[i3i[[j]][l]])
+                }
+            }
+
+            if (showPoints) {
+                legend(legpos, allpls[-(1:3)][c(jjp, jjp2+6)], 
+                       pch=c(jjp, jjp2+6),
+                       lty=c(jlty, jlty2),
+                       lwd=c(jlwd, jlwd2), bty='n')
+            } else {
+                legend(legpos, allpls[-(1:3)][c(jjp, jjp2+6)], 
+                       lty=c(jlty, jlty2),
+                       lwd=c(jlwd, jlwd2), bty='n')
+            }
+
+        } else {
+            
             if (showPoints) {
                 legend(legpos, allpls[-(1:3)][jjp],
                        pch=jjp, lty=jlty, lwd=jlwd, bty='n')
@@ -1109,18 +1156,17 @@ data2plot <- function(d,
                 legend(legpos, allpls[-(1:3)][jjp], 
                        lty=jlty, lwd=jlwd, bty='n')
             }
-            axis(1, xl$x, format(xl$x, '%b,%d'))
-            axis(2, las=1)
-            abline(v=xl$x, h=pretty(ylm), 
-                   col=gray(0.5, 0.5), lty=2)
-            abline(h=0)
-        } else {
-            warning('no Google mobility data for the selected place!')
         }
+        
+        axis(1, xl$x, format(xl$x, '%b,%d'))
+        axis(2, las=1)
+        abline(v=xl$x, h=pretty(ylm), 
+               col=gray(0.5, 0.5), lty=2)
+        abline(h=0)
+
+
     }
     
-        
     
-  
-  return(invisible())
+    return(invisible())
 }
