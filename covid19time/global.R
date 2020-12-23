@@ -377,7 +377,7 @@ dataPrepare <- function(slocal) {
     w <- weekdays(d$x)
     d$sy <- apply(yy[,,1, drop=FALSE], 2, SmoothFit, w=w)
     d$so <- apply(yy[,,2, drop=FALSE], 2, SmoothFit, w=w)
-
+    
     d$yy <- yy
     d <- Rtfit(d)
 
@@ -395,7 +395,7 @@ dataPrepare <- function(slocal) {
             t(m[iim, jj, drop=FALSE]))
         
         d$sgmob <- lapply(d$gmob, function(m)
-            apply(m[, drop=FALSE], 2, SmoothFitG, w=w))
+                  apply(m[, drop=FALSE], 2, SmoothFitG, w=w))
 
         attr(d, 'iim') <- iim
         attr(d, 'i2i') <- i2i
@@ -421,7 +421,7 @@ dataPrepare <- function(slocal) {
         d$samob <- lapply(d$amob, function(m) {
             if (is.null(m)) return(NULL)
             apply(m[, , drop=FALSE], 2, SmoothFitG, w=w)
-        })
+          })
         
         attr(d, 'iam') <- iam
         attr(d, 'i3i') <- i3i
@@ -1055,12 +1055,12 @@ data2plot <- function(d,
             
             if (showPoints) {
                 ylm <- range(unlist(lapply(
-                    d$mob[jjp], function(m)
+                    d$gmob[jjp], function(m)
                         range(c(-15, m[jj, ], 15),
                               na.rm=TRUE))), na.rm=TRUE)
             } else {
                 ylm <- range(unlist(lapply(
-                    d$smob[jjp], function(m)
+                    d$sgmob[jjp], function(m)
                         range(c(-10, m[jj, ], 10),
                               na.rm=TRUE))), na.rm=TRUE)
             }
@@ -1100,16 +1100,16 @@ data2plot <- function(d,
             for (l in 1:length(i2i)) { ##ncol(d$mob[[1]])) {
                 for (j in jjl) {
                     if (showPoints)
-                        points(d$x, d$mob[[jjp[j]]][, l],
+                        points(d$x, d$gmob[[jjp[j]]][, l],
                                pch=jjp[j], col=scol[i2i[l]])
-                    lines(d$x, d$smob[[jjp[j]]][, l],
+                    lines(d$x, d$sgmob[[jjp[j]]][, l],
                           lty=jlty[j], lwd=jlwd[j],
                           col=scol[i2i[l]])
                 }
             }
 
         }
-            
+        
         if (any(plots>9)) {
             jjp2 <- plots[(plots>9)]-9
 
@@ -1130,7 +1130,7 @@ data2plot <- function(d,
                                d$amob[[jjp2[j]]][, l],
                                pch=6+jjp2[j], col=scol[i3i[[j]][l]])
                     lines(attr(wambl[[j]], 'Date'),
-                          d$smob[[jjp2[j]]][, l],
+                          d$samob[[jjp2[j]]][, l],
                           lty=jlty2[j], lwd=jlwd2[j],
                           col=scol[i3i[[j]][l]])
                 }

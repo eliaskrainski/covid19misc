@@ -460,6 +460,9 @@ if (gmob) {
         gmbl$sub_region_1[iij] <- uf$UF[j]
     }
 
+    if (any(ls()=='wdl'))
+        load('data/wdl.RData')
+    
     length(aa <- paste(
                wdl[[1]]$City, 
                wdl[[1]]$Province,
