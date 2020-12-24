@@ -139,7 +139,7 @@ if (usesesa) { ### DADOS SESA PR
 }
 
 if (!any(ls()=='gmob'))
-    gmob <- FALSE
+    gmob <- TRUE
 
 if (gmob) {
 ### mobility data from Google
@@ -147,5 +147,30 @@ if (gmob) {
     mfl <- 'Global_Mobility_Report.csv'
     system(paste0('wget https://www.gstatic.com/covid19/mobility/',
                   mfl, ' -O data/', mfl))
+
+}
+
+if (!any(ls()=='amob'))
+    amob <- TRUE
+
+if (amob) {
+
+    ## tip from
+    ## https://kieranhealy.org/blog/archives/2020/05/23/get-apples-mobility-data/
+    get_apple_target <- function(cdn_url = "https://covid19-static.cdn-apple.com",
+                                 json_file = "covid19-mobility-data/current/v3/index.json") {
+        tf <- tempfile(fileext = ".json")
+        curl::curl_download(paste0(cdn_url, "/", json_file), tf)
+        json_data <- jsonlite::fromJSON(tf)
+        paste0(cdn_url, json_data$basePath, json_data$regions$`en-us`$csvPath)
+    }
+
+    aurl <- get_apple_target()
+    aurl
+    
+    amfl <- tail(strsplit(aurl, '/')[[1]], 1)
+    amfl
+
+    system(paste0('wget ', aurl, ' -O data/', amfl))
 
 }
