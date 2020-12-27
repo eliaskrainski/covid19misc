@@ -580,27 +580,36 @@ data2plot <- function(d,
         c('cases', 'deaths'))
 
     plots <- pmatch(plots, allpls)
-    wplot <- integer(4)
+    wplot <- integer(5)
     if (any(plots==1))
         wplot[1] <- 1
     if (any(plots==2))
         wplot[2] <- 2
     if (any(plots==3))
         wplot[3] <- 3
-    if (any(plots>3))
+    if (any((plots>3) & (plots<10)))
         wplot[4] <- 4
+    if (any(plots>9))
+        wplot[5] <- 5
     wplot <- wplot[wplot>0]
     iplot <- 0
 
-    if (length(wplot)==4) {
-        par(mfrow=c(2, 2), 
+    if (length(wplot)>4) {
+        par(mfrow=c(3, 2), 
             mar=c(0.5, 4.5, 0.5, 0.5), mgp=c(3.5, 0.5, 0))
-        ncwplot <- nrwplot <- 2
+        nrwplot <- 3
+        ncwplot <- 2
     } else {
-        par(mfrow=c(length(wplot), 1), 
-            mar=c(0.5, 4.5, 0.5, 0.5), mgp=c(3.5, 0.5, 0))
-        nrwplot <- length(wplot)
-        ncwplot <- 1
+        if (length(wplot)==4) {
+            par(mfrow=c(2, 2),
+                mar=c(0.5, 4.5, 0.5, 0.5), mgp=c(3.5, 0.5, 0))
+            ncwplot <- nrwplot <- 2
+        } else {
+            par(mfrow=c(length(wplot), 1),
+                mar=c(0.5, 4.5, 0.5, 0.5), mgp=c(3.5, 0.5, 0))
+            nrwplot <- length(wplot)
+            ncwplot <- 1
+        }
     }
     
     sxlm <- as.Date(dateRange, '%d/%m/%y')
@@ -1044,110 +1053,69 @@ data2plot <- function(d,
   }
     abline(v=xl$x, col=gray(0.5, 0.5), lty=2)
 
-    if (any(plots>3)) {
-        
+    if (any((plots>3) & (plots<10))) {
+
+        iplot <- iplot + 1
         par(mar=c(2, 4.5, 0, 0.5))
         i2i <- attr(d, 'i2i')
-        i3i <- attr(d, 'i3i')
         
         if (length(i2i)>0) {
             jjp <- plots[(plots>3) & (plots<10)]-3
-            
-            if (showPoints) {
-                ylm <- range(unlist(lapply(
-                    d$gmob[jjp], function(m)
-                        range(c(-15, m[jj, ], 15),
-                              na.rm=TRUE))), na.rm=TRUE)
-            } else {
-                ylm <- range(unlist(lapply(
-                    d$sgmob[jjp], function(m)
-                        range(c(-10, m[jj, ], 10),
-                              na.rm=TRUE))), na.rm=TRUE)
-            }
 
-            if (any(sapply(i3i, length)>0)) {
-                if (showPoints)
-                    ylm <- range(ylm)
-            } 
-            
-            if (all(is.finite(ylm))) {                
-                plot(d$x, ##d$mob[[1]][,1],
-                     type='n', axes=FALSE,
-                     xlim=xlm, ylim=ylm,
-                     ylab=ylmob)
-            } else {
-                plot(d$x,
-                     xlim=xlm, ylim=c(-100,100),
-                     type='n', axes=FALSE,
-                     ylab=ylmob)
-            }
-            
-            jjl <- 1:length(jjp)
-            if (length(jjl)>4) {
-                jlty <- rep(1:3, 2)[jjl]
-                jlwd <- rep(1:2, each=3)[jjl]
-            } else {
-                if (length(jjl)>2) {
-                    jlty <- rep(1:2, 2)[jjl]
-                    jlwd <- rep(1:2, each=2)[jjl]
+            if (length(jjp)>0) {
+                
+                if (showPoints) {
+                    ylm <- range(unlist(lapply(
+                        d$gmob[jjp], function(m)
+                            range(c(-15, m[jj, ], 15),
+                                  na.rm=TRUE))), na.rm=TRUE)
                 } else {
-                    jlty <- 1:2
-                    jlwd <- c(2,2)
+                    ylm <- range(unlist(lapply(
+                        d$sgmob[jjp], function(m)
+                            range(c(-10, m[jj, ], 10),
+                                  na.rm=TRUE))), na.rm=TRUE)
                 }
-            }
-            jlwd <- 2*jlwd
             
-            for (l in 1:length(i2i)) { ##ncol(d$mob[[1]])) {
-                for (j in jjl) {
-                    if (showPoints)
-                        points(d$x, d$gmob[[jjp[j]]][, l],
-                               pch=jjp[j], col=scol[i2i[l]])
-                    lines(d$x, d$sgmob[[jjp[j]]][, l],
-                          lty=jlty[j], lwd=jlwd[j],
-                          col=scol[i2i[l]])
+                if (all(is.finite(ylm))) {                
+                    plot(d$x, ##d$mob[[1]][,1],
+                         type='n', axes=FALSE,
+                         xlim=xlm, ylim=ylm,
+                         ylab=ylmob)
+                } else {
+                    plot(d$x,
+                         xlim=xlm, ylim=c(-100,100),
+                         type='n', axes=FALSE,
+                         ylab=ylmob)
                 }
-            }
-
-        }
-        
-        if (any(plots>9)) {
-            jjp2 <- plots[(plots>9)]-9
-
-            jjl2 <- 1:length(jjp2)
-            if (length(jjl)>2) {
-                jlty2 <- rep(1:2, 2)[jjl]
-                jlwd2 <- rep(1:2, each=2)[jjl]
-            } else {
-                jlty2 <- 1:2
-                jlwd2 <- c(2,2)
-            }
-            jlwd2 <- 2*jlwd2
-
-            for (j in jjl2) {
-                for (l in 1:sum(!is.na(i3i[[j]])))  {
-                    if (showPoints)
-                        points(attr(wambl[[j]], 'Date'),
-                               d$amob[[jjp2[j]]][, l],
-                               pch=6+jjp2[j], col=scol[i3i[[j]][l]])
-                    lines(attr(wambl[[j]], 'Date'),
-                          d$samob[[jjp2[j]]][, l],
-                          lty=jlty2[j], lwd=jlwd2[j],
-                          col=scol[i3i[[j]][l]])
+                
+                jjl <- 1:length(jjp)
+                if (length(jjl)>4) {
+                    jlty <- rep(1:3, 2)[jjl]
+                    jlwd <- rep(1:2, each=3)[jjl]
+                } else {
+                    if (length(jjl)>2) {
+                        jlty <- rep(1:2, 2)[jjl]
+                        jlwd <- rep(1:2, each=2)[jjl]
+                    } else {
+                        jlty <- 1:2
+                        jlwd <- c(2,2)
+                    }
                 }
-            }
-
-            if (showPoints) {
-                legend(legpos, allpls[-(1:3)][c(jjp, jjp2+6)], 
-                       pch=c(jjp, jjp2+6),
-                       lty=c(jlty, jlty2),
-                       lwd=c(jlwd, jlwd2), bty='n')
+                jlwd <- 2*jlwd
+                
+                for (l in 1:length(i2i)) { ##ncol(d$mob[[1]])) {
+                    for (j in jjl) {
+                        if (showPoints)
+                            points(d$x, d$gmob[[jjp[j]]][, l],
+                                   pch=jjp[j], col=scol[i2i[l]])
+                        lines(d$x, d$sgmob[[jjp[j]]][, l],
+                              lty=jlty[j], lwd=jlwd[j],
+                              col=scol[i2i[l]])
+                    }
+                }
             } else {
-                legend(legpos, allpls[-(1:3)][c(jjp, jjp2+6)], 
-                       lty=c(jlty, jlty2),
-                       lwd=c(jlwd, jlwd2), bty='n')
+                jlwd <- jlty <- jjl <- NULL
             }
-
-        } else {
             
             if (showPoints) {
                 legend(legpos, allpls[-(1:3)][jjp],
@@ -1156,6 +1124,78 @@ data2plot <- function(d,
                 legend(legpos, allpls[-(1:3)][jjp], 
                        lty=jlty, lwd=jlwd, bty='n')
             }
+
+            axis(1, xl$x, format(xl$x, '%b,%d'))
+            axis(2, las=1)
+            abline(v=xl$x, h=pretty(ylm), 
+                   col=gray(0.5, 0.5), lty=2)
+            abline(h=0)
+
+        }
+    }
+    
+    if (any(plots>9)) {
+        iplot <- iplot + 1
+        i3i <- attr(d, 'i3i')
+        jjp2 <- plots[(plots>9)]-9
+        jjl2 <- 1:length(jjp2)
+        
+        if (length(jjp2)>0) {
+            
+            if (showPoints) {
+                ylm <- range(unlist(lapply(
+                    d$amob[jjp2], function(m)
+                        range(c(80, m[jj, ], 125),
+                              na.rm=TRUE))), na.rm=TRUE)
+            } else {
+                ylm <- range(unlist(lapply(
+                    d$samob[jjp2], function(m)
+                        range(c(80, m[jj, ], 125),
+                              na.rm=TRUE))), na.rm=TRUE)
+            }
+            
+            if (all(is.finite(ylm))) {                
+                plot(attr(wambl[[1]], 'Date'), ##d$mob[[1]][,1],
+                     type='n', axes=FALSE,
+                     xlim=xlm, ylim=ylm,
+                     ylab=ylmob)
+            } else {
+                plot(attr(wambl[[1]], 'Date'),
+                     xlim=xlm, ylim=c(0,200),
+                     type='n', axes=FALSE,
+                     ylab=ylmob)
+            }
+            
+            if (length(jjl2)>2) {
+                jlty2 <- rep(1:2, 2)[jjl2]
+                jlwd2 <- rep(1:2, each=2)[jjl2]
+            } else {
+                jlty2 <- 1:2
+                jlwd2 <- c(2,2)
+            }
+            jlwd2 <- 2*jlwd2
+            
+            for (j in jjl2) {
+                for (l in 1:sum(!is.na(i3i[[j]])))  {
+                    if (showPoints)
+                        points(attr(wambl[[j]], 'Date'),
+                               d$amob[[jjp2[j]]][, l],
+                               pch=jjp2[j], col=scol[i3i[[j]][l]])
+                    lines(attr(wambl[[j]], 'Date'),
+                          d$samob[[jjp2[j]]][, l],
+                          lty=jlty2[j], lwd=jlwd2[j],
+                          col=scol[i3i[[j]][l]])
+                }
+            }
+            
+            if (showPoints) {
+                legend(legpos, allpls[-(1:3)][jjp2+6],
+                       pch=jjp2, lty=jlty2, lwd=jlwd2, bty='n')
+            } else {
+                legend(legpos, allpls[-(1:3)][jjp2+6], 
+                       lty=jlty2, lwd=jlwd2, bty='n')
+            }
+
         }
         
         axis(1, xl$x, format(xl$x, '%b,%d'))
@@ -1163,10 +1203,8 @@ data2plot <- function(d,
         abline(v=xl$x, h=pretty(ylm), 
                col=gray(0.5, 0.5), lty=2)
         abline(h=0)
-
-
+        
     }
-    
     
     return(invisible())
 }

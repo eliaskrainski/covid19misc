@@ -16,7 +16,7 @@ server <- function(input, output) {
                      ##'Brasil',
                         'Pinhais, PR - BR'), ##,'NY - US', 'US'),
                 dateRange=c('01/01/20', '10/10/21'),
-                plots=allpls[c(1,2,5:12)],
+                plots=allpls[c(1,10:12)],
                 ##c("Daily counts",
                   ##      "Reproduction number",
                     ##    "Fatality rate (%)",

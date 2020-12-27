@@ -318,7 +318,6 @@ if (dms) {
 
 source('rcode/dados-curitiba.R')
 
-
     for (k in 1:2) {
         wdl[[k]] <- rbind(
             wdl[[k]],
@@ -678,6 +677,8 @@ if (amob) {
         attr(wambl[[k]], 'Date') <-
             as.Date(colnames(wambl[[k]]), 'X%Y.%m.%d')
     }
+
+    grep('Curitiba', attr(wambl[[1]], 'local'))
     
     system.time(save(
         'wambl',
