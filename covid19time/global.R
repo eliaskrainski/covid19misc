@@ -4,7 +4,8 @@ npretty <- 7
 
 ### load packages
 library(shiny)
-library(mgcv)
+mgcv.ok <- require(mgcv)
+mgcv.ok
 
 ### load dataset 
 brio <- TRUE ### if is to use brazil.io data
@@ -375,10 +376,16 @@ dataPrepare <- function(slocal) {
     }
 
     w <- weekdays(d$x)
-    d$sy <- apply(yy[,,1, drop=FALSE], 2, SmoothFit, w=w)
-    d$so <- apply(yy[,,2, drop=FALSE], 2, SmoothFit, w=w)
+    if (mgcv.ok) {
+        d$sy <- apply(yy[,,1, drop=FALSE], 2, SmoothFit, w=w)
+        d$so <- apply(yy[,,2, drop=FALSE], 2, SmoothFit, w=w)
+    } else {
+        d$sy <- d$y
+        d$so <- d$o
+    }
     
     d$yy <- yy
+
     d <- Rtfit(d)
 
     attr(d, 'ii') <- ii 
@@ -393,9 +400,13 @@ dataPrepare <- function(slocal) {
         
         d$gmob <- lapply(wgmbl, function(m)
             t(m[iim, jj, drop=FALSE]))
-        
-        d$sgmob <- lapply(d$gmob, function(m)
-                  apply(m[, drop=FALSE], 2, SmoothFitG, w=w))
+
+        if (mgcv.ok) {
+            d$sgmob <- lapply(d$gmob, function(m)
+                apply(m[, drop=FALSE], 2, SmoothFitG, w=w))
+        } else {
+            d$sgmob <- d$gmob
+        }
 
         attr(d, 'iim') <- iim
         attr(d, 'i2i') <- i2i
@@ -417,11 +428,16 @@ dataPrepare <- function(slocal) {
                 return(t(wambl[[k]][ia, , drop=FALSE]))
             return(NULL)
         })
-        
-        d$samob <- lapply(d$amob, function(m) {
-            if (is.null(m)) return(NULL)
-            apply(m[, , drop=FALSE], 2, SmoothFitG, w=w)
-          })
+
+        if (mgcv.ok) {
+            d$samob <- lapply(d$amob, function(m) {
+                if (is.null(m)) return(NULL)
+                apply(m[, , drop=FALSE], 2, SmoothFitG,
+                      w=weekdays(as.Date(rownames(m), 'X%Y.%m.%d')))
+            })
+        } else {
+            d$samob <- d$amob
+        }
         
         attr(d, 'iam') <- iam
         attr(d, 'i3i') <- i3i
@@ -461,32 +477,34 @@ SmoothFit <- function(y, w) {
 }
 
 SmoothFitG <- function(y, w) {
-    ii <- which(!is.na(y))
+    ii <- which((!is.na(y)) & (!is.na(w)))
     dtmp <- list(tt=ii, r=y[ii], w=factor(w[ii]))
-    r <- y
+    rr <- y
     if (length(ii)<10) {
-        r[ii] <- mean(dtmp$y)
+        rr[ii] <- mean(dtmp$y)
     } else {
         if (length(ii)<30) {
-            sfit <- gam(r ~ 0 + s(tt), data=dtmp)
-            r[ii] <- predict(sfit)
+            sfit <- gam(r ~ 1 + s(tt), data=dtmp)
+            p.t <- predict(sfit, type='terms')
+            rr[ii] <- (attr(p.t, 'constant') + p.t[,1])
       } else {
           if ((length(levels(dtmp$w))>1) &
               all(table(dtmp$w)>2)) {
               sfit <- gam(r ~ 0 + w + s(tt), data=dtmp)
               p.t <- predict(sfit, type='terms')
-##              if (nrow(p.t)==length(ii)) {
-                  r[ii] <- (p.t[,2] + mean(p.t[,1]))
+              ##              if (nrow(p.t)==length(ii)) {
+              rr[ii] <- (p.t[,2] + mean(p.t[,1]))
   ##            } else {
-      ##            r[ii] <- mean(dtmp$y)
+      ##            rr[ii] <- mean(dtmp$y)
     ##          }
           } else {
-              sfit <- gam(r ~ 0 + s(tt), data=dtmp)
-              r[ii] <- predict(sfit)
+              sfit <- gam(r ~ 1 + s(tt), data=dtmp)
+              p.t <- predict(sfit, type='terms')
+              rr[ii] <- (attr(p.t, 'constant') + p.t[,1])
           }
       }
     }
-    return(r)
+    return(rr)
 }
 
 ### do the R_t computations 
@@ -523,7 +541,7 @@ Rtfit <- function(d, a=0.5, b=1) {
             i1 <- which(yy[, l, k]>0)[1]
             ii <- which(!is.na(yy[, l, k]))
             ii <- ii[ii>=i1]
-            if (length(ii)>19) {
+            if ((length(ii)>19) & (mgcv.ok)) {
               fRt <- gam(y ~ 0 + w + s(x), poisson(), 
                          data=list(
                            w = factor(weekdays(d$x[ii])), 
@@ -1176,15 +1194,17 @@ data2plot <- function(d,
             jlwd2 <- 2*jlwd2
             
             for (j in jjl2) {
-                for (l in 1:sum(!is.na(i3i[[j]])))  {
-                    if (showPoints)
-                        points(attr(wambl[[j]], 'Date'),
-                               d$amob[[jjp2[j]]][, l],
-                               pch=jjp2[j], col=scol[i3i[[j]][l]])
-                    lines(attr(wambl[[j]], 'Date'),
-                          d$samob[[jjp2[j]]][, l],
-                          lty=jlty2[j], lwd=jlwd2[j],
-                          col=scol[i3i[[j]][l]])
+                if (any(!is.na(i3i[[jjp2[j]]]))) {
+                    for (l in 1:sum(!is.na(i3i[[j]])))  {
+                        if (showPoints)
+                            points(attr(wambl[[jjp2[j]]], 'Date'),
+                                   d$amob[[jjp2[j]]][, l],
+                                   pch=jjp2[j], col=scol[i3i[[jjp2[j]]][l]])
+                        lines(attr(wambl[[jjp2[j]]], 'Date'),
+                              d$samob[[jjp2[j]]][, l],
+                              lty=jlty2[j], lwd=jlwd2[j],
+                              col=scol[i3i[[jjp2[j]]][l]])
+                    }
                 }
             }
             
