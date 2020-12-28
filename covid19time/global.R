@@ -1195,7 +1195,7 @@ data2plot <- function(d,
             
             for (j in jjl2) {
                 if (any(!is.na(i3i[[jjp2[j]]]))) {
-                    for (l in 1:sum(!is.na(i3i[[j]])))  {
+                    for (l in 1:sum(!is.na(i3i[[jjp2[j]]])))  {
                         if (showPoints)
                             points(attr(wambl[[jjp2[j]]], 'Date'),
                                    d$amob[[jjp2[j]]][, l],
