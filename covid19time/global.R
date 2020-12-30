@@ -585,14 +585,17 @@ data2plot <- function(d,
                       transf, 
                       legpos) {
 
-  if (length(variables)<1)
-    if (pt) {
-      stop(safeError(
-        'Favor selecionar pelo menos uma variável!'))
-    } else {
-      stop(safeError(
-        'Please select at least one variable!'))
+    if ((length(plots)==0) |
+        (any(plots%in%(1:2)) & (length(variables)<1))) {
+        if (pt) {
+            stop(safeError(
+                'Favor selecionar pelo menos uma variável!'))
+        } else {
+            stop(safeError(
+                'Please select at least one variable!'))
+        }
     }
+    
     v <- pmatch(
         variables, 
         c('cases', 'deaths'))
@@ -1135,20 +1138,45 @@ data2plot <- function(d,
                 jlwd <- jlty <- jjl <- NULL
             }
             
-            if (showPoints) {
-                legend(legpos, allpls[-(1:3)][jjp],
-                       pch=jjp, lty=jlty, lwd=jlwd, bty='n')
+            if (any(plots%in%c(1,2,3))) {
+                if (showPoints) {
+                    legend(legpos, allpls[-(1:3)][jjp],
+                           pch=jjp, lty=jlty, lwd=jlwd, bty='n')
+                } else {
+                    legend(legpos, allpls[-(1:3)][jjp], 
+                           lty=jlty, lwd=jlwd, bty='n')
+                }
             } else {
-                legend(legpos, allpls[-(1:3)][jjp], 
-                       lty=jlty, lwd=jlwd, bty='n')
-            }
+                if (showPoints) {
+                    legend(legpos, c(lll[oloc], allpls[-(1:3)][jjp]),
+                           pch=c(rep(1, length(oloc)), jjp), 
+                           lty=c(rep(1, length(oloc)), jlty),
+                           lwd=c(rep(2, length(oloc)), jlwd),
+                           col=c(scol[oloc], rep(1, length(jjp))), 
+                           ncol=leg.ncols, bty='n')
+                } else {
+                    legend(legpos, c(lll[oloc], allpls[-(1:3)][jjp]),
+                           lty=c(rep(1, length(oloc)), jlty),
+                           lwd=c(rep(2, length(oloc)), jlwd),
+                           col=c(scol[oloc], rep(1, length(jjp))), 
+                           ncol=leg.ncols, bty='n')
+                }
+            }            
 
-            axis(1, xl$x, format(xl$x, '%b,%d'))
+            if (ncwplot==1) {
+                if (nrwplot==iplot)                    
+                    axis(1, xl$x, format(xl$x, '%b,%d'))
+            } else {
+                if (iplot>2)
+                    axis(1, xl$x, format(xl$x, '%b,%d'))
+            }
+            
             axis(2, las=1)
             abline(v=xl$x, h=pretty(ylm), 
                    col=gray(0.5, 0.5), lty=2)
             abline(h=0)
 
+            
         }
     }
     
@@ -1207,7 +1235,11 @@ data2plot <- function(d,
                     }
                 }
             }
+            abline(h=100)
             
+        }
+        
+        if (any(plots%in%c(1:9))) {
             if (showPoints) {
                 legend(legpos, allpls[-(1:3)][jjp2+6],
                        pch=jjp2, lty=jlty2, lwd=jlwd2, bty='n')
@@ -1215,7 +1247,21 @@ data2plot <- function(d,
                 legend(legpos, allpls[-(1:3)][jjp2+6], 
                        lty=jlty2, lwd=jlwd2, bty='n')
             }
-
+        } else {
+            if (showPoints) {
+                legend(legpos, c(lll[oloc], allpls[-(1:3)][jjp2+6]),
+                       pch=c(rep(1, length(oplot)), jjp2), 
+                       lty=c(rep(1, length(oloc)), rep(NA, length(jlty2))),
+                       lwd=c(rep(2, length(oloc)), jlwd2),
+                       col=c(scol[oloc], rep(1, length(jjp2))), 
+                       ncol=leg.ncols, bty='n')
+            } else {
+                legend(legpos, c(lll[oloc], allpls[-(1:3)][jjp2+6]),
+                       lty=c(rep(1, length(oloc)), rep(1, length(jlty2))),
+                       lwd=c(rep(2, length(oloc)), jlwd2),
+                       col=c(scol[oloc], rep(1, length(jjp2))), 
+                       ncol=leg.ncols, bty='n')
+            }
         }
         
         axis(1, xl$x, format(xl$x, '%b,%d'))
