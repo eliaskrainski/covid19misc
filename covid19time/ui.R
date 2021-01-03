@@ -1,14 +1,11 @@
 ui <- fluidPage(
-  includeHTML("../GLOBAL/header.html"),
-  includeHTML("../GLOBAL/MathJax.html"),
-  includeCSS("../GLOBAL/style.css"),
   withMathJax(),
-  titlePanel("Visualização temporal de dados de COVID19"),
+  titlePanel("Temporal visualization of COVID19 data"),
   sidebarLayout(
     sidebarPanel(
       checkboxGroupInput(
         inputId = "variables", 
-        label = "Variável (Total Mundo)", 
+        label = 'Variable (Total world)',  
         choices=lb.n, 
         selected = 'cases'),
       selectizeInput(
@@ -21,29 +18,28 @@ ui <- fluidPage(
                      'Brasil', 'NY - US', 'US')),
       dateRangeInput(
         inputId = 'dateRange',
-        label = 'Data (intervalo):',
+        label = 'Date (interval):',
         start = as.Date('2020-01-20'),
         end = Sys.Date(),
-        format = "dd/mm/yy", 
-        language = 'pt'),
+        format = "dd/mm/yy"),
       checkboxGroupInput(
         inputId = "plots", 
-        label = 'Para mostrar', 
+        label = 'To show', 
         choices = allpls, 
         selected = allpls[c(1:2, 5)]),
       checkboxInput(
         inputId = 'showPoints',
-        label = 'Mostrar pontos',
+        label = 'Show points',
         value = TRUE),
       radioButtons(
         inputId = "legend",
-        label = "Legenda (posição)",
-        choices = c('À direita' = 'right',
-                    'Acima' = 'top'),
+        label = "Legend (position)",
+        choices = c('Right' = 'right',
+                    'Top' = 'top'),
         selected = 'top'),
       radioButtons(
         inputId = "transf", 
-	      label = "Tranformação", 
+	      label = "Tranformation", 
 	      choices=c('Nenhuma'='none', 
 	                'sqrt'='sqrt', 
 	                'log10'='log10'), 
@@ -54,5 +50,4 @@ ui <- fluidPage(
     mainPanel(
       plotOutput("plot"))
     ),
-  includeHTML("../GLOBAL/footer.html")
 ) # fluidPage

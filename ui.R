@@ -17,7 +17,7 @@ ui <- fluidPage(
         choices = olocals,
         multiple = TRUE, 
         selected = c('Curitiba(SM), PR - BR', 
-                     'PR - Brasil', 
+                     'PR - BR', 
                      'Brasil', 'NY - US', 'US')),
       dateRangeInput(
         inputId = 'dateRange',
@@ -29,8 +29,8 @@ ui <- fluidPage(
       checkboxGroupInput(
         inputId = "plots", 
         label = 'Para mostrar', 
-        choices = pls, 
-        selected = pls[1:2]),
+        choices = allpls, 
+        selected = allpls[c(1:2, 5)]),
       checkboxInput(
         inputId = 'showPoints',
         label = 'Mostrar pontos',

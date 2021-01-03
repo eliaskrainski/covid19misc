@@ -678,7 +678,7 @@ if (amob) {
             as.Date(colnames(wambl[[k]]), 'X%Y.%m.%d')
     }
 
-    grep('Curitiba', attr(wambl[[1]], 'local'))
+    grep('Curitiba', attr(wambl[[1]], 'local'),value=TRUE)
     
     system.time(save(
         'wambl',
