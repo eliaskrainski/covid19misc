@@ -1013,6 +1013,13 @@ data2plot <- function(d,
         par(mar=c(2, 4.5, 0, 0.5))
     if (ncwplot==2)
         par(mar=c(2, 4.5, 0, 0.5))
+    if (ncwplot==1) {
+      if (iplot==nrwplot)
+        par(mar=c(2, 4.5, 0, 0.5))
+    } else {
+      if (iplot>2)
+        par(mar=c(2, 4.5, 0, 0.5))
+    }
     
     arate <- 100*d$o/d$y
     arate[d$y<1] <- NA
@@ -1027,7 +1034,7 @@ data2plot <- function(d,
         srate[, l] <- xTransf(srate[, l], transf)
     }    
     
-    ylm <- range(srate[jj,], na.rm=TRUE)
+    ylm <- range(srate[jj,], arate[jj,], na.rm=TRUE)
     if (showPoints)
         ylm <- range(rate[jj,], na.rm=TRUE)
     if (transf=='none')
@@ -1056,9 +1063,16 @@ data2plot <- function(d,
         if (iplot>2)
             axis(1, xl$x, format(xl$x, '%b,%d'))
     }
-    y0l <- c(0, c(1, 3, 5), c(1, 2, 4)*10) 
-    axis(2, xTransf(y0l, transf), y0l, las=1) 
-    abline(h=xTransf(y0l, transf), lty=2, col=gray(0.5,0.5)) 
+    
+    if(transf=='none'){
+      axis(2,pretty(par()$usr[3:4],n=10),las=1)
+      abline(h=pretty(par()$usr[3:4],n=20),lty=2)
+    }else{
+      y0l <- c(0, c(1, 3, 5), c(1, 2, 4)*10) 
+      axis(2, xTransf(y0l, transf), y0l, las=1) 
+      abline(h=xTransf(y0l, transf), lty=2, col=gray(0.5,0.5))       
+    }
+
     if (pt) {
       lleg3 <- c('Diária', 'Acumulada')
     } else {
@@ -1101,12 +1115,12 @@ data2plot <- function(d,
                     plot(d$x, ##d$mob[[1]][,1],
                          type='n', axes=FALSE,
                          xlim=xlm, ylim=ylm,
-                         ylab=ylmob)
+                         ylab=paste(ylmob,'(Google)'))
                 } else {
                     plot(d$x,
                          xlim=xlm, ylim=c(-100,100),
                          type='n', axes=FALSE,
-                         ylab=ylmob)
+                         ylab=paste(ylmob,'(Google)'))
                 }
                 
                 jjl <- 1:length(jjp)
@@ -1204,12 +1218,12 @@ data2plot <- function(d,
                 plot(attr(wambl[[1]], 'Date'), ##d$mob[[1]][,1],
                      type='n', axes=FALSE,
                      xlim=xlm, ylim=ylm,
-                     ylab=ylmob)
+                     ylab=paste(ylmob,'(Apple)'))
             } else {
                 plot(attr(wambl[[1]], 'Date'),
                      xlim=xlm, ylim=c(0,200),
                      type='n', axes=FALSE,
-                     ylab=ylmob)
+                     ylab=paste(ylmob,'(Apple)'))
             }
             
             if (length(jjl2)>2) {

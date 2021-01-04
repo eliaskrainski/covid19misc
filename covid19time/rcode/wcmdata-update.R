@@ -318,7 +318,6 @@ if (dms) {
 
 source('rcode/dados-curitiba.R')
 
-
     for (k in 1:2) {
         wdl[[k]] <- rbind(
             wdl[[k]],
@@ -668,14 +667,18 @@ if (amob) {
             ifelse(wambl[[k]]$geo_type %in% c('country/region'), 
                    wambl[[k]]$region, wambl[[k]]$country), sep='_')
         ii <- grep('Curitiba_PR', tlocal)
+        cat(ii, tlocal[ii], '\n')
         new <- as.matrix(wambl[[k]][ii, 7:ncol(wambl[[k]]), drop=FALSE])
-        rownames(new) <- gsub('Curitiba', 'Curitiba(SM)', rownames(new))
+        nnew <- gsub('Curitiba', 'Curitiba(SM)', tlocal[ii])
+        rownames(new) <- nnew
         wambl[[k]] <- rbind(as.matrix(wambl[[k]][, 7:ncol(wambl[[k]])]),
                             new)
-        attr(wambl[[k]], 'local') <- tlocal
+        attr(wambl[[k]], 'local') <- c(tlocal, nnew)
         attr(wambl[[k]], 'Date') <-
             as.Date(colnames(wambl[[k]]), 'X%Y.%m.%d')
     }
+
+    grep('Curitiba', attr(wambl[[1]], 'local'),value=TRUE)
     
     system.time(save(
         'wambl',
