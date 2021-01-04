@@ -1115,12 +1115,12 @@ data2plot <- function(d,
                     plot(d$x, ##d$mob[[1]][,1],
                          type='n', axes=FALSE,
                          xlim=xlm, ylim=ylm,
-                         ylab=ylmob)
+                         ylab=paste(ylmob,'(Google)'))
                 } else {
                     plot(d$x,
                          xlim=xlm, ylim=c(-100,100),
                          type='n', axes=FALSE,
-                         ylab=ylmob)
+                         ylab=paste(ylmob,'(Google)'))
                 }
                 
                 jjl <- 1:length(jjp)
@@ -1218,12 +1218,12 @@ data2plot <- function(d,
                 plot(attr(wambl[[1]], 'Date'), ##d$mob[[1]][,1],
                      type='n', axes=FALSE,
                      xlim=xlm, ylim=ylm,
-                     ylab=ylmob)
+                     ylab=paste(ylmob,'(Apple)'))
             } else {
                 plot(attr(wambl[[1]], 'Date'),
                      xlim=xlm, ylim=c(0,200),
                      type='n', axes=FALSE,
-                     ylab=ylmob)
+                     ylab=paste(ylmob,'(Apple)'))
             }
             
             if (length(jjl2)>2) {
