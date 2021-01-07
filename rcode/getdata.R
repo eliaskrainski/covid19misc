@@ -44,7 +44,7 @@ if (brio) {
 }
 
 if (!any(ls()=='wcota'))
-    wcota <- FALSE
+    wcota <- TRUE
 
 if (wcota) { ### Brazilian data put together by Wesley Cota
 

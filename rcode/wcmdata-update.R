@@ -7,7 +7,6 @@ if (FALSE) { ## can manually skip
 
 options(width=70)
 
-wcota <- TRUE
 source('rcode/getdata.R')
 
 Date <- seq(as.Date('20200121', '%Y%m%d'), Sys.Date(), 1)
@@ -36,12 +35,27 @@ wdl <- lapply(c(confirmed='data/confirmed_global.csv',
                 deaths='data/deaths_global.csv'), wwfun)
 sapply(wdl, dim)
 wdl[[1]][1:3, 1:7]
-wdl[[1]][101:110, c(1:4, -1:0+ncol(wdl[[1]]))]
+wdl[[1]][101:110, c(1:7, -1:0+ncol(wdl[[1]]))]
 
 ##for (k in 1:2) {
 ##    i.us <- which(wdl[[k]]$Country=='US')
 ##    wdl[[k]]$Country[i.us] <- 'United States'
 ##}
+
+for (k in 1:2) {
+    wdl[[k]]$Country.Region <- gsub(
+        'Burma', 'Myanmar',
+        wdl[[k]]$Country.Region, fixed=TRUE)
+    wdl[[k]]$Country.Region <- gsub(
+        'Congo (Brazzaville)', 'Congo',
+        wdl[[k]]$Country.Region, fixed=TRUE)
+    wdl[[k]]$Country.Region <- gsub(
+        'Congo (Kinshasa)', 'DR Congo',
+        wdl[[k]]$Country.Region, fixed=TRUE)
+    wdl[[k]]$Country.Region <- gsub(
+        'West Bank and Gaza', 'Palestine',
+        wdl[[k]]$Country.Region, fixed=TRUE)
+}
 
 for (k in 1:2) {
     dtmp <- as.Date(colnames(wdl[[k]])[7:ncol(wdl[[k]])],
@@ -68,6 +82,20 @@ colnames(wdl[[1]])[7:ncol(wdl[[1]])] <-
     colnames(wdl[[2]])[7:ncol(wdl[[2]])] <-
     paste0('X', gsub('-', '', as.character(Date)))
 
+### Add countries population
+wcpop <- read.table(
+    'data/world2020population.txt', header=TRUE)
+head(wcpop)
+
+w2i.c <- pmatch(paste0(wdl[[1]]$Country.Region,
+                      wdl[[1]]$Province.State),
+               wcpop$Country)
+summary(w2i.c)
+
+if (FALSE)
+    wdl[[1]][is.na(w2i.c), 1:4]
+
+wpop.c <- ifelse(is.na(w2i.c), NA, wcpop$Population[w2i.c])
 
 ### US states data
 us.d <- read.csv('data/daily.csv')
@@ -88,16 +116,41 @@ for (k in 1:2) {
                    w.us[[k]]))
 }
 
-## US county data
-system.time(uscl <- read.csv('data/us-counties.csv'))
-head(uscl,3)
+### US counties population from
+## https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv
+uscpop <- read.csv('data/us-counties-statistics.csv')
+head(uscpop,1)
 
-system.time(uscl$fdate <- factor(gsub('-', '', uscl$date), alldates))
+table(uscpop$SUMLEV)
+tapply(uscpop$POPESTIMATE2019,
+       uscpop$SUMLEV, sum)
+summary(uscpop$POPESTIMATE2019[uscpop$SUMLEV==50])
+uscpop[tail(order(uscpop$POPESTIMATE2019)), 1:7]
 
 ussabb <- read.csv('data/us-states-abbreviation.csv')
 head(ussabb,2)
 for (j in 1:ncol(ussabb))
     ussabb[,j] <- as.character(ussabb[,j])
+
+i2ist <- pmatch(uscpop$STNAME,
+                ussabb$State.District,
+                duplicates.ok=TRUE)
+uscpop$STcode <- ussabb$Postal.Code[i2ist]
+
+uss.pop <- tapply(uscpop$POPESTIMATE2019, uscpop$STcode, sum)
+uss.pop
+
+w2i.uss <- pmatch(rownames(w.us[[1]]), names(uss.pop))
+summary(w2i.uss)
+wpop.uss <- ifelse(is.na(w2i.uss), NA, uss.pop[w2i.uss])
+wpop.uss
+
+## US county data
+system.time(uscl <- read.csv('data/us-counties.csv'))
+head(uscl,3)
+
+system.time(uscl$fdate <- factor(gsub(
+                '-', '', uscl$date), alldates))
 
 uscl$ST <- as.character(uscl$state)
 for (j in 1:nrow(ussabb)) {
@@ -135,6 +188,10 @@ wuscl.loc <- strsplit(rownames(wuscl[[1]]), '_')
 stopifnot(length(unique(sapply(wuscl.loc, length)))==1)
 
 dim(wuscl.loc <- sapply(wuscl.loc, as.character))
+head(t(wuscl.loc))
+
+uscpop[uscpop$SUMLEV==50, ][
+    tail(order(uscpop$POPESTIMATE2019[uscpop$SUMLEV==50])), 1:7]
 
 for (k in 1:2) {
     wdl[[k]] <- rbind(
@@ -146,6 +203,20 @@ for (k in 1:2) {
                    Long=as.numeric(NA),
                    wuscl[[k]]))
 }
+
+w2i.usc <- pmatch(
+    paste(wuscl.loc[1,], wuscl.loc[2,], sep='_'),
+    paste(gsub(' County', '',
+               gsub(' city', '', uscpop$CTYNAME)),
+          uscpop$STcode, sep='_'))
+summary(w2i.usc)
+dim(uscpop[which(is.na(w2i.usc)), 6:7])
+
+wpop.usc <- ifelse(
+    is.na(w2i.usc), NA, uscpop$POPESTIMATE2019)
+summary(wpop.usc)
+uscpop[which(uscpop$POPESTIMATE2019==
+             uscpop$POPESTIMATE2019[which.max(wpop.usc)]), 1:9]
 
 uf <- data.frame(
     STATE=c("SERGIPE", "MARANHÃO", "ESPÍRITO SANTO", "AMAZONAS",
@@ -186,6 +257,8 @@ if (wcota) {
     
     dim(dbr)
     summary(as.Date(unique(dbr$date)))
+
+    dbr[tail(order(dbr$totalCases),2),]
     
     table(nchar(dbr$ibgeID))
     
@@ -200,8 +273,9 @@ if (wcota) {
     i.mu.l <- which(dbr$city!='TOTAL')
     i.rg.l <- which(dbr$name_RegiaoDeSaude!='')
     
-    dbr$fcode <- gsub('CASO SEM LOCALIZAÇÃO DEFINIDA', 'Indefinido',
-                      as.character(dbr$city))
+    dbr$fcode <- gsub(
+        'CASO SEM LOCALIZAÇÃO DEFINIDA', 'Indefinido',
+        as.character(dbr$city))
     
     grep('Indefinido', unique(dbr$fcode), val=T)
     
@@ -209,16 +283,18 @@ if (wcota) {
                              fixed=TRUE), alldates)
     head(dbr, 3)
     
-    dbr$Regiao <- uf$Regi[pmatch(dbr$state, uf$UF, duplicates.ok=TRUE)]
+    dbr$Regiao <- uf$Regi[pmatch(dbr$state, uf$UF,
+                                 duplicates.ok=TRUE)]
     table(is.na(dbr$Regiao))
     dbr$Regiao[is.na(dbr$Regiao)] <- ''
     table(dbr$Regiao)
     
-    system.time(wbr.mu <- lapply(
-                    dbr[i.mu.l, c('totalCases', 'deaths')], tapply,
-                    dbr[i.mu.l, c('fcode', 'fdate')], as.integer))
+    system.time(
+        wbr.mu <- lapply(
+            dbr[i.mu.l, c('totalCases', 'deaths')], tapply,
+            dbr[i.mu.l, c('fcode', 'fdate')], as.integer))
     str(wbr.mu)
-    
+
     mun.mun <- sapply(rownames(wbr.mu[[1]]), function(x)
         substr(x, 1, nchar(x)-3))
     
@@ -226,28 +302,38 @@ if (wcota) {
     table(is.na(st.mun))
     table(st.mun)
     mun.mun[is.na(st.mun)]
-    st.mun[is.na(st.mun)] <- substring(names(mun.mun)[is.na(st.mun)], 12)
+    st.mun[is.na(st.mun)] <- substring(
+        names(mun.mun)[is.na(st.mun)], 12)
     table(is.na(st.mun))
     
-    system.time(wbr.rg <- lapply(
-                    dbr[i.rg.l, c('totalCases', 'deaths')], tapply,
-                    dbr[i.rg.l, c('name_RegiaoDeSaude', 'fdate')], sum))
+    system.time(
+        wbr.rg <- lapply(
+            dbr[i.rg.l, c('totalCases', 'deaths')], tapply,
+            dbr[i.rg.l, c('name_RegiaoDeSaude', 'fdate')], sum))
     str(wbr.rg)
     
     st.rg <- dbr$state[pmatch(rownames(
                      wbr.rg[[1]]), dbr$name_RegiaoDeSaude)]
     table(st.rg)
     
-    system.time(wbr.uf <- lapply(
-                    dbr[i.mu.l, c('totalCases', 'deaths')], tapply,
-                    dbr[i.mu.l, c('state', 'fdate')], sum))
+    system.time(
+        wbr.uf <- lapply(
+            dbr[i.mu.l, c('totalCases', 'deaths')], tapply,
+            dbr[i.mu.l, c('state', 'fdate')], sum))
     str(wbr.uf)
 
-    system.time(wbr.R <- lapply(
-                    dbr[c('totalCases', 'deaths')], tapply,
-                dbr[c('Regiao', 'fdate')], sum))
+    system.time(
+        wbr.R <- lapply(
+            dbr[c('totalCases', 'deaths')], tapply,
+            dbr[c('Regiao', 'fdate')], sum))
     str(wbr.R)
 
+    cc.m <- tapply(dbr$totalCases[i.mu.l], 
+                   dbr$fcode[i.mu.l], max)
+    cc.mk <- tapply(dbr$totalCases_per_100k[i.mu.l], 
+                    dbr$fcode[i.mu.l], max)
+    sum(1e5*cc.m/cc.mk, na.rm=TRUE)
+    
 }
 
 dms <- !wcota
@@ -490,7 +576,8 @@ if (gmob) {
         gmbl$sub_region_1,
         gmbl$country_region_code, sep='_')
 
-    sort(table(gmbl$local[icode <- substr(gmbl$local, 1, 2)=='__']))
+    sort(table(gmbl$local[icode <- substr(
+                              gmbl$local, 1, 2)=='__']))
     table(icode)
     
     gmbl$local[icode] <- paste0('__', gmbl$country_region[icode])
@@ -522,9 +609,11 @@ if (gmob) {
 
     table(im.inc <- gmbl$local %in% aa)
 
-    system.time(wgmbl <- mclapply(gmbl[im.inc, 9:14], tapply,
-                                  gmbl[im.inc, c('local', 'fdate')], 
-                                  mean))
+    system.time(
+        wgmbl <- mclapply(
+            gmbl[im.inc, 9:14], tapply,
+            gmbl[im.inc, c('local', 'fdate')], 
+            mean))
 
     str(wgmbl[1])
 
@@ -534,14 +623,16 @@ if (gmob) {
     for (k in 1:length(wgmbl)) {
         ii <- grep('Curitiba_PR', rownames(wgmbl[[k]]))
         new <- wgmbl[[k]][ii,, drop=FALSE]
-        rownames(new) <- gsub('Curitiba', 'Curitiba(SM)', rownames(new))
+        rownames(new) <- gsub(
+            'Curitiba', 'Curitiba(SM)', rownames(new))
         wgmbl[[k]] <- rbind(wgmbl[[k]], new)
     }
 
     for (k in 1:length(wgmbl)) {
         ii <- which(rownames(wgmbl[[k]])=='__Brazil')
         new <- wgmbl[[k]][ii,, drop=FALSE]
-        rownames(new) <- gsub('__Brazil', '__Brasil', rownames(new))
+        rownames(new) <- gsub(
+            '__Brazil', '__Brasil', rownames(new))
         wgmbl[[k]] <- rbind(wgmbl[[k]], new)
     }
 
@@ -559,7 +650,8 @@ if (!any(ls()=='amob'))
 if (amob) {
 
     (afl <- system('ls data/applemobilitytrends*csv', TRUE))
-    afl <- afl[order(as.Date(substr(afl, 26, 35)), decreasing=TRUE)]
+    afl <- afl[order(as.Date(
+        substr(afl, 26, 35)), decreasing=TRUE)]
     afl
 
     system.time(wambl0 <- read.csv(afl[1]))
@@ -587,9 +679,11 @@ if (amob) {
     table(wambl0$sub.region=='United States')
 
     table(wambl0$region=='US')
-    wambl0$region <- gsub('United States', 'US', wambl0$region)
+    wambl0$region <- gsub(
+        'United States', 'US', wambl0$region)
     table(wambl0$country=='US')
-    wambl0$country <- gsub('United States', 'US', wambl0$country)
+    wambl0$country <- gsub(
+        'United States', 'US', wambl0$country)
 
     table(wambl0$region=='BR')
     wambl0$region <- gsub('Brazil', 'BR', wambl0$region)
@@ -600,7 +694,8 @@ if (amob) {
     grep('state', wambl0$sub.region, val=T)
     grep('state', wambl0$country, val=T)
 
-    wambl0$region <- gsub(' (state)', '', wambl0$region, fixed=TRUE)
+    wambl0$region <- gsub(
+        ' (state)', '', wambl0$region, fixed=TRUE)
     wambl0$sub.region <- gsub(
         ' (state)', '', wambl0$sub.region, fixed=TRUE)
 
@@ -668,11 +763,13 @@ if (amob) {
                    wambl[[k]]$region, wambl[[k]]$country), sep='_')
         ii <- grep('Curitiba_PR', tlocal)
         cat(ii, tlocal[ii], '\n')
-        new <- as.matrix(wambl[[k]][ii, 7:ncol(wambl[[k]]), drop=FALSE])
+        new <- as.matrix(
+            wambl[[k]][ii, 7:ncol(wambl[[k]]), drop=FALSE])
         nnew <- gsub('Curitiba', 'Curitiba(SM)', tlocal[ii])
         rownames(new) <- nnew
-        wambl[[k]] <- rbind(as.matrix(wambl[[k]][, 7:ncol(wambl[[k]])]),
-                            new)
+        wambl[[k]] <- rbind(
+            as.matrix(wambl[[k]][, 7:ncol(wambl[[k]])]),
+            new)
         attr(wambl[[k]], 'local') <- c(tlocal, nnew)
         attr(wambl[[k]], 'Date') <-
             as.Date(colnames(wambl[[k]]), 'X%Y.%m.%d')

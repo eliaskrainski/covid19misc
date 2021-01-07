@@ -1195,7 +1195,8 @@ data2plot <- function(d,
     }
     
     if (any(plots>9)) {
-        iplot <- iplot + 1
+      par(mar=c(2, 4.5, 0, 0.5))
+      iplot <- iplot + 1
         i3i <- attr(d, 'i3i')
         jjp2 <- plots[(plots>9)]-9
         jjl2 <- 1:length(jjp2)
