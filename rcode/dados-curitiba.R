@@ -41,7 +41,7 @@ tail(diff(c(0, t3a[,2])), 21)
 
 (jj <- pmatch(c(##paste0('202011', 28:30),
      paste0('202012', sprintf('%02d', 31)),
-     paste0('202101', sprintf('%02d', 1:6))), 
+     paste0('202101', sprintf('%02d', 1:7))), 
      colnames(t3)))
 t3a[jj, ]
 
