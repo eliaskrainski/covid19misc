@@ -449,7 +449,7 @@ dataPrepare <- function(slocal, dpop) {
     if (popDivide)
         for (k in 2:12)
             for (l in 1:length(ii))
-                sdata[[k]][,l] <- sdata[[k]][,l]/attr(d, 'population')[l]
+                sdata[[k]][,l] <- 1e5*sdata[[k]][,l]/attr(d, 'population')[l]
     
     return(d) 
 
