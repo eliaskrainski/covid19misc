@@ -95,7 +95,7 @@ summary(w2i.c)
 if (FALSE)
     wdl[[1]][is.na(w2i.c), 1:4]
 
-wpop.c <- ifelse(is.na(w2i.c), NA, wcpop$Population[w2i.c])
+summary(wpop.c <- wcpop$Population[w2i.c])
 
 ### US states data
 us.d <- read.csv('data/daily.csv')
@@ -119,7 +119,7 @@ for (k in 1:2) {
 ### US counties population from
 ## https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv
 uscpop <- read.csv('data/us-counties-statistics.csv')
-head(uscpop,1)
+head(uscpop[,1:20],1)
 
 table(uscpop$SUMLEV)
 tapply(uscpop$POPESTIMATE2019,
@@ -142,8 +142,8 @@ uss.pop
 
 w2i.uss <- pmatch(rownames(w.us[[1]]), names(uss.pop))
 summary(w2i.uss)
-wpop.uss <- ifelse(is.na(w2i.uss), NA, uss.pop[w2i.uss])
-wpop.uss
+wpop.uss <- uss.pop[w2i.uss]
+summary(wpop.uss)
 
 ## US county data
 system.time(uscl <- read.csv('data/us-counties.csv'))
@@ -212,9 +212,7 @@ w2i.usc <- pmatch(
 summary(w2i.usc)
 dim(uscpop[which(is.na(w2i.usc)), 6:7])
 
-wpop.usc <- ifelse(
-    is.na(w2i.usc), NA, uscpop$POPESTIMATE2019)
-summary(wpop.usc)
+summary(wpop.usc <- uscpop$POPESTIMATE2019[w2i.usc])
 uscpop[which(uscpop$POPESTIMATE2019==
              uscpop$POPESTIMATE2019[which.max(wpop.usc)]), 1:9]
 
@@ -273,10 +271,16 @@ if (wcota) {
     i.mu.l <- which(dbr$city!='TOTAL')
     i.rg.l <- which(dbr$name_RegiaoDeSaude!='')
     
-    dbr$fcode <- gsub(
-        'CASO SEM LOCALIZAÇÃO DEFINIDA', 'Indefinido',
-        as.character(dbr$city))
-    
+    system.time(dbr$fcode <- gsub(
+                    'CASO SEM LOCALIZAÇÃO DEFINIDA', 'Indefinido',
+                    as.character(dbr$city)))
+    system.time(dbr$fcode <- gsub(
+                    "Olho-d'Água do Borges", "Olho d'Água do Borges", dbr$fcode))
+    system.time(dbr$fcode <- gsub(
+                    "Pingo-d'Água", "Pingo d'Água", dbr$fcode))
+    system.time(dbr$fcode <- gsub(
+                    'Santa Teresinha', 'Santa Terezinha', dbr$fcode))
+
     grep('Indefinido', unique(dbr$fcode), val=T)
     
     dbr$fdate <- factor(gsub('-', '', dbr$date, 
@@ -298,7 +302,7 @@ if (wcota) {
     mun.mun <- sapply(rownames(wbr.mu[[1]]), function(x)
         substr(x, 1, nchar(x)-3))
     
-    st.mun <- dbr$state[pmatch(rownames(wbr.mu[[1]]), dbr$city)]
+    st.mun <- dbr$state[pmatch(rownames(wbr.mu[[1]]), dbr$fcode)]
     table(is.na(st.mun))
     table(st.mun)
     mun.mun[is.na(st.mun)]
@@ -327,13 +331,7 @@ if (wcota) {
             dbr[c('totalCases', 'deaths')], tapply,
             dbr[c('Regiao', 'fdate')], sum))
     str(wbr.R)
-
-    cc.m <- tapply(dbr$totalCases[i.mu.l], 
-                   dbr$fcode[i.mu.l], max)
-    cc.mk <- tapply(dbr$totalCases_per_100k[i.mu.l], 
-                    dbr$fcode[i.mu.l], max)
-    sum(1e5*cc.m/cc.mk, na.rm=TRUE)
-    
+   
 }
 
 dms <- !wcota
@@ -401,6 +399,88 @@ if (dms) {
     
 
 }
+
+### br mun pop
+brmpop <- read.csv2('data/populacao2019municipio.csv', skip=3)
+brmpop[1:2,]
+
+head(rownames(wbr.mu[[1]]))
+head(mun.mun)
+head(st.mun)
+head(paste0(mun.mun, ' (', st.mun, ')'))
+
+grep('ivac', brmpop[,2], val=T)
+grep('de (RN)', brmpop[,2], val=T, fixed=TRUE)
+grep('RN', grep('Campo', brmpop[,2], val=T, fixed=TRUE), val=TRUE)
+grep('ona', brmpop[,2], val=T)
+grep('rer', brmpop[,2], val=T)
+grep('Cardo', brmpop[,2], val=T)
+grep('Borges', brmpop[,2], val=T)
+grep('Pingo', brmpop[,2], val=T)
+grep('Santa Tere', brmpop[,2], val=T)
+grep('Letras', brmpop[,2], val=T)
+grep('Taboc', brmpop[,2], val=T)
+
+head(dbr[intersect(grep('Campo Grande', dbr$city),
+                   which(dbr$state=='RN')), ])
+brmpop[brmpop[,1]=='2401305', ]
+
+brmpop[,2] <- as.character(brmpop[,2])
+brmpop[,2] <- gsub(
+    'Atílio Vivacqua', 'Atilio Vivacqua', brmpop[,2])
+brmpop[,2] <- gsub(
+    'Augusto Severo (RN)', 'Campo Grande (RN)',
+    brmpop[,2], fixed=TRUE)
+brmpop[,2] <- gsub(
+    'Dona Eusébia (MG)', 'Dona Euzébia (MG)',
+    brmpop[,2], fixed=TRUE)
+brmpop[,2] <- gsub(
+    'Ererê (CE)', 'Ereré (CE)', 
+    brmpop[,2], fixed=TRUE)
+brmpop[,2] <- gsub(
+    'Gracho Cardoso (SE)', 'Graccho Cardoso (SE)', 
+    brmpop[,2], fixed=TRUE)
+brmpop[,2] <- gsub(
+    'São Thomé das Letras (MG)', 'São Tomé das Letras (MG)', 
+    brmpop[,2], fixed=TRUE)
+brmpop[,2] <- gsub(
+    'Fortaleza do Tabocão', 'Tabocão', 
+    brmpop[,2], fixed=TRUE)
+brmpop[,2] <- gsub(
+    'Santa Teresinha', 'Santa Terezinha', brmpop[,2])
+
+summary(w2i.brm <- pmatch(
+            paste0(mun.mun, ' (', st.mun, ')'),
+            as.character(brmpop[,2])))
+paste(mun.mun, st.mun)[is.na(w2i.brm)]
+summary(wpop.brm <- brmpop$X2019[w2i.brm])
+
+unddbr <- dbr[!duplicated(dbr$fcode),]
+dim(unddbr)
+
+unddbr[1,]
+brmpop[1,]
+
+und.mnm <- sapply(strsplit(unddbr$fcode, '/'), head, 1)
+i2und.mn <- pmatch(brmpop[,2], paste0(und.mnm, ' (', unddbr$state, ')'))
+summary(i2und.mn)
+
+wpop.rg <- tapply(brmpop$X2019, unddbr$name_RegiaoDeSaude[i2und.mn], sum, na.rm=TRUE)
+str(wpop.rg)
+
+stopifnot(all(rownames(wbr.rg[[1]])==names(wpop.rg)))
+
+wpop.uf <- tapply(brmpop$X2019, unddbr$state[i2und.mn], sum, na.rm=TRUE)
+str(wpop.uf)
+
+stopifnot(all(rownames(wbr.uf[[1]])==names(wpop.uf)))
+
+table(unddbr$Regiao)
+wpop.R <- c(brmpop$X2019[1], tapply(brmpop$X2019, unddbr$Regiao[i2und.mn], sum, na.rm=TRUE))
+str(wpop.R)
+
+stopifnot(all(rownames(wbr.R[[1]])==names(wpop.R)))
+
 
 source('rcode/dados-curitiba.R')
 
@@ -487,6 +567,9 @@ paste(wdl[[1]]$City,
                        wdl[[1]]$Prov,
                        wdl[[1]]$Country))]
 
+
+attr(wdl, 'population') <- c(
+    wpop.c, wpop.uss, wpop.usc, wpop.brm, wpop.rg, wpop.uf, wpop.R)
 attr(wdl, 'Sys.time') <- Sys.time()
 
 save('wdl', file='data/wdl.RData')
