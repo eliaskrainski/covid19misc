@@ -209,7 +209,7 @@ w2i.usc <- pmatch(
     paste(gsub(' County', '',
                gsub(' city', '', uscpop$CTYNAME)),
           uscpop$STcode, sep='_'))
-summary(w2i.usc)
+summry(w2i.usc)
 dim(uscpop[which(is.na(w2i.usc)), 6:7])
 
 summary(wpop.usc <- uscpop$POPESTIMATE2019[w2i.usc])
@@ -567,9 +567,11 @@ paste(wdl[[1]]$City,
                        wdl[[1]]$Prov,
                        wdl[[1]]$Country))]
 
+(wpop.cwb <- brmpop$X2019[brmpop[,2]=='Curitiba (PR)'])
 
+length(c(wpop.c, wpop.uss, wpop.usc, wpop.brm, wpop.rg, wpop.uf, wpop.R, wpop.cwb))
 attr(wdl, 'population') <- c(
-    wpop.c, wpop.uss, wpop.usc, wpop.brm, wpop.rg, wpop.uf, wpop.R)
+    wpop.c, wpop.uss, wpop.usc, wpop.brm, wpop.rg, wpop.uf, wpop.R, wpop.cwb)
 attr(wdl, 'Sys.time') <- Sys.time()
 
 save('wdl', file='data/wdl.RData')
