@@ -8,6 +8,10 @@ ui <- fluidPage(
         label = 'Variable (Total world)',  
         choices=lb.n, 
         selected = 'cases'),
+      checkboxInput(
+        inputId = 'dividePop',
+        label = "Divide per 100K inhabitants",
+        value = TRUE),
       selectizeInput(
         inputId = "local",
         label = "Local",

@@ -336,7 +336,7 @@ accMax <- function(x) {
 ###   prepare it:
 ### 1. differenced series
 ### 2. R_t computations 
-dataPrepare <- function(slocal) {
+dataPrepare <- function(slocal, dpop) {
 
     ii <- pmatch(slocal, locals)
 
@@ -442,6 +442,14 @@ dataPrepare <- function(slocal) {
         attr(d, 'iam') <- iam
         attr(d, 'i3i') <- i3i
     }
+
+    attr(d, 'population') <-
+        attr(wdl, 'population')[ii]
+
+    if (popDivide)
+        for (k in 2:12)
+            for (l in 1:length(ii))
+                sdata[[k]][,l] <- sdata[[k]][,l]/attr(d, 'population')[l]
     
     return(d) 
 
@@ -1266,7 +1274,7 @@ data2plot <- function(d,
             if (showPoints) {
                 legend(legpos, c(lll[oloc], allpls[-(1:3)][jjp2+6]),
                        pch=c(rep(1, length(oplot)), jjp2), 
-                       lty=c(rep(1, length(oloc)), rep(NA, length(jlty2))),
+                       lty=c(rep(1, length(oloc)), rep(NA, length(jltyg2))),
                        lwd=c(rep(2, length(oloc)), jlwd2),
                        col=c(scol[oloc], rep(1, length(jjp2))), 
                        ncol=leg.ncols, bty='n')
