@@ -336,7 +336,7 @@ accMax <- function(x) {
 ###   prepare it:
 ### 1. differenced series
 ### 2. R_t computations 
-dataPrepare <- function(slocal, dpop) {
+dataPrepare <- function(slocal, popDivide) {
 
     ii <- pmatch(slocal, locals)
 
@@ -443,13 +443,18 @@ dataPrepare <- function(slocal, dpop) {
         attr(d, 'i3i') <- i3i
     }
 
-    attr(d, 'population') <-
-        attr(wdl, 'population')[ii]
+    pop <- attr(wdl, 'population')[ii]
+    print(pop)
+    attr(d, 'population') <- pop
 
-    if (popDivide)
-        for (k in 2:12)
-            for (l in 1:length(ii))
-                sdata[[k]][,l] <- 1e5*sdata[[k]][,l]/attr(d, 'population')[l]
+    if (popDivide) {
+        for (l in 1:length(ii)) {
+            cat(pop[l], max(d[[2]][,l], na.rm=TRUE), '')
+            for (k in 2:7)
+                d[[k]][,l] <- 1e5*d[[k]][,l]/pop[l]
+            cat(max(d[[2]][,l], na.rm=TRUE), '\n')
+        }
+    }
     
     return(d) 
 

@@ -12,8 +12,8 @@ ui <- fluidPage(
         choices=lb.n, 
         selected = 'cases'),
       checkboxInput(
-        inputId = 'dividePop',
-        label = "Divide por 100K habitantes",
+        inputId = 'popDivide',
+        label = "Por 100K habitantes",
         value = TRUE),
       selectizeInput(
         inputId = "local",

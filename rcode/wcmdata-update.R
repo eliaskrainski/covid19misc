@@ -209,7 +209,7 @@ w2i.usc <- pmatch(
     paste(gsub(' County', '',
                gsub(' city', '', uscpop$CTYNAME)),
           uscpop$STcode, sep='_'))
-summry(w2i.usc)
+summary(w2i.usc)
 dim(uscpop[which(is.na(w2i.usc)), 6:7])
 
 summary(wpop.usc <- uscpop$POPESTIMATE2019[w2i.usc])
@@ -274,10 +274,13 @@ if (wcota) {
     system.time(dbr$fcode <- gsub(
                     'CASO SEM LOCALIZAÇÃO DEFINIDA', 'Indefinido',
                     as.character(dbr$city)))
+
     system.time(dbr$fcode <- gsub(
                     "Olho-d'Água do Borges", "Olho d'Água do Borges", dbr$fcode))
+
     system.time(dbr$fcode <- gsub(
                     "Pingo-d'Água", "Pingo d'Água", dbr$fcode))
+
     system.time(dbr$fcode <- gsub(
                     'Santa Teresinha', 'Santa Terezinha', dbr$fcode))
 
