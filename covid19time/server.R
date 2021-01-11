@@ -34,7 +34,7 @@ server <- function(input, output) {
 
 ##        stop(safeError('testing'))
 
-        sdata <- dataPrepare(input$local, input$popDivide)
+        sdata <- dataPrepare(input$local)
         
         if (length(input$plots)<1)
           if (pt) {
@@ -47,6 +47,7 @@ server <- function(input, output) {
 
         
         data2plot(d=sdata, 
+                  popDivide=input$popDivide,
                   variables=input$variables,
                   dateRange=input$dateRange, 
                   plots=input$plots,

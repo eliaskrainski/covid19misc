@@ -336,7 +336,7 @@ accMax <- function(x) {
 ###   prepare it:
 ### 1. differenced series
 ### 2. R_t computations 
-dataPrepare <- function(slocal, popDivide) {
+dataPrepare <- function(slocal) {
 
     ii <- pmatch(slocal, locals)
 
@@ -444,18 +444,8 @@ dataPrepare <- function(slocal, popDivide) {
     }
 
     pop <- attr(wdl, 'population')[ii]
-    print(pop)
     attr(d, 'population') <- pop
 
-    if (popDivide) {
-        for (l in 1:length(ii)) {
-            cat(pop[l], max(d[[2]][,l], na.rm=TRUE), '')
-            for (k in 2:7)
-                d[[k]][,l] <- 1e5*d[[k]][,l]/pop[l]
-            cat(max(d[[2]][,l], na.rm=TRUE), '\n')
-        }
-    }
-    
     return(d) 
 
 }
@@ -591,6 +581,7 @@ Rtfit <- function(d, a=0.5, b=1) {
 
 ## display the data and R_t
 data2plot <- function(d,
+                      popDivide,
                       variables,
                       dateRange, 
                       plots,
@@ -628,19 +619,23 @@ data2plot <- function(d,
     wplot <- wplot[wplot>0]
     iplot <- 0
 
+    mgpp <- c(3, 0.5, 0)
+    if (popDivide)
+        mgpp[1] <- 2
+    
     if (length(wplot)>4) {
         par(mfrow=c(3, 2), 
-            mar=c(0.5, 4.5, 0.5, 0.5), mgp=c(3.5, 0.5, 0))
+            mar=c(0.5, 4.5, 0.5, 0.5), mgp=mgpp)
         nrwplot <- 3
         ncwplot <- 2
     } else {
         if (length(wplot)==4) {
             par(mfrow=c(2, 2),
-                mar=c(0.5, 4.5, 0.5, 0.5), mgp=c(3.5, 0.5, 0))
+                mar=c(0.5, 4.5, 0.5, 0.5), mgp=mgpp)
             ncwplot <- nrwplot <- 2
         } else {
             par(mfrow=c(length(wplot), 1),
-                mar=c(0.5, 4.5, 0.5, 0.5), mgp=c(3.5, 0.5, 0))
+                mar=c(0.5, 4.5, 0.5, 0.5), mgp=mgpp)
             nrwplot <- length(wplot)
             ncwplot <- 1
         }
@@ -666,11 +661,17 @@ data2plot <- function(d,
         }
     }
 
+    if (popDivide) {
+        popd <- attr(d, 'population')*1e-6
+    } else {
+        popd <- attr(d, 'population')*0 + 1
+    }
+
     for (j in 1:4) {
         d[[length(d)+1]] <- d[[3+j]]
         for (l in 1:nl) {
             d[[length(d)]][, l] <- xTransf(
-                d[[3+j]][, l], transf)
+                d[[3+j]][, l]/popd[l], transf)
         }
     }
 
@@ -730,6 +731,9 @@ data2plot <- function(d,
             'Óbitos confirmados por dia'),
             'Número de reprodução\n(infectados por infectante)', 
             'Taxa de letalidade (%)')
+        if (popDivide) {
+            ylabs[[1]][1:3] <- paste0(ylabs[[1]][1:3], '\n(por 1M habitantes)')
+        }
     } else {
         ylabs <- list(
             c('Daily counts',
@@ -737,6 +741,9 @@ data2plot <- function(d,
               'Daily number of deaths'),
             'Reproduction number\n(infecteds per infectee)', 
             'Fatality rate (%)')
+        if (popDivide) {
+            ylabs[[1]][1:3] <- paste0(ylabs[[1]][1:3], '\n(per 1M inhabitants)')
+        }
     }
 
     nl <- ncol(d$y)
@@ -774,16 +781,17 @@ data2plot <- function(d,
     iplot <- iplot + 1 
     if (nrwplot==1) 
       par(mar=c(2, 4.5, 0, 0.5))
+
     if (length(v)==2) {
+
       if (showPoints) {
-        ylm <- range(
-          d$dy.plot[jj,],
-          d$do.plot[jj,], na.rm=TRUE)
+        ylm <- range(d$dy.plot[jj,], 
+                     d$do.plot[jj,], na.rm=TRUE)
       } else {
-        ylm <- range(
-          d$sy.plot[jj,],
-          d$so.plot[jj,], na.rm=TRUE)
+        ylm <- range(d$sy.plot[jj,],
+                     d$so.plot[jj,], na.rm=TRUE)
       }
+      
       plot(d$x, 
            d$dy.plot[,1], 
            axes=FALSE,
@@ -792,13 +800,17 @@ data2plot <- function(d,
            type = 'n',
            xlab='',
            ylab=ylabs[[1]][1]) 
+
     } else {
+
       if (v==1) {
-        if (showPoints) {
-          ylm <- range(d$dy.plot[jj, ], na.rm=TRUE)
-        } else {
-          ylm <- range(d$sy.plot[jj, ], na.rm=TRUE)
-        }
+          if (showPoints) {
+              ylm <- range(
+                  d$dy.plot[jj, ], na.rm=TRUE)
+          } else {
+              ylm <- range(d$sy.plot[jj, ], na.rm=TRUE)
+          }
+            
         plot(d$x, 
              d$dy.plot[,1], 
              axes=FALSE, 
@@ -807,12 +819,15 @@ data2plot <- function(d,
              type = 'n', 
              xlab='', 
              ylab=ylabs[[1]][2])
+          
       } else {
+          
         if (showPoints) {
           ylm <- range(d$do.plot[jj, ], na.rm=TRUE)
         } else {
           ylm <- range(d$so.plot[jj, ], na.rm=TRUE)
         }
+          
         plot(d$x, 
              d$do.plot[,1], 
              axes=FALSE, 
@@ -821,6 +836,7 @@ data2plot <- function(d,
              type = 'n', 
              xlab='', 
              ylab=ylabs[[1]][3])
+          
       }
     }
 

@@ -137,12 +137,15 @@ i2ist <- pmatch(uscpop$STNAME,
                 duplicates.ok=TRUE)
 uscpop$STcode <- ussabb$Postal.Code[i2ist]
 
-uss.pop <- tapply(uscpop$POPESTIMATE2019, uscpop$STcode, sum)
+## uscpop[c("STcode", "POPESTIMATE2019")][uscpop$SUMLEV==40, ]
+
+uss.pop <- tapply(uscpop$POPESTIMATE2019[uscpop$SUMLEV==40],
+                  uscpop$STcode[uscpop$SUMLEV==40], sum)
 uss.pop
 
 w2i.uss <- pmatch(rownames(w.us[[1]]), names(uss.pop))
 summary(w2i.uss)
-wpop.uss <- uss.pop[w2i.uss]
+sum(wpop.uss <- uss.pop[w2i.uss], na.rm=TRUE)
 summary(wpop.uss)
 
 ## US county data
@@ -216,6 +219,7 @@ summary(wpop.usc <- uscpop$POPESTIMATE2019[w2i.usc])
 uscpop[which(uscpop$POPESTIMATE2019==
              uscpop$POPESTIMATE2019[which.max(wpop.usc)]), 1:9]
 
+### BR states
 uf <- data.frame(
     STATE=c("SERGIPE", "MARANHÃO", "ESPÍRITO SANTO", "AMAZONAS",
             "RORAIMA", "GOIÁS", "AMAPÁ", "RIO GRANDE DO SUL",
@@ -238,6 +242,7 @@ uf <- data.frame(
                 "22", "35", "42", "26", "33", "50", "51", "29", "31",
                 "27", "23", "24", "41", "11", "53", "12", "15", "17"))
 
+### BR regions
 r.pt <- c("Norte", "Nordeste", "Sudeste", "Sul", "Centro-Oeste")
 uf$Rcod <- as.integer(substr(rownames(uf), 1, 1))
 uf$Região <- r.pt[uf$Rcod]
@@ -464,26 +469,42 @@ dim(unddbr)
 unddbr[1,]
 brmpop[1,]
 
-und.mnm <- sapply(strsplit(unddbr$fcode, '/'), head, 1)
-i2und.mn <- pmatch(brmpop[,2], paste0(und.mnm, ' (', unddbr$state, ')'))
+und.mnm <- sapply(strsplit(
+    unddbr$fcode, '/'), head, 1)
+i2und.mn <- pmatch(
+    brmpop[,2],
+    paste0(und.mnm, ' (',
+           unddbr$state, ')'))
 summary(i2und.mn)
 
-wpop.rg <- tapply(brmpop$X2019, unddbr$name_RegiaoDeSaude[i2und.mn], sum, na.rm=TRUE)
+head(paste0(und.mnm, ' (', unddbr$state, ')'))
+tail(paste0(und.mnm, ' (', unddbr$state, ')'))
+
+wpop.rg <- tapply(
+    brmpop$X2019,
+    unddbr$name_RegiaoDeSaude[i2und.mn],
+    sum, na.rm=TRUE)
 str(wpop.rg)
 
 stopifnot(all(rownames(wbr.rg[[1]])==names(wpop.rg)))
 
-wpop.uf <- tapply(brmpop$X2019, unddbr$state[i2und.mn], sum, na.rm=TRUE)
+wpop.uf <- tapply(
+    brmpop$X2019,
+    unddbr$state[i2und.mn],
+    sum, na.rm=TRUE)
 str(wpop.uf)
 
 stopifnot(all(rownames(wbr.uf[[1]])==names(wpop.uf)))
 
 table(unddbr$Regiao)
-wpop.R <- c(brmpop$X2019[1], tapply(brmpop$X2019, unddbr$Regiao[i2und.mn], sum, na.rm=TRUE))
+wpop.R <- c(
+    brmpop$X2019[1],
+    tapply(brmpop$X2019,
+           unddbr$Regiao[i2und.mn],
+           sum, na.rm=TRUE))
 str(wpop.R)
 
 stopifnot(all(rownames(wbr.R[[1]])==names(wpop.R)))
-
 
 source('rcode/dados-curitiba.R')
 
@@ -527,6 +548,15 @@ source('rcode/dados-curitiba.R')
                 matrix(wcwb[[k]], 1,
                        dimnames=list(NULL, alldates))))
     }
+
+if (FALSE) {
+
+    iii <- sort(sample(tail(1:nrow(wdl[[1]]), 5570), 10))
+    wdl[[1]][iii, 2:3]
+    wpop.brm[iii]
+    grep('Ibipeba', brmpop[,2], val=T)
+    
+}
 
 sapply(wdl, dim)
 
@@ -572,9 +602,12 @@ paste(wdl[[1]]$City,
 
 (wpop.cwb <- brmpop$X2019[brmpop[,2]=='Curitiba (PR)'])
 
-length(c(wpop.c, wpop.uss, wpop.usc, wpop.brm, wpop.rg, wpop.uf, wpop.R, wpop.cwb))
+length(c(wpop.c, wpop.uss, wpop.usc, wpop.brm,
+         wpop.rg, wpop.uf, wpop.R, wpop.cwb))
 attr(wdl, 'population') <- c(
-    wpop.c, wpop.uss, wpop.usc, wpop.brm, wpop.rg, wpop.uf, wpop.R, wpop.cwb)
+    wpop.c, wpop.uss, wpop.usc, wpop.R, 
+    wpop.uf, wpop.rg, wpop.brm, wpop.cwb)
+
 attr(wdl, 'Sys.time') <- Sys.time()
 
 save('wdl', file='data/wdl.RData')

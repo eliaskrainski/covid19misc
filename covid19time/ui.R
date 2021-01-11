@@ -10,7 +10,7 @@ ui <- fluidPage(
         selected = 'cases'),
       checkboxInput(
         inputId = 'popDivide',
-        label = "Per 100K inhabitants",
+        label = "Per 1M inhabitants",
         value = TRUE),
       selectizeInput(
         inputId = "local",
