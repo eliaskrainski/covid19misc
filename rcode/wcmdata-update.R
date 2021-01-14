@@ -7,6 +7,9 @@ if (FALSE) { ## can manually skip
 
 options(width=70)
 
+usems <- !TRUE
+if (usems)
+    wcota <- FALSE
 source('rcode/getdata.R')
 
 Date <- seq(as.Date('20200121', '%Y%m%d'), Sys.Date(), 1)
@@ -252,7 +255,53 @@ for (j in which(sapply(uf, is.factor)))
 
 head(uf)
 
+### br mun pop
+brmpop <- read.csv2('data/populacao2019municipio.csv', skip=3)
+brmpop[1:2,]
+
+grep('ivac', brmpop[,2], val=T)
+grep('de (RN)', brmpop[,2], val=T, fixed=TRUE)
+grep('RN', grep('Campo', brmpop[,2], val=T, fixed=TRUE), val=TRUE)
+grep('ona', brmpop[,2], val=T)
+grep('rer', brmpop[,2], val=T)
+grep('Cardo', brmpop[,2], val=T)
+grep('Borges', brmpop[,2], val=T)
+grep('Pingo', brmpop[,2], val=T)
+grep('Santa Tere', brmpop[,2], val=T)
+grep('Letras', brmpop[,2], val=T)
+grep('Taboc', brmpop[,2], val=T)
+
+##head(dbr[intersect(grep('Campo Grande', dbr$city),
+  ##                 which(dbr$state=='RN')), ])
+brmpop[brmpop[,1]=='2401305', ]
+
+brmpop[,2] <- as.character(brmpop[,2])
+
+brmpop[,2] <- gsub(
+    'Augusto Severo (RN)', 'Campo Grande (RN)',
+    brmpop[,2], fixed=TRUE)
+brmpop[,2] <- gsub(
+    'Dona Eusébia (MG)', 'Dona Euzébia (MG)',
+    brmpop[,2], fixed=TRUE)
+brmpop[,2] <- gsub(
+    'Ererê (CE)', 'Ereré (CE)', 
+    brmpop[,2], fixed=TRUE)
+brmpop[,2] <- gsub(
+    'São Thomé das Letras (MG)', 'São Tomé das Letras (MG)', 
+    brmpop[,2], fixed=TRUE)
+brmpop[,2] <- gsub(
+    'Fortaleza do Tabocão', 'Tabocão', 
+    brmpop[,2], fixed=TRUE)
+
 if (wcota) {
+
+    brmpop[,2] <- gsub(
+        'Atílio Vivacqua', 'Atilio Vivacqua', brmpop[,2])
+    brmpop[,2] <- gsub(
+        'Gracho Cardoso (SE)', 'Graccho Cardoso (SE)', 
+        brmpop[,2], fixed=TRUE)
+    brmpop[,2] <- gsub(
+        'Santa Teresinha', 'Santa Terezinha', brmpop[,2])
 
 ### data from Wesley Cota 
     system.time(dbr <- read.csv(
@@ -342,7 +391,7 @@ if (wcota) {
    
 }
 
-dms <- !wcota
+dms <- (!wcota) & (!usems)
 
 if (dms) {
 
@@ -408,54 +457,32 @@ if (dms) {
 
 }
 
-### br mun pop
-brmpop <- read.csv2('data/populacao2019municipio.csv', skip=3)
-brmpop[1:2,]
+if (usems) {
+    
+    library(covid19br)
 
-head(rownames(wbr.mu[[1]]))
-head(mun.mun)
-head(st.mun)
-head(paste0(mun.mun, ' (', st.mun, ')'))
+    system.time(dbrms <- as.data.frame(
+                    covid19br:::downloadBR('en', 'cities')))
+    
+    dim(dbrms)
+    head(dbrms,2)
+    summary(dbrms$date)
 
-grep('ivac', brmpop[,2], val=T)
-grep('de (RN)', brmpop[,2], val=T, fixed=TRUE)
-grep('RN', grep('Campo', brmpop[,2], val=T, fixed=TRUE), val=TRUE)
-grep('ona', brmpop[,2], val=T)
-grep('rer', brmpop[,2], val=T)
-grep('Cardo', brmpop[,2], val=T)
-grep('Borges', brmpop[,2], val=T)
-grep('Pingo', brmpop[,2], val=T)
-grep('Santa Tere', brmpop[,2], val=T)
-grep('Letras', brmpop[,2], val=T)
-grep('Taboc', brmpop[,2], val=T)
+    for (j in which(sapply(dbrms, is.factor)))
+        dbrms[, j] <- as.character(dbrms[, j])
 
-head(dbr[intersect(grep('Campo Grande', dbr$city),
-                   which(dbr$state=='RN')), ])
-brmpop[brmpop[,1]=='2401305', ]
+    system.time(dbrms$fcode <- ifelse(
+                    dbrms$city=='', 'Indefinido', dbrms$city))
 
-brmpop[,2] <- as.character(brmpop[,2])
-brmpop[,2] <- gsub(
-    'Atílio Vivacqua', 'Atilio Vivacqua', brmpop[,2])
-brmpop[,2] <- gsub(
-    'Augusto Severo (RN)', 'Campo Grande (RN)',
-    brmpop[,2], fixed=TRUE)
-brmpop[,2] <- gsub(
-    'Dona Eusébia (MG)', 'Dona Euzébia (MG)',
-    brmpop[,2], fixed=TRUE)
-brmpop[,2] <- gsub(
-    'Ererê (CE)', 'Ereré (CE)', 
-    brmpop[,2], fixed=TRUE)
-brmpop[,2] <- gsub(
-    'Gracho Cardoso (SE)', 'Graccho Cardoso (SE)', 
-    brmpop[,2], fixed=TRUE)
-brmpop[,2] <- gsub(
-    'São Thomé das Letras (MG)', 'São Tomé das Letras (MG)', 
-    brmpop[,2], fixed=TRUE)
-brmpop[,2] <- gsub(
-    'Fortaleza do Tabocão', 'Tabocão', 
-    brmpop[,2], fixed=TRUE)
-brmpop[,2] <- gsub(
-    'Santa Teresinha', 'Santa Terezinha', brmpop[,2])
+    table(paste0(dbrms$fcode, ' (', dbrms$state, ')') %in% brmpop[,2])
+    table(dbrms$city[!paste0(dbrms$fcode, ' (', dbrms$state, ')') %in% brmpop[,2]])
+
+    dbrms$fdate <- factor(gsub('-', '', dbrms$data, 
+                               fixed=TRUE), alldates)
+    table(dbrms$region)
+
+
+}
 
 summary(w2i.brm <- pmatch(
             paste0(mun.mun, ' (', st.mun, ')'),

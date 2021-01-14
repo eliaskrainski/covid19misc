@@ -9,9 +9,10 @@ diff(c('0630'=356189, '0707'=393980,
        '0810'=575936,
        '1102'=882148, '1110'=886836,
        '1122'=945461, '3011'=973111,
-       '1214'=1029684))
+       '1214'=1029684,
+       '0104'=1103284, '0111'=1136682))
 
-fls <- system('ls data/INFLUD*2020.csv', TRUE)
+(fls <- system('ls data/INFLUD*202*.csv', TRUE))
 if (length(fls)>0) {
     file <- fls[tail(order(as.Date(substr(
         fls, 13, 22), '%d-%m-%Y')), 1)]
@@ -46,8 +47,10 @@ if (file.exists(rfile)) {
 ### labels da variavel CLASSI_FIN
     lab.cf <- c('NA', 'Influenza', 'ORespir', 
                 'OEtiol', 'NEspec', 'COVID19')
+
     table(is.na(srags20$CLASSI_FIN))
     table(srags20$CLASSI_FIN)
+    
     srags20$Classificação  <- factor(
         ifelse(is.na(srags20$CLASSI_FIN), 0,
                srags20$CLASSI_FIN), c(0:5), lab.cf)
@@ -63,6 +66,38 @@ if (file.exists(rfile)) {
     table(srags20$Evolução,
           ifelse(is.na(srags20$EVOLUCAO), 0, srags20$EVOLUCAO))
 
+    srags20$anoS <- substr(srags20$dSintPrinc, 1, 4)
+    table(srags20$anoS, srags20$Classificação)
+    table(srags20$Evolu, srags20$anoS)
+
+    addmargins(with(srags20[(
+        srags20$anoS==2020) & (srags20$Classificação=='COVID19'),],
+        table(Evolução, anoS)))
+
+    table(srags20$ev2 <- factor(ifelse(
+              srags20$Evolução=='NA', 'Indef', as.character(srags20$Evolução)),
+              c('Cura', 'Óbito', 'Indef')), 
+          srags20$Evolução)
+    t0 <- with(srags20[(
+        srags20$anoS==2020) & (srags20$Classificação=='COVID19'),],
+        table(ev2, UTI))
+    addmargins(t0)
+    
+    t1 <- cbind(t0[, 1, drop=FALSE], rowSums(t0[, 2:3]))
+    addmargins(t1)
+
+    srags20$diasInt <- as.integer(difftime(
+        srags20$dEvol, srags20$dInterna, units='days'))
+    tapply(srags20$diasInt, srags20$UTI, summary)
+
+    tapply(srags20$diasInt, srags20$UTI, sum, na.rm=TRUE)
+    sum(tapply(srags20$diasInt, srags20$UTI, sum,
+               na.rm=TRUE) * c(1800, 800, 1000))*1e-6
+    
+    table(srags20$UTI)
+    addmargins(with(srags20[srags20$Classificação=='COVID19',],
+                    table(Evolução, UTI)))
+    
     
     srags20$Idade <- srags20$NU_IDADE_N/
         (c(365.25, 12, 1)[as.integer(substr(srags20$COD_IDADE, 1, 1))])

@@ -739,8 +739,8 @@ data2plot <- function(d,
             'Número de reprodução\n(infectados por infectante)', 
             'Taxa de letalidade (%)')
         if (popDivide) {
-            ylabs[[1]][1:3] <- paste0(ylabs[[1]][1:3], '\n(por 1M habitantes)')
-            ylabs[[2]][1:3] <- paste0(ylabs[[2]][1:3], '\n(por 1M habitantes)')
+            ylabs[[1]][1:3] <- paste0(ylabs[[1]][1:3], '\npor 1M habitantes')
+            ylabs[[2]][1:3] <- paste0(ylabs[[2]][1:3], '\npor 1M habitantes')
         }
     } else {
         ylabs <- list(
@@ -752,8 +752,8 @@ data2plot <- function(d,
             'Reproduction number\n(infecteds per infectee)', 
             'Fatality rate (%)')
         if (popDivide) {
-            ylabs[[1]][1:3] <- paste0(ylabs[[1]][1:3], '\n(per 1M inhabitants)')
-            ylabs[[2]][1:3] <- paste0(ylabs[[2]][1:3], '\n(per 1M inhabitants)')
+            ylabs[[1]][1:3] <- paste0(ylabs[[1]][1:3], '\nper 1M inhabitants')
+            ylabs[[2]][1:3] <- paste0(ylabs[[2]][1:3], '\nper 1M inhabitants')
         }
     }
 
@@ -793,6 +793,8 @@ data2plot <- function(d,
     if (nrwplot==1) 
       par(mar=c(2, 4.5, 0, 0.5))
 
+    y.ex1 <- y.ex1*ifelse(any(plots==2), 0.33, 1)
+    
     if (length(v)==2) {
 
       if (showPoints) {
@@ -879,58 +881,72 @@ data2plot <- function(d,
         }
     }
 
-    nn1x <- format(nn1, big.mark = ',')
-    nn2x <- format(nn2, big.mark = ',')
-    if (pt) {
-      nn1x <- gsub(',', '.', nn1x, fixed=TRUE)
-      nn2x <- gsub(',', '.', nn2x, fixed=TRUE)
-    }
-    if (length(v)==2) {
-      if (nl>1) {
-        nlab <- paste0(nn1x, ' C, ', nn2x, ' D')
-      } else {
-        nlab <- c(nn1x, nn2x)
-      }
+    if (any(plots==2)) {
+        if (pt) {
+            legend(legpos, c('Casos', 'Óbitos')[v],
+                   lwd=2, lty=v, bty='n', title='Variável')
+        } else {
+            legend(legpos, c('Cases', 'Deaths')[v],
+                   lwd=2, lty=v, bty='n', title='Variable')
+        }
     } else {
-      if (v==1) {
-        nlab <- nn1x 
-      } else {
-        nlab <- nn2x 
-      }
-    }
-    if (nl>1) {
-      legend(legpos, paste0(lll, '\n', nlab)[oloc], 
-             ##inset = c(0, -0.05),
-             col=scol[oloc], lty=1, lwd=5,
-             bty='n', xpd=TRUE,
-             y.intersp=sqrt(0.5+max(nnll)),
-             cex=leg.cex, ncol=leg.ncols)
-    } else {
-      if (pt) {
-        llg <- paste(c('Casos', 'Óbitos'), ':', nlab)
-      } else {
-        llg <- paste(c('Cases', 'Deaths'), ':', nlab)
-      }
-      if (showPoints) {
-        legend(legpos, llg[v], bty='n', 
-               pch=c(19,8)[v], lty=v, lwd=2)
-      } else {
-        legend(legpos, llg[v], bty='n', 
-               lty=1:length(v), lwd=2)
-      }
+        nn1x <- format(nn1, big.mark = ',')
+        nn2x <- format(nn2, big.mark = ',')
+        if (pt) {
+            nn1x <- gsub(',', '.', nn1x, fixed=TRUE)
+            nn2x <- gsub(',', '.', nn2x, fixed=TRUE)
+        }
+        if (length(v)==2) {
+            if (nl>1) {
+                if (pt) {
+                    nlab <- paste0(nn1x, ' C, ', nn2x, ' Ó')
+                } else {
+                    nlab <- paste0(nn1x, ' C, ', nn2x, ' D')
+                }
+            } else {
+                nlab <- c(nn1x, nn2x)
+            }
+        } else {
+            if (v==1) {
+                nlab <- nn1x 
+            } else {
+                nlab <- nn2x 
+            }
+        }
+        if (nl>1) {
+            legend(legpos, paste0(lll, '\n', nlab)[oloc], 
+                   ##inset = c(0, -0.05),
+                   col=scol[oloc], lty=1, lwd=5,
+                   bty='n', xpd=TRUE,
+                   y.intersp=sqrt(0.5+max(nnll)),
+                   cex=leg.cex, ncol=leg.ncols)
+        } else {
+            if (pt) {
+                llg <- paste(c('Casos', 'Óbitos'), ':', nlab)
+            } else {
+                llg <- paste(c('Cases', 'Deaths'), ':', nlab)
+            }
+            if (showPoints) {
+                legend(legpos, llg[v], bty='n', 
+                       pch=c(19,8)[v], lty=v, lwd=2)
+            } else {
+                legend(legpos, llg[v], bty='n', 
+                       lty=1:length(v), lwd=2)
+            }
+        }
     }
     if (nrwplot==1) 
       axis(1, xl$x, format(xl$x, '%b,%d'))
   }
   abline(v=xl$x, col=gray(0.5, 0.5), lty=2)
 
-  par(mgp=c(2, 0.5, 0))
+  par(mgp=mgpp)
 
   if (any(plots==2)) {
         iplot <- iplot + 1        
 
-    y.ex1 <- y.ex1*ifelse(any(plots==1), 0.5, 1)
-    if (nrwplot==1) 
+    y.ex1 <- y.ex1*ifelse(any(plots==1), 3, 1)
+    if ((nrwplot==1) | ((ncwplot==1) & (nrwplot==iplot)))
       par(mar=c(2, 4.5, 0, 0.5))
 
       d$y.plot <- d$y
@@ -1042,7 +1058,11 @@ data2plot <- function(d,
     }
     if (length(v)==2) {
       if (nl>1) {
-        nlab <- paste0(nn1x, ' C, ', nn2x, ' D')
+                if (pt) {
+                    nlab <- paste0(nn1x, ' C, ', nn2x, ' Ó')
+                } else {
+                    nlab <- paste0(nn1x, ' C, ', nn2x, ' D')
+                }
       } else {
         nlab <- c(nn1x, nn2x)
       }
@@ -1074,8 +1094,11 @@ data2plot <- function(d,
                lty=1:length(v), lwd=2)
       }
     }
-    if (nrwplot==1) 
-      axis(1, xl$x, format(xl$x, '%b,%d'))
+
+        if ((nrwplot==1) | ((ncwplot==1) & (nrwplot==iplot))) {
+            par(mgp=c(2, 0.5, 0))
+            axis(1, xl$x, format(xl$x, '%b,%d'))
+        }
 
   }
     
