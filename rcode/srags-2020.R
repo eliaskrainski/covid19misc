@@ -14,10 +14,206 @@ tail(n2br)
 if (any(is.na(n2br[nrow(n2br),])))
     n2br <- n2br[-nrow(n2br),]
 
-source('rcode/load-srags-2020.R')
+system.time(source('rcode/load-srags-2020.R')) 
 
 dim(srags20)
 srags20[1,]
+
+table(srags20$Classifica, srags20$anoS)
+with(srags20[(srags20$anoS==2020) &
+             (srags20$Classific=='COVID19'), ],
+     table(Evolução))
+t20a2 <- with(
+    srags20[(srags20$anoS==2020) &
+            (srags20$Classific=='COVID19'), ],
+    table(gIdade10, Evolução))
+t20a2
+
+round(100*prop.table(t20a2, margin=1), 1)
+
+table(srags20$fx3 <- cut(
+          srags20$Idade, c(-0, 20, 40, 50, 60, 70, 80, 199), right=FALSE))
+
+t20a3 <- with(
+    srags20[(srags20$anoS==2020) &
+            (srags20$Classific=='COVID19'), ],
+    table(fx3, Evolução))
+t20a3
+
+round(100*prop.table(t20a3, margin=1),1)
+round(100*prop.table(t20a3, margin=2),1)
+
+table(srags20$fx4 <- c('<60', '60-69', '70-79', '80+')[
+          findInterval(srags20$Idade, c(-0, 60, 70, 80, 199))])
+
+if (!any(colnames(srags20)=='evolucao'))
+    srags20$evolucao <- srags20$ev2
+
+t20a4 <- with(
+    srags20[(srags20$anoS==2020) &
+            (srags20$Classific=='COVID19'), ],
+    table(fx4, evolucao))
+t20a4
+round(100*prop.table(t20a4, margin=2),1)
+
+table(srags20$anoS, srags20$mesS <- substr(srags20$dSintPrinc, 6, 7))
+
+n20a4t <- with(
+    srags20[(srags20$anoS==2020) &
+            (srags20$Classific=='COVID19'), ],
+    table(mesS, fx4))
+n20a4t
+o20a4t <- with(
+    srags20[(srags20$evolucao=='Óbito') &
+            (srags20$anoS==2020) &
+            (srags20$Classific=='COVID19'), ],
+    table(mesS, fx4))
+o20a4t
+p20a4t <- prop.table(o20a4t, 1)*100
+p20a4t
+tx20a4t <- (o20a4t/n20a4t)*100
+tx20a4t
+
+c4 <- c('cyan', 'blue', 'orange', 'red')
+
+png('figures/prop-obitos-fx4-mes.png', 600, 600)
+par(mar=c(3,3,1,1), mgp=c(2,1,0))
+plot(3:12, p20a4t[2:11, 1], type='n',
+     ylim=c(range(p20a4t)), axes=FALSE,
+     ylab='%', xlab='Mês', las=1)
+axis(1, 3:12, month.abb[3:12])
+axis(2, las=1)
+for (j in 1:4)
+    lines(3:12, p20a4t[2:11, j], col=c4[j], lwd=3)
+abline(h=15:35, lty=2, col=gray(.5,.5))
+legend('top', colnames(p20a4t),
+       col=c4, lty=1, bty='n', ncol=4, lwd=3)
+dev.off()
+if (FALSE)
+    system('eog figures/prop-obitos-fx4-mes.png &')
+
+png('figures/letalidade-fx4-mes.png', 600, 600)
+par(mar=c(3,3,1,1), mgp=c(2,1,0))
+plot(3:12, tx20a4t[2:11, 1], type='n',
+     ylim=c(range(tx20a4t)), axes=FALSE,
+     ylab='%', xlab='Mês', las=1)
+axis(1, 3:12, month.abb[3:12])
+axis(2, las=1)
+for (j in 1:4)
+    lines(3:12, tx20a4t[2:11, j], col=c4[j], lwd=3)
+abline(h=5*(2:15), lty=2, col=gray(.5,.5))
+legend('top', colnames(tx20a4t),
+       col=c4, lty=1, bty='n', ncol=4, lwd=3)
+dev.off()
+if (FALSE)
+    system('eog figures/letalidade-fx4-mes.png &')
+
+### subset PR
+table(srags20$UFcod <- substr(srags20$CO_MUN_RES,1,2))
+n20a4t.pr <- with(
+    srags20[(srags20$UFcod=='41') &
+            (srags20$anoS==2020) &
+            (srags20$Classific=='COVID19'), ],
+    table(mesS, fx4))
+n20a4t.pr
+o20a4t.pr <- with(
+    srags20[(srags20$UFcod=='41') &
+            (srags20$evolucao=='Óbito') &
+            (srags20$anoS==2020) &
+            (srags20$Classific=='COVID19'), ],
+    table(mesS, fx4))
+o20a4t.pr
+p20a4t.pr <- prop.table(o20a4t.pr, 1)*100
+p20a4t.pr
+tx20a4t.pr <- (o20a4t.pr/n20a4t.pr)*100
+tx20a4t.pr
+
+png('figures/prop-obitos-fx4-mes-PR.png', 600, 600)
+par(mar=c(3,3,1,1), mgp=c(2,1,0))
+plot(3:12, p20a4t.pr[1:10, 1], type='n',
+     ylim=c(range(p20a4t.pr)), axes=FALSE,
+     ylab='%', xlab='Mês', las=1)
+axis(1, 3:12, month.abb[3:12])
+axis(2, las=1)
+for (j in 1:4)
+    lines(3:12, p20a4t.pr[1:10, j], col=c4[j], lwd=3)
+abline(h=15:35, lty=2, col=gray(.5,.5))
+legend('top', colnames(p20a4t.pr),
+       col=c4, lty=1, bty='n', ncol=4, lwd=3)
+dev.off()
+if (FALSE)
+    system('eog figures/prop-obitos-fx4-mes-PR.png &')
+
+png('figures/letalidade-fx4-mes-PR.png', 600, 600)
+par(mar=c(3,3,1,1), mgp=c(2,1,0))
+plot(3:12, tx20a4t.pr[1:10, 1], type='n',
+     ylim=c(range(tx20a4t.pr)), axes=FALSE,
+     ylab='%', xlab='Mês', las=1)
+axis(1, 3:12, month.abb[3:12])
+axis(2, las=1)
+for (j in 1:4)
+    lines(3:12, tx20a4t.pr[1:10, j], col=c4[j], lwd=3)
+abline(h=5*(2:15), lty=2, col=gray(.5,.5))
+legend('top', colnames(tx20a4t.pr),
+       col=c4, lty=1, bty='n', ncol=4, lwd=3)
+dev.off()
+if (FALSE)
+    system('eog figures/letalidade-fx4-mes-PR.png &')
+
+n20a4t.cwb <- with(
+    srags20[(srags20$CO_MUN_RES=='410690') &
+            (srags20$anoS==2020) &
+            (srags20$Classific=='COVID19'), ],
+    table(mesS, fx4))
+n20a4t.cwb
+
+o20a4t.cwb <- with(
+    srags20[(srags20$CO_MUN_RES=='410690') &
+            (srags20$evolucao=='Óbito') &
+            (srags20$anoS==2020) &
+            (srags20$Classific=='COVID19'), ],
+    table(mesS, fx4))
+o20a4t.cwb
+
+p20a4t.cwb <- prop.table(o20a4t.cwb, 1)*100
+p20a4t.cwb
+tx20a4t.cwb <- (o20a4t.cwb/n20a4t.cwb)*100
+tx20a4t.cwb
+
+png('figures/prop-obitos-fx4-mes-Curitiba.png', 600, 600)
+par(mar=c(3,3,1,1), mgp=c(2,1,0))
+plot(3:12, p20a4t.cwb[1:10, 1], type='n',
+     ylim=c(range(p20a4t.cwb)), axes=FALSE,
+     ylab='%', xlab='Mês', las=1)
+axis(1, 3:12, month.abb[3:12])
+axis(2, las=1)
+for (j in 1:4)
+    lines(3:12, p20a4t.cwb[1:10, j], col=c4[j], lwd=3)
+abline(h=15:35, lty=2, col=gray(.5,.5))
+legend('top', colnames(p20a4t.cwb),
+       col=c4, lty=1, bty='n', ncol=4, lwd=3)
+dev.off()
+if (FALSE)
+    system('eog figures/prop-obitos-fx4-mes-Curitiba.png &')
+
+png('figures/letalidade-fx4-mes-Curitiba.png', 600, 600)
+par(mar=c(3,3,1,1), mgp=c(2,1,0))
+plot(3:12, tx20a4t.cwb[1:10, 1], type='n',
+     ylim=c(range(tx20a4t.cwb)), axes=FALSE,
+     ylab='%', xlab='Mês', las=1)
+axis(1, 3:12, month.abb[3:12])
+axis(2, las=1)
+for (j in 1:4)
+    lines(3:12, tx20a4t.cwb[1:10, j], col=c4[j], lwd=3)
+abline(h=5*(2:15), lty=2, col=gray(.5,.5))
+legend('top', colnames(tx20a4t.cwb),
+       col=c4, lty=1, bty='n', ncol=4, lwd=3)
+dev.off()
+if (FALSE)
+    system('eog figures/letalidade-fx4-mes-Curitiba.png &')
+
+srags20[1,]
+
 
 i5.ev.cl <- with(
     srags20, table(gIdade5, Evolução,
@@ -40,16 +236,16 @@ sum(n.day)
 n.dpcr <- with(srags20[i.o.c, ], table(dPCR))
 sum(n.dpcr)
 
-msDate <- as.Date(rownames(n2br), 'X%Y%m%d')
-Rse <- t(sapply(1:nrow(n2br), function(i) {
-    d <- abs(1:nrow(n2br)-i)/6
+msDate <- as.Date(rownames(n.dpcr), 'X%Y%m%d')
+Rse <- t(sapply(1:nrow(n.dpcr), function(i) {
+    d <- abs(1:nrow(n.dpcr)-i)/6
     d <- (1-d)*(d<1)
     d/sum(d)
 }))
 Rse[1:7, 1:10]
 table(rowSums(Rse))
-tail(n2br)
-n2s <- apply(n2br, 2, function(y) Rse %*% y)
+tail(n.dpcr)
+n2s <- apply(n.dpcr, 2, function(y) Rse %*% y)
 summary(n2br)
 summary(n2s)
 

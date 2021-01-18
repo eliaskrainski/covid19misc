@@ -212,15 +212,29 @@ for (k in 1:2) {
 
 w2i.usc <- pmatch(
     paste(wuscl.loc[1,], wuscl.loc[2,], sep='_'),
-    paste(gsub(' County', '',
-               gsub(' city', '', uscpop$CTYNAME)),
-          uscpop$STcode, sep='_'))
+    c(paste(gsub(' County', '',
+                 gsub(' city', '', uscpop$CTYNAME)),
+            uscpop$STcode, sep='_'),
+      'New York City_NY'))
 summary(w2i.usc)
 dim(uscpop[which(is.na(w2i.usc)), 6:7])
 
-summary(wpop.usc <- uscpop$POPESTIMATE2019[w2i.usc])
-uscpop[which(uscpop$POPESTIMATE2019==
-             uscpop$POPESTIMATE2019[which.max(wpop.usc)]), 1:9]
+nycc <- c('New York', 'Kings', 'Bronx', 'Richmond', 'Queens')
+lapply(nycc, function(x)
+    uscpop$CTYNAME[paste(x, 'County')==uscpop$CTYNAME])
+
+nyc.pop <- uscpop$POPESTIMATE2019[
+(uscpop$STNAME=='New York') &
+(uscpop$CTYNAME %in% paste(nycc, 'County'))]
+nyc.pop
+
+sum(nyc.pop)
+
+summary(wpop.usc <- c(uscpop$POPESTIMATE2019,
+                      sum(nyc.pop))[w2i.usc])
+
+grep('New York', paste(wuscl.loc[1,], wuscl.loc[2,], sep='_'), val=T)
+wuscl[[1]][grep('New York', paste(wuscl.loc[1,], wuscl.loc[2,], sep='_')), c(-3:0+ncol(wuscl[[1]]))]
 
 ### BR states
 uf <- data.frame(
@@ -909,19 +923,40 @@ if (amob) {
                    wambl[[k]]$region, wambl[[k]]$sub.region), 
             ifelse(wambl[[k]]$geo_type %in% c('country/region'), 
                    wambl[[k]]$region, wambl[[k]]$country), sep='_')
+
+        tmp <- as.matrix(wambl[[k]][, 7:ncol(wambl[[k]])])
+        
         ii <- grep('Curitiba_PR', tlocal)
-        cat(ii, tlocal[ii], '\n')
-        new <- as.matrix(
-            wambl[[k]][ii, 7:ncol(wambl[[k]]), drop=FALSE])
-        nnew <- gsub('Curitiba', 'Curitiba(SM)', tlocal[ii])
-        rownames(new) <- nnew
-        wambl[[k]] <- rbind(
-            as.matrix(wambl[[k]][, 7:ncol(wambl[[k]])]),
-            new)
-        attr(wambl[[k]], 'local') <- c(tlocal, nnew)
+        if (length(ii)>0) {
+            cat(ii, tlocal[ii], '\n')
+            wacwb <- as.matrix(
+                wambl[[k]][ii, 7:ncol(wambl[[k]]), drop=FALSE])
+            ncwb <- gsub('Curitiba', 'Curitiba(SM)', tlocal[ii])
+            rownames(wacwb) <- ncwb
+            tmp <- rbind(tmp, wacwb)
+            tlocal <- c(tlocal, ncwb)
+        }
+        
+        ii <- which(tlocal %in% paste0(c('NY', nycc[-1]), '_NY_US'))
+        if (length(ii)>0) {
+            print(ii)
+            wanyc <- matrix(
+                colMeans(wambl[[k]][ii, 7:ncol(wambl[[k]]),
+                                    drop=FALSE]), 1)
+            nnyc <- 'New York City_NY_US'
+            rownames(wanyc) <- nnyc
+            tmp <- rbind(tmp, wanyc)
+            tlocal <- c(tlocal, nnyc)
+        }
+        
+        wambl[[k]] <- tmp 
+        attr(wambl[[k]], 'local') <- tlocal 
         attr(wambl[[k]], 'Date') <-
             as.Date(colnames(wambl[[k]]), 'X%Y.%m.%d')
     }
+
+    sapply(wambl, nrow)
+    sapply(wambl, function(x) length(attr(x, 'local')))
 
     grep('Curitiba', attr(wambl[[1]], 'local'),value=TRUE)
     

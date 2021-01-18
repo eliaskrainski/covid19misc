@@ -74,13 +74,13 @@ if (file.exists(rfile)) {
         srags20$anoS==2020) & (srags20$Classificação=='COVID19'),],
         table(Evolução, anoS)))
 
-    table(srags20$ev2 <- factor(ifelse(
+    table(srags20$evolucao <- factor(ifelse(
               srags20$Evolução=='NA', 'Indef', as.character(srags20$Evolução)),
               c('Cura', 'Óbito', 'Indef')), 
           srags20$Evolução)
     t0 <- with(srags20[(
         srags20$anoS==2020) & (srags20$Classificação=='COVID19'),],
-        table(ev2, UTI))
+        table(evolucao, UTI))
     addmargins(t0)
     
     t1 <- cbind(t0[, 1, drop=FALSE], rowSums(t0[, 2:3]))
