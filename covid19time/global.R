@@ -454,6 +454,7 @@ dataPrepare <- function(slocal) {
 
 ### spline smooth series of non-negative data
 SmoothFit <- function(y, w) {
+  x0t <- seq(-3, length(y)+5, 3)
   y[y<0] <- NA
   ii <- which(!is.na(y))
   dtmp <- list(tt=ii, r=y[ii], w=w[ii])
@@ -468,11 +469,13 @@ SmoothFit <- function(y, w) {
       } else {
           if ((length(levels(dtmp$w))>1) &
               all(table(dtmp$w)>2)) {
-              sfit <- gam(r ~ 0 + w + s(tt), poisson(), data=dtmp)
+              sfit <- gam(r ~ 0 + w + s(tt, m=1), 
+			  poisson(), data=dtmp, knots=list(tt=x0t))
               p.t <- predict(sfit, type='terms')
               r[ii] <- exp(p.t[,2] + mean(p.t[,1]))
           } else {
-              sfit <- gam(r ~ 1 + s(tt), poisson(), data=dtmp)
+              sfit <- gam(r ~ 1 + s(tt, m=1), poisson(), 
+			  data=dtmp, knots=list(tt=x0t))
               p.t <- predict(sfit, type='terms')
               r[ii] <- exp(attr(p.t, 'constant') + p.t[,1])
           }
@@ -515,7 +518,9 @@ SmoothFitG <- function(y, w) {
 ### do the R_t computations 
 Rtfit <- function(d, a=0.5, b=1) {
     
-    pw <- pgamma(0:21, shape=(5.8/4)^2, scale=4^2/5.8)
+    x0t <- seq(-3, nrow(d$yy)+5, 3)
+
+    pw <- pgamma(0:21, shape=(5.8/4)^2, scale=4^2/5.8)[1:15]
     w <- diff(pw)/sum(diff(pw))
     n0 <- length(w)
     n1 <- nrow(d$sdy)
@@ -531,8 +536,9 @@ Rtfit <- function(d, a=0.5, b=1) {
     ##  ee[1:n0] <- (1-w)*dtmp$y[1:n0] * exp(-(1:n0))/exp(-1)
     for (k in 1:2)
         for (l in 1:nl) {
+##            y0 <- (yy[, l, k] + ys[, l, k])/2
+  ##          y0[y0<0] <- 0
             y0 <- ys[, l, k]
-            ##      y0[y0<0] <- 0
             for (i in which(!is.na(y0))) 
                 d$ee[i+1:n0, l, k] <- 
                 d$ee[i+1:n0, l, k] + y0[i] * w 
@@ -547,7 +553,8 @@ Rtfit <- function(d, a=0.5, b=1) {
             ii <- which(!is.na(yy[, l, k]))
             ii <- ii[ii>=i1]
             if ((length(ii)>19) & (mgcv.ok)) {
-              fRt <- gam(y ~ 0 + w + s(x), poisson(), 
+              fRt <- gam(y ~ 0 + w + s(x, m=1), poisson(),
+			 knots=list(x=x0t), 
                          data=list(
                            w = factor(weekdays(d$x[ii])), 
                            x = ii, y = yy[ii,l,k]), 
@@ -865,7 +872,8 @@ data2plot <- function(d,
 
     if (any(v==1)) {
         for (l in 1:nl) {
-          lines(d$x, d$sdy.plot[,l], col=scol[l], lwd=2)
+            lines(d$x, d$sdy.plot[,l], col=scol[l], lwd=2)
+##            lines(d$x, d$ee.plot[,l,1], col=4, lty=2)
           if (showPoints)
             points(d$x, d$dy.plot[,l], 
                    cex=1-log(nl,10)/2, pch=19, col=scol[l])
@@ -875,6 +883,7 @@ data2plot <- function(d,
         for (l in 1:nl) {
           lines(d$x, d$sdo.plot[,l], col=scol[l], 
                 lty=length(v), lwd=3)
+  ##          lines(d$x, d$ee.plot[,l,2], col=4, lty=2)
           if (showPoints)
             points(d$x, d$do.plot[,l], 
                    cex=1-log(nl,10)/2, pch=8, col=scol[l])
