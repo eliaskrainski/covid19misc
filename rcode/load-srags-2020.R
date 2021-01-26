@@ -18,7 +18,7 @@ if (length(fls)>0) {
         fls, 13, 22), '%d-%m-%Y')), 1)]
     (rfile <- gsub('.csv', '.RData', file))
 } else {
-    rfls <- system('ls data/INFLUD*2020.RData', TRUE)
+    rfls <- system('ls data/INFLUD*.RData', TRUE)
     rfile <- rfls[tail(order(as.Date(substr(
         rfls, 13, 22), '%d-%m-%Y')), 1)]
 }

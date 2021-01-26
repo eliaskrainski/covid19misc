@@ -1084,3 +1084,15 @@ for (log10 in FALSE) { ##c(FALSE, TRUE)) {
 }
 
 
+### seleciona covid
+dim(dcov <- srags20[which(srags20$Classificação=='COVID19'),])
+
+
+tev <- as.integer(difftime(
+    dcov$dEvol, dcov$dSintPrinc, units='days'))
+tapply(tev, paste(dcov$Evol), summary)
+
+table(icwb <- dcov$CO_MUN_RES=='410690')
+tapply(tev[icwb], paste(dcov$Evol[icwb]), summary)
+
+

@@ -882,12 +882,22 @@ data2plot <- function(d,
     }
 
     if (any(plots==2)) {
-        if (pt) {
-            legend(legpos, c('Casos', 'Óbitos')[v],
-                   lwd=2, lty=v, bty='n', title='Variável')
+        if (any(plots==1)) {
+            if (pt) {
+                legend(legpos, c('Casos', 'Óbitos')[v],
+                       lwd=2, lty=v, bty='n', title='Variável')
+            } else {
+                legend(legpos, c('Cases', 'Deaths')[v],
+                       lwd=2, lty=v, bty='n', title='Variable')
+            }
         } else {
-            legend(legpos, c('Cases', 'Deaths')[v],
-                   lwd=2, lty=v, bty='n', title='Variable')
+            if (pt) {
+                legend(legpos, c('Óbitos'),
+                       lwd=2, lty=1, bty='n', title='Variável')
+            } else {
+                legend(legpos, c('Deaths'),
+                       lwd=2, lty=1, bty='n', title='Variable')
+            }
         }
     } else {
         nn1x <- format(nn1, big.mark = ',')
@@ -938,7 +948,10 @@ data2plot <- function(d,
     if (nrwplot==1) 
       axis(1, xl$x, format(xl$x, '%b,%d'))
   }
-  abline(v=xl$x, col=gray(0.5, 0.5), lty=2)
+##    abline(v=xl$x, col=gray(0.5, 0.5), lty=2)
+    segments(xl$x, rep(ylm[1], length(xl$x)),
+             xl$x, rep(ylm[2], length(xl$x)),
+             col=gray(0.5, 0.5), lty=2)
 
   par(mgp=mgpp)
 
@@ -1106,9 +1119,9 @@ data2plot <- function(d,
     if (any(plots==3)) {
     iplot <- iplot + 1
     if ((ncwplot==1) & (tail(wplot,1)==iplot))
-        par(mar=c(2, 4.5, 0, 0.5))
+        par(mar=c(2, 4.5, 0, 0.5), mgp=c(2,0.5,0))
     if (nrwplot==2)
-        par(mar=c(2, 4.5, 0, 0.5))
+        par(mar=c(2, 4.5, 0, 0.5), mgp=c(2,0.5,0))
     
     ylm <- range(1, d$Rtlow[jj,,v], 
                  d$Rtupp[jj,,v], na.rm=TRUE)
@@ -1164,7 +1177,7 @@ data2plot <- function(d,
              lty=2, col=gray(0.7, 0.5))
     segments(xlm0[1], xTransf(1, transf),
              xlm0[2], xTransf(1, transf))
-    abline(h=par()$usr[4])
+###    abline(h=par()$usr[4])
 
     rtu.last <- rtl.last <- rt.last <- matrix(NA, nl, 2)
     for (k in 1:2) {
@@ -1227,8 +1240,11 @@ data2plot <- function(d,
     if (nrwplot==2)
         axis(1, xl$x, format(xl$x, '%b,%d'))    
   }    
-  abline(v=xl$x, col=gray(0.5, 0.5), lty=2)
-  
+##  abline(v=xl$x, col=gray(0.5, 0.5), lty=2)
+      segments(xl$x, rep(ylm[1], length(xl$x)),
+             xl$x, rep(ylm[2], length(xl$x)),
+             col=gray(0.5, 0.5), lty=2)
+
   par(mar=c(0, 4.5, 0, 0.5))
   if (any(plots==4)) {
     iplot <- iplot + 1
@@ -1294,12 +1310,19 @@ data2plot <- function(d,
     
     if(transf=='none'){
       axis(2,pretty(par()$usr[3:4],n=10),las=1)
-      abline(h=pretty(par()$usr[3:4],n=20),lty=2)
-    }else{
+##      abline(h=pretty(par()$usr[3:4],n=20),lty=2)
+      yy00 <- pretty(par()$usr[3:4], n=20)
+      segments(rep(xlm[1], length(yy00)), yy00,
+               rep(xlm[2], length(yy00)),
+               lty=2, col=gray(0.5, 0.5))
+    } else{
       y0l <- c(0, c(1, 3, 5), c(1, 2, 4)*10) 
       axis(2, xTransf(y0l, transf), y0l, las=1) 
-      abline(h=xTransf(y0l, transf),
-             lty=2, col=gray(0.5,0.5))       
+  ##    abline(h=xTransf(y0l, transf),
+      ##          lty=2, col=gray(0.5,0.5))
+      segments(rep(xlm[1], length(y0l)), y0l,
+               rep(xlm[2], length(y0l)), y0l,
+               lty=2, col=gray(0.5, 0.5))
     }
 
     if (pt) {
@@ -1315,7 +1338,11 @@ data2plot <- function(d,
              col=scol[oloc], ncol=leg.ncols, bty='n')
     }
   }
-    abline(v=xl$x, col=gray(0.5, 0.5), lty=2)
+##    abline(v=xl$x, col=gray(0.5, 0.5), lty=2)
+        segments(xl$x, rep(ylm[1], length(xl$x)),
+             xl$x, rep(ylm[2], length(xl$x)),
+             col=gray(0.5, 0.5), lty=2)
+
 
     if (any((plots>4) & (plots<11))) {
 
@@ -1431,8 +1458,15 @@ data2plot <- function(d,
             }
             
             axis(2, las=1)
-            abline(v=xl$x, h=pretty(ylm), 
-                   col=gray(0.5, 0.5), lty=2)
+            ##abline(v=xl$x, h=pretty(ylm), 
+              ##     col=gray(0.5, 0.5), lty=2)
+            segments(xl$x, rep(ylm[1], length(xl$x)),
+                     xl$x, rep(ylm[2], length(xl$x)),
+                     col=gray(0.5, 0.5), lty=2)
+            yy00 <- pretty(ylm) 
+            segments(rep(xlm[1], length(yy00)), yy00,
+                     rep(xlm[2], length(yy00)),
+                     lty=2, col=gray(0.5, 0.5))    
             abline(h=0)
 
             
@@ -1530,9 +1564,13 @@ data2plot <- function(d,
         
         axis(1, xl$x, format(xl$x, '%b,%d'))
         axis(2, las=1)
-        abline(v=xl$x, h=pretty(ylm), 
-               col=gray(0.5, 0.5), lty=2)
-        abline(h=0)
+##        abline(v=xl$x, h=pretty(ylm), 
+  ##             col=gray(0.5, 0.5), lty=2)
+      yy00 <- pretty(ylm) 
+      segments(rep(xlm[1], length(yy00)), yy00,
+               rep(xlm[2], length(yy00)),
+               lty=2, col=gray(0.5, 0.5))    
+      abline(h=0)
         
     }
     
