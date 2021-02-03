@@ -891,7 +891,7 @@ data2plot <- function(d,
     }
 
     if (any(plots==2)) {
-        if (any(plots==1)) {
+        if (any(v==1)) {
             if (pt) {
                 legend(legpos, c('Casos', 'Óbitos')[v],
                        lwd=2, lty=v, bty='n', title='Variável')
@@ -1246,7 +1246,7 @@ data2plot <- function(d,
     
     if ((ncwplot==1) & (tail(wplot,1)==iplot))
         axis(1, xl$x, format(xl$x, '%b,%d'))
-    if (nrwplot==2)
+    if ((nrwplot==2) & (tail(wplot,1)==iplot))
         axis(1, xl$x, format(xl$x, '%b,%d'))    
   }    
 ##  abline(v=xl$x, col=gray(0.5, 0.5), lty=2)

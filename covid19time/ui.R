@@ -37,14 +37,14 @@ ui <- fluidPage(
         value = TRUE),
       radioButtons(
         inputId = "legend",
-        label = "Legend (position)",
+        label = "Legend position",
         choices = c('Right' = 'right',
                     'Top' = 'top'),
         selected = 'top'),
       radioButtons(
         inputId = "transf", 
 	      label = "Tranformation", 
-	      choices=c('Nenhuma'='none', 
+	      choices=c('None'='none', 
 	                'sqrt'='sqrt', 
 	                'log10'='log10'), 
         selected = 'log10'),
