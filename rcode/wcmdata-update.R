@@ -10,6 +10,7 @@ options(width=70)
 usems <- !TRUE
 if (usems)
     wcota <- FALSE
+
 source('rcode/getdata.R')
 
 Date <- seq(as.Date('20200121', '%Y%m%d'), Sys.Date(), 1)

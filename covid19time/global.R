@@ -24,7 +24,7 @@ if (file.exists('data/wambl.RData'))
 ### check if the data is more than 6 hours old
 if (difftime(Sys.time(), 
              attr(wdl, 'Sys.time'), 
-             units='hours')>23) {
+             units='hours')>71) {
   source('rcode/wcmdata-update.R')
 }
 cn <- colnames(wdl[[1]])
@@ -1246,8 +1246,8 @@ data2plot <- function(d,
     
     if ((ncwplot==1) & (tail(wplot,1)==iplot))
         axis(1, xl$x, format(xl$x, '%b,%d'))
-    if ((nrwplot==2) & (tail(wplot,1)==iplot))
-        axis(1, xl$x, format(xl$x, '%b,%d'))    
+    if ((nrwplot==2) & ((iplot>2) & (iplot<5))) 
+        axis(1, xl$x, format(xl$x, '%b,%d'))
   }    
 ##  abline(v=xl$x, col=gray(0.5, 0.5), lty=2)
       segments(xl$x, rep(ylm[1], length(xl$x)),
