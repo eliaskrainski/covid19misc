@@ -9,7 +9,9 @@ library(parallel)
 (ncores <- detectCores())
 
 ### load global data and create the 'wdl' object
-dupdate <- FALSE
+dupdate <- TRUE
+if (FALSE)
+    dupdate <- FALSE
 system.time(source('rcode/wc0update.R'))
 
 ls()
