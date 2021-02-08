@@ -5,101 +5,15 @@ if (FALSE) { ## can manually skip
 
 }
 
-options(width=70)
+library(parallel)
+(ncores <- detectCores())
 
-usems <- !TRUE
-if (usems)
-    wcota <- FALSE
+### load global data and create the 'wdl' object
+dupdate <- FALSE
+system.time(source('rcode/wc0update.R'))
 
-source('rcode/getdata.R')
-
-Date <- seq(as.Date('20200121', '%Y%m%d'), Sys.Date(), 1)
-alldates <- gsub('-', '', as.character(Date))
-
-wwfun <- function(fl) {
-    m <- read.csv(fl)
-    co <- as.character(m$Country)
-    prov.bl <- m$Province!=''
-    toSum <- setdiff(
-        co[prov.bl],
-        do.call('intersect', split(co, c('x', 'y')[prov.bl+1])))
-    if (length(toSum)>0) {
-        aux <- data.frame(code='', City='', Province.State='',
-                          Country.Region=toSum, Lat=NA, Long=NA) 
-        cs <- sapply(toSum, function(x)
-            colSums(m[which(m$Country==x), 5:ncol(m)]))
-        return(rbind(data.frame(aux, t(cs)), 
-                     data.frame(code='', City='', m)))
-    } else {
-        return(m)
-    }                                                 
-}
-
-wdl <- lapply(c(confirmed='data/confirmed_global.csv',
-                deaths='data/deaths_global.csv'), wwfun)
+ls()
 sapply(wdl, dim)
-wdl[[1]][1:3, 1:7]
-wdl[[1]][101:110, c(1:7, -1:0+ncol(wdl[[1]]))]
-
-##for (k in 1:2) {
-##    i.us <- which(wdl[[k]]$Country=='US')
-##    wdl[[k]]$Country[i.us] <- 'United States'
-##}
-
-for (k in 1:2) {
-    wdl[[k]]$Country.Region <- gsub(
-        'Burma', 'Myanmar',
-        wdl[[k]]$Country.Region, fixed=TRUE)
-    wdl[[k]]$Country.Region <- gsub(
-        'Congo (Brazzaville)', 'Congo',
-        wdl[[k]]$Country.Region, fixed=TRUE)
-    wdl[[k]]$Country.Region <- gsub(
-        'Congo (Kinshasa)', 'DR Congo',
-        wdl[[k]]$Country.Region, fixed=TRUE)
-    wdl[[k]]$Country.Region <- gsub(
-        'West Bank and Gaza', 'Palestine',
-        wdl[[k]]$Country.Region, fixed=TRUE)
-}
-
-for (k in 1:2) {
-    dtmp <- as.Date(colnames(wdl[[k]])[7:ncol(wdl[[k]])],
-                    'X%m.%d.%y')
-    nnt1 <- as.integer(difftime(
-        head(dtmp,1), Date[1]), units='days')
-    if (nnt1>0)
-        for (j in 1:nnt1)
-            wdl[[k]] <- data.frame(wdl[[k]][, 1:6],
-                                   old=NA,
-                                   wdl[[k]][, 7:ncol(wdl[[k]])])
-    nnt <- as.integer(difftime(
-        Sys.Date(), tail(dtmp,1), units='days'))
-    if (nnt>0)
-        for (j in 1:nnt)
-            wdl[[k]] <- data.frame(wdl[[k]][, 1:ncol(wdl[[k]])],
-                                   new=NA)
-}
-
-head(colnames(wdl[[1]]), 10)
-tail(colnames(wdl[[1]]))
-
-colnames(wdl[[1]])[7:ncol(wdl[[1]])] <-
-    colnames(wdl[[2]])[7:ncol(wdl[[2]])] <-
-    paste0('X', gsub('-', '', as.character(Date)))
-
-### Add countries population
-wcpop <- read.table(
-    'data/world2020population.txt', header=TRUE)
-head(wcpop)
-
-w2i.c <- pmatch(paste0(wdl[[1]]$Country.Region,
-                      wdl[[1]]$Province.State),
-               wcpop$Country)
-summary(w2i.c)
-
-if (FALSE)
-    wdl[[1]][is.na(w2i.c), 1:4]
-
-summary(wpop.c <- wcpop$Population[w2i.c])
 
 ### US states data
 us.d <- read.csv('data/daily.csv')
@@ -406,20 +320,30 @@ if (wcota) {
    
 }
 
-dms <- (!wcota) & (!usems)
+if (usems) {
 
-if (dms) {
+    if (FALSE) {
+        
+        system.time(dbr <- read.csv2(
+                        'data/HIST_PAINEL_COVIDBR.csv'))
+    
+        for (j in which(sapply(dbr, is.factor)))
+            dbr[, j] <- as.character(dbr[, j])
 
-    system.time(dbr <- read.csv2(
-                    'data/HIST_PAINEL_COVIDBR.csv'))
+    } else {
+        
+        system.time(
+            dbr <- as.data.frame(
+                readr::read_csv2(
+                           'data/HIST_PAINEL_COVIDBR.csv',
+                           col_types='cccccccciiiiiiiic')))
+
+    }
     
     dim(dbr)
     head(dbr,2)
     summary(as.Date(unique(dbr$data)))
     
-    for (j in which(sapply(dbr, is.factor)))
-        dbr[, j] <- as.character(dbr[, j])
-
     i.mu.l <- which(dbr$municipio!='')
     i.rg.l <- which(dbr$nomeRegiaoSaude!='')
     
@@ -429,15 +353,20 @@ if (dms) {
 
     dbr$Regiao <- dbr$regiao
     dbr$Regiao[dbr$regiao=='Brasil'] <- ''
-    table(dbr$Regiao)
 
-    table(table(dbr$mun.uf <- paste(
-                    dbr$municipio, 
-                    dbr$estado, sep='/'),
-                dbr$fdate))
-    table(table(dbr$mun.uf[i.mu.l], dbr$fdate[i.mu.l]))
-    
-    system.time(wbr.mu <- lapply(
+    if (FALSE) {
+        
+        table(dbr$Regiao)
+        
+        table(table(dbr$mun.uf <- paste(
+                        dbr$municipio, 
+                        dbr$estado, sep='/'),
+                    dbr$fdate))
+        table(table(dbr$mun.uf[i.mu.l], dbr$fdate[i.mu.l]))
+
+    }
+
+    system.time(wbr.mu <- mclapply(
                     dbr[i.mu.l, c('casosAcumulado', 'obitosAcumulado')], tapply,
                     dbr[i.mu.l, c('mun.uf', 'fdate')], as.integer))
     str(wbr.mu)
@@ -472,7 +401,7 @@ if (dms) {
 
 }
 
-if (usems) {
+if (usefnd) {
     
     library(covid19br)
 
@@ -660,11 +589,15 @@ if (!any(ls()=='gmob'))
 if (gmob) {
 ### mobility data from Google
 
-    system.time(gmbl <- read.csv(
-                "data/Global_Mobility_Report.csv"))
+    library(readr)
+    ##system.time(gmbl <- read.csv(
+    ##"data/Global_Mobility_Report.csv"))
+    
+    system.time(gmbl <- as.data.frame(read_csv(
+                    "data/Global_Mobility_Report.csv",
+                    col_types='cccccccciiiiii')))
     
     dim(gmbl)
-    
     head(gmbl,2)
     summary(as.Date(unique(gmbl$date)))
     
@@ -674,27 +607,30 @@ if (gmob) {
     for(j in which(sapply(gmbl, is.factor)))
         gmbl[, j] <- as.character(gmbl[, j])
 
-    unique(grep('municip', gmbl$sub_region_2, val=T))
-    unique(grep('city', gmbl$sub_region_2, val=T))
-    length(unique(grep('City', gmbl$sub_region_2, val=T)))
+    ##unique(grep('municip', gmbl$sub_region_2, val=T))
+    ##unique(grep('city', gmbl$sub_region_2, val=T))
+    ##length(unique(grep('City', gmbl$sub_region_2, val=T)))
 
-    table(gmbl$country_region[grep('City', gmbl$sub_region_2)])
-    unique(gmbl$sub_region_2[intersect(
-                    grep('City', gmbl$sub_region_2),
-                    which(gmbl$country_region=='United States'))])
-    unique(grep('County', gmbl$sub_region_2, val=T))
+    ##table(gmbl$country_region[grep('City', gmbl$sub_region_2)])
+    ##unique(gmbl$sub_region_2[intersect(
+      ##              grep('City', gmbl$sub_region_2),
+        ##            which(gmbl$country_region=='United States'))])
+    ##unique(grep('County', gmbl$sub_region_2, val=T))
     
-    gmbl$fdate <- factor(gsub(
-        '-', '', gmbl$date), alldates)
+    system.time(gmbl$fdate <- factor(gsub(
+                    '-', '', gmbl$date), alldates))
     summary(as.integer(table(gmbl$fdate)))
     
-    table(gmbl$country_region_code)
+    ##table(gmbl$country_region_code)
     
-    table(as.character(
-        gmbl$sub_region_1[grep('State', gmbl$sub_region_1)]))
-    
-    gmbl$sub_region_1 <- gsub('State of ', '', gmbl$sub_region_1)
-    gmbl$sub_region_2 <- gsub(' County', '', gmbl$sub_region_2)
+    ##table(as.character(
+      ##  gmbl$sub_region_1[grep('State', gmbl$sub_region_1)]))
+
+    ##system.time(gmbl$sub_region_1 <- gsub('State of ', '', gmbl$sub_region_1))
+    system.time(iaux <- which(substr(gmbl$sub_region_1,1,9)=='State of '))
+    system.time(gmbl$sub_region_1[iaux] <- substring(gmbl$sub_region_1[iaux], 10))
+
+    system.time(gmbl$sub_region_2 <- gsub(' County', '', gmbl$sub_region_2))
     
     for (j in 1:nrow(ussabb)) {
         iij <- which(gmbl$sub_region_1==ussabb$State[j])
@@ -709,7 +645,7 @@ if (gmob) {
     }
 
     if (any(ls()=='wdl'))
-        load('data/wdl.RData')
+        system.time(load('data/wdl.RData'))
     
     length(aa <- paste(
                wdl[[1]]$City, 
