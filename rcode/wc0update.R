@@ -7,9 +7,9 @@ if (FALSE) { ## can manually skip
 
 options(width=70)
 
-usems <- TRUE
+usems <- FALSE#TRUE
 usefnd <- FALSE
-wcota <- FALSE
+wcota <- TRUE#FALSE
 usebrio <- FALSE
 
 if (!any(ls()=='dupdate'))
