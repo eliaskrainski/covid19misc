@@ -3,6 +3,9 @@ if (FALSE)
 
 options(timeout=60*5)
 
+library(parallel)
+(ncores <- as.integer(detectCores()/2))
+
 cssegis.f <- function(d=TRUE) {
 ### download the cssegis data (the famous one) 
 ### The base url for the data source 
@@ -51,10 +54,15 @@ brms.f <- function(d=TRUE) {
                       httr::add_headers("X-Parse-Application-Id" =
                                             "unAFkcaNDeXajurGB7LChj8SgQYS2ptm"))
         url <- httr::content(res.url)$results[[1]]$arquivo$url 
-        download.file(url, 'brms.zip')
-        unzip('brms.zip')
-        system('mv HIST_PAINEL_COVIDBR_*.csv data/HIST_PAINEL_COVIDBR.csv')
-        system('rm brms.zip')
+        if (substring(url, nchar(url)-2)=='zip') {
+            download.file(url, 'brms.zip')
+            unzip('brms.zip')
+            system('mv HIST_PAINEL_COVIDBR_*.csv data/HIST_PAINEL_COVIDBR.csv')
+            system('rm brms.zip')
+        } 
+        if (substring(url, nchar(url)-2)=='csv') {
+            download.file(url, 'data/HIST_PAINEL_COVIDBR.csv')
+        } 
     }
     return(invisible())
 }
@@ -206,15 +214,11 @@ gus.f <- function(d=TRUE) {
 
 others.f <- function() {
     gus.f()
-    brms.f()
+    wcota.f()
     amob.f()
 }
 
-library(parallel)
-
-ncores <- detectCores()
-
-if (ncores<3) {
+if (ncores<39) {
     cat('1\n')
     system.time(mclapply(list(
     others='others.f()',
@@ -224,13 +228,13 @@ if (ncores<3) {
         eval(parse(text=x)), 
     mc.cores = ncores))
 } else {
-    if (ncores<6) {
+    if (ncores<69) {
         cat('2\n')
         system.time(mclapply(list(
             gus='gus.f()',
-            brms='brms.f()',    
+            ##brms='brms.f()',    
             ##brio='brio.f()',
-            ##wcota=wcota.f(),
+            wcota=wcota.f(),
             ##fnd='fnd.f()',
             ##sesa='sesa.f()')
             apple='amob.f()',
@@ -245,9 +249,9 @@ if (ncores<3) {
             global='cssegis.f()',
             uss='uss.f()',
             usc='usc.f()',
-            brms=brms.f(),
+            ##brms=brms.f(),
             ##brio='brio.f()',
-            ##wcota='wcota.f()',
+            wcota='wcota.f()',
             ##fnd='fnd.f()',
             ##sesa='sesa.f()')
             apple='amob.f()',

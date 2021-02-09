@@ -454,7 +454,7 @@ dataPrepare <- function(slocal) {
 
 ### spline smooth series of non-negative data
 SmoothFit <- function(y, w) {
-  x0t <- seq(-3, length(y)+5, 3)
+  x0t <- rev(seq(length(y)-1, 1, -3))
   y[y<0] <- NA
   ii <- which(!is.na(y))
   dtmp <- list(tt=ii, r=y[ii], w=w[ii])
@@ -518,7 +518,7 @@ SmoothFitG <- function(y, w) {
 ### do the R_t computations 
 Rtfit <- function(d, a=0.5, b=1) {
     
-    x0t <- seq(-3, nrow(d$yy)+5, 3)
+    x0t <- rev(seq(nrow(d$yy)-1, 0, -3))
 
     pw <- pgamma(0:21, shape=(5.8/4)^2, scale=4^2/5.8)[1:15]
     w <- diff(pw)/sum(diff(pw))
@@ -830,7 +830,7 @@ data2plot <- function(d,
           } else {
               ylm <- range(d$sdy.plot[jj, ], na.rm=TRUE)
           }
-            
+
         plot(d$x, 
              d$dy.plot[,1], 
              axes=FALSE, 
