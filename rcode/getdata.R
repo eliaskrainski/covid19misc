@@ -214,7 +214,7 @@ gus.f <- function(d=TRUE) {
 
 others.f <- function() {
     gus.f()
-    wcota.f()
+    brms.f()
     amob.f()
 }
 
@@ -232,9 +232,9 @@ if (ncores<39) {
         cat('2\n')
         system.time(mclapply(list(
             gus='gus.f()',
-            ##brms='brms.f()',    
+            brms='brms.f()',    
             ##brio='brio.f()',
-            wcota=wcota.f(),
+            ##wcota=wcota.f(),
             ##fnd='fnd.f()',
             ##sesa='sesa.f()')
             apple='amob.f()',
@@ -249,9 +249,9 @@ if (ncores<39) {
             global='cssegis.f()',
             uss='uss.f()',
             usc='usc.f()',
-            ##brms=brms.f(),
+            brms=brms.f(),
             ##brio='brio.f()',
-            wcota='wcota.f()',
+            ##wcota='wcota.f()',
             ##fnd='fnd.f()',
             ##sesa='sesa.f()')
             apple='amob.f()',
