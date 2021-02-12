@@ -13,7 +13,7 @@ cssegis.f <- function(d=TRUE) {
         'https://raw.githubusercontent.com/',
         'CSSEGISandData/COVID-19/master/',
         'csse_covid_19_data/csse_covid_19_time_series/',
-    'time_series_covid19_')
+        'time_series_covid19_')
     
 ### The root names of the three derired  data files
     vnames <- c('confirmed', 'deaths', 'recovered')
@@ -145,9 +145,9 @@ sesa.f <- function(d=FALSE) {
             
         }
         options(show.error.messages = TRUE)
-
+        
     }
-
+    
     ## https://www.saude.pr.gov.br/sites/default/arquivos_restritos/files/documento/2020-11/informe_epidemiologico_08_11_geral.csv
     ## https://www.saude.pr.gov.br/sites/default/arquivos_restritos/files/documento/2020-11/informe_epidemiologico_08_11_obitos_casos_municipio.csv
     
@@ -162,7 +162,7 @@ sesa.f <- function(d=FALSE) {
                      rep(c('n', 's'), c(3,2))), ses$STATUS)
         
     }
-
+    
     return(invisible())
 }
 
@@ -172,7 +172,7 @@ gmob.f <- function(d=TRUE) {
         
         mfl <- 'Global_Mobility_Report.csv'
         ##system(paste0('wget https://www.gstatic.com/covid19/mobility/',
-          ##            mfl, ' -O data/', mfl))
+        ##            mfl, ' -O data/', mfl))
         download.file(paste0('https://www.gstatic.com/covid19/mobility/',mfl),
                       paste0('data/', mfl))
         
@@ -221,12 +221,12 @@ others.f <- function() {
 if (ncores<39) {
     cat('1\n')
     system.time(mclapply(list(
-    others='others.f()',
-    google='gmob.f()'), 
-    function(x)
-    ##        eval(str2lang(x))
-        eval(parse(text=x)), 
-    mc.cores = ncores))
+        others='others.f()',
+        google='gmob.f()'), 
+        function(x)
+            ##        eval(str2lang(x))
+            eval(parse(text=x)), 
+        mc.cores = ncores))
 } else {
     if (ncores<69) {
         cat('2\n')
