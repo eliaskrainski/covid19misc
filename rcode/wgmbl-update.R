@@ -25,7 +25,7 @@ if (gmob) {
     
     system.time(gmbl <- as.data.frame(read_csv(
                     "data/Global_Mobility_Report.csv",
-                    col_types='cccccccciiiiii')))
+                    col_types='ccccccccciiiiii')))
     
     dim(gmbl)
     head(gmbl,2)

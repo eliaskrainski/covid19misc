@@ -401,9 +401,17 @@ if (usems) {
                     dbr[i.mu.l, c('estado', 'fdate')], sum))
     str(wbr.uf)
 
-    system.time(wbr.R <- lapply(
-                    dbr[c('casosAcumulado', 'obitosAcumulado')], tapply,
-                dbr[c('Regiao', 'fdate')], sum))
+    table(dbr$Regiao)
+    idd <- which((dbr$Regiao=='') & duplicated(dbr$fdate))
+    if (length(idd)>0) {
+        system.time(wbr.R <- lapply(
+                        dbr[-idd, c('casosAcumulado', 'obitosAcumulado')], tapply,
+                        dbr[-idd, c('Regiao', 'fdate')], sum))
+    } else {
+        system.time(wbr.R <- lapply(
+                        dbr[, c('casosAcumulado', 'obitosAcumulado')], tapply,
+                        dbr[, c('Regiao', 'fdate')], sum))
+    }
     str(wbr.R)
     
 }
