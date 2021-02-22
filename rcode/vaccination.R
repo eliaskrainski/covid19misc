@@ -69,7 +69,7 @@ g4 <- g0 +
 
 library(gridExtra)
 
-png('figures/vaccination-time-countries.png', 700, 700)
+png('figures/vaccination-time-countries.png', 1000, 700)
 grid.arrange(g1, g2, g3, g4)
 dev.off()
 if (FALSE)
@@ -104,7 +104,8 @@ if (nsel>12) {
 }
 
 fac <- c(100, 100, 100, 1e6)
-ylm <- c(1, 1, 1, max(ts0[[4]]/fac[4], na.rm=TRUE))
+ylm <- c(1, 1, 1,
+         max(ts0[[4]][head(isel,nsel),]/fac[4], na.rm=TRUE))
 nams <- c('Doses / populacion',
           'People vaccinated / population',
           'Complete vaccined / population',
