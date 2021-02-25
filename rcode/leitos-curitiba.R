@@ -31,7 +31,11 @@ ldl0 <- lapply(ddates, function(d) {
 table(sapply(ldl0, class))
 
 i0 <- which(!sapply(ldl0, is.null))[-1]
-ldl <- ldl0[i0]
+if (length(i0)>0) {
+    ldl <- ldl0[i0]
+} else {
+    ldl <- ldl0
+}
 
 table(sapply(ldl, ncol))
 table(sapply(ldl, nrow))
@@ -56,14 +60,21 @@ nl.t <- sapply(ldl, function(d) {
 tail(ddates)
 tail(ddates[i0])
 
+png('figures/leitosCuritiba.png', 500, 500)
 par(mfrow=c(1,1), mar=c(2, 3, 0.5, 0.5), mgp=c(2,0.5,0))
 plot(ddates[i0], nl.t[1, ], las=1, pch=19, 
-     ylim=range(nl.t, na.rm=TRUE),
+     ylim=range(nl.t, na.rm=TRUE), ##axes=FALSE,
      ylab='Numero de leitos', xlab='')
 for (j in 2:3)
     points(ddates[i0], nl.t[j,], col=j, pch=19)
 legend('left', c('Total', 'Ocupados', 'Livres'),
        lty=1, col=1:4, ncol=1,
        bty='n', bg=gray(.9))
-
-
+##axis(1, 
+  ##   format(pretty(ddates,10), '%m,%d'),
+    ## lty=2, col=gray(.5,.5))
+abline(v=pretty(ddates,10),
+       h=50*(0:20), lty=2, col=gray(.5,.5))
+dev.off()
+if (FALSE)
+    system("eog figures/leitosCuritiba.png &")

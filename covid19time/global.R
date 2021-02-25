@@ -166,6 +166,93 @@ if (length(ib)) {
     }
 }
 
+y7w <- function(y) {
+    r <- y
+    aux <- y[1:7]
+    r[1:3] <- (y[1:3] + sum(aux[aux>0])/7)/2
+    for (j in 4:(length(y)-3)) {
+        aux <- y[-3:3+j]
+        r[j] <- sum(aux[aux>0])/7
+    }
+    for (j in (length(y)-2):length(y)) {
+        aux <- y[(j-6):j]
+        r[j] <- (y[j]*(y[j]>0)+sum(aux[aux>0])/7)/2
+    }
+    return(r)
+}
+
+y2positive <- function(y) {
+    y7 <- y7w(y)
+    
+}
+
+fpois <- function(y, X, B, o=2, theta=0) {
+    n <- length(y)
+    k <- ncol(B)
+    q <- crossprod(diff(diag(k), difference=o))
+    colnames(X) <- paste0('x', 1:ncol(X))
+    colnames(B) <- paste0('b', 1:ncol(B))
+    r0 <- glm.fit(cbind(X, B), y, family=poisson())
+    cx <- r0$coef[which(substr(names(r0$coef), 1, 1)=='x')]
+    cb <- r0$coef[which(substr(names(r0$coef), 1, 1)=='b')]
+    ix <- which(!is.na(cx))
+    ib <- which(!is.na(cb))
+    r0$fix <- drop(X[, ix] %*% cx[ix])
+    r0$spart <- drop(B[, ib] %*% cb[ib])
+    r0$ss <- exp(mean(r0$fix) + r0$spart)
+    r0
+}
+
+
+tSmoothPoisson <- function(y, X, B) {
+    if (is.null(colnames(X)))
+        colnames(X) <- paste0('x', 1:ncol(X))
+    if (is.null(colnames(B)))
+        colnames(B) <- paste0('b', 1:ncol(B))
+    d <- maked(y)
+    if (length(d$i)>9) {
+        xx <- X[d$i, ]
+        jx <- which(colSums(xx)>0)
+        xx <- xx[, jx]
+    } else {
+        xx <- matrix(1, length(d$i), 1)
+        colnames(x) <- 'b0'
+        jx <- 1
+    }
+    if (length(d$i)>19) {
+        bb <- B[d$i,]
+        jb <- which(colSums(bb)>0.5)
+        bb <- bb[, jb]
+        if (jb[1]>1)
+            for (j in 1:(jb[1]-1))
+                bb[, 1] <- bb[, 1] + B[d$i, j]
+        if (jb[length(jb)]<ncol(B))
+            for (j in ncol(B):(jb[length(jb)]+1))
+                bb[, length(jb)] <- bb[, length(jb)] + B[d$i, j]
+    } else {
+        bb <- matrix(d$i-mean(d$i), length(d$i), 1)
+        colnames(bb) <- 'b1'
+        jb <- 1
+    }
+    gfit <- glm.fit(cbind(xx, bb), d$y,
+                    family=poisson())
+    bg <- gfit$coef
+
+    bg <- bg[!is.na(bg)]
+    icx <- pmatch(colnames(xx), names(bg))
+    iicx <- which(!is.na(icx))
+
+    icb <- pmatch(colnames(bb), names(bg))
+    iicb <- which(!is.na(icb))
+
+    res <- list(fit=gfit, y=d$y)
+    res$x.m <- drop(xx[, iicx, drop=FALSE] %*% bg[icx[iicx]] )
+    res$b.m <- bb[, iicb, drop=FALSE] %*% bg[icb[iicb]]
+    res$ys <- exp(drop(mean(res$x.m) + res$b.m))
+
+    return(res) 
+}
+
 ### map real to real as 
 ###   y = sqrt(x), if x>0
 ###   y = -sqrt(-x), if x<0 
@@ -454,7 +541,7 @@ dataPrepare <- function(slocal) {
 
 ### spline smooth series of non-negative data
 SmoothFit <- function(y, w) {
-  x0t <- rev(seq(length(y)-1, 1, -3))
+  x0t <- rev(seq(length(y), -7, -7))
   y[y<0] <- NA
   ii <- which(!is.na(y))
   dtmp <- list(tt=ii, r=y[ii], w=w[ii])
@@ -518,7 +605,7 @@ SmoothFitG <- function(y, w) {
 ### do the R_t computations 
 Rtfit <- function(d, a=0.5, b=1) {
     
-    x0t <- rev(seq(nrow(d$yy)-1, 0, -3))
+    x0t <- rev(seq(nrow(d$yy), -7, -7))
 
     pw <- pgamma(0:21, shape=(5.8/4)^2, scale=4^2/5.8)[1:15]
     w <- diff(pw)/sum(diff(pw))
@@ -1246,6 +1333,8 @@ data2plot <- function(d,
     
     if ((ncwplot==1) & (tail(wplot,1)==iplot))
         axis(1, xl$x, format(xl$x, '%b,%d'))
+    if ((nrwplot==2) & ((iplot>2) & length(wplot)<5)) 
+        axis(1, xl$x, format(xl$x, '%b,%d'))
     if ((nrwplot==2) & ((iplot>2) & (iplot<5))) 
         axis(1, xl$x, format(xl$x, '%b,%d'))
   }    
@@ -1261,7 +1350,7 @@ data2plot <- function(d,
         par(mar=c(2, 4.5, 0, 0.5))
     }
     if (ncwplot==2) {
-        if ((length(plots)-iplot)<2)
+        if (length(wplot)<5) ##(length(plots)-iplot)<2)
             par(mar=c(2, 4.5, 0, 0.5))
     }
     if (ncwplot==3) {
@@ -1309,7 +1398,7 @@ data2plot <- function(d,
         axis(1, xl$x, format(xl$x, '%b,%d'))
     }
     if (ncwplot==2) {
-        if ((length(plots)-iplot)<2)
+        if (length(wplot)<5) 
             axis(1, xl$x, format(xl$x, '%b,%d'))
     }
     if (ncwplot==3) {

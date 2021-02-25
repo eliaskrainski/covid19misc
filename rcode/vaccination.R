@@ -123,7 +123,7 @@ for (k in 1:4) {
          xlab='', ylab='',
          axes=FALSE)
     axis(1, pretty(datel, 10),
-         format(pretty(datel, 10), '%d, %b'))
+         format(pretty(datel, 10), '%b,%d'))
     axis(2, 0:10/10, format(10*0:10*ylm[k], digits=2), las=1)
     for (j in 1:nsel) {
         lines(as.Date(colnames(ts0[[k]])),
