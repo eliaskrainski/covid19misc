@@ -141,12 +141,24 @@ if (gmob) {
 
     table(im.inc <- gmbl$local %in% aa)
 
-    system.time(
-        wgmbl <- mclapply(
-            gmbl[im.inc, 9:14], tapply,
-            gmbl[im.inc, c('local', 'fdate')], 
-            mean, mc.cores=min(6L, ncores)))
+    if (FALSE) {
 
+        system.time(
+            wgmbl <- mclapply(
+                gmbl[im.inc, 9:14], tapply,
+                gmbl[im.inc, c('local', 'fdate')], 
+                mean, mc.cores=min(6L, ncores)))
+
+    } else {
+
+        system.time(
+            wgmbl <- lapply(
+                gmbl[im.inc, 9:14], tapply,
+                gmbl[im.inc, c('local', 'fdate')], 
+                mean))
+
+    }
+    
     str(wgmbl[1])
 
     grep('Curitiba', rownames(wgmbl[[1]]))
