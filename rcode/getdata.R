@@ -48,12 +48,12 @@ usc.f <- function(d=TRUE) {
 ### the official data from the Brazilian Health Ministry
 ###  is at https://covid.saude.gov.br/
 brms.f <- function(d=TRUE) {
+    res.url <-
+        httr::GET("https://xx9p7hp1p7.execute-api.us-east-1.amazonaws.com/prod/PortalGeral",
+                  httr::add_headers("X-Parse-Application-Id" =
+                                        "unAFkcaNDeXajurGB7LChj8SgQYS2ptm"))
+    url <- httr::content(res.url)$results[[1]]$arquivo$url 
     if (d) {
-        res.url <-
-            httr::GET("https://xx9p7hp1p7.execute-api.us-east-1.amazonaws.com/prod/PortalGeral",
-                      httr::add_headers("X-Parse-Application-Id" =
-                                            "unAFkcaNDeXajurGB7LChj8SgQYS2ptm"))
-        url <- httr::content(res.url)$results[[1]]$arquivo$url 
         if (substring(url, nchar(url)-2)=='zip') {
             download.file(url, 'brms.zip')
             unzip('brms.zip')
@@ -63,7 +63,7 @@ brms.f <- function(d=TRUE) {
         if (substring(url, nchar(url)-2)=='csv') {
             download.file(url, 'data/HIST_PAINEL_COVIDBR.csv')
         } 
-    }
+    } else return(url)
     return(invisible())
 }
 
@@ -181,27 +181,23 @@ gmob.f <- function(d=TRUE) {
 }
 
 amob.f <- function(d=TRUE) {
-    if (d) {
-        
-        ## tip from
-        ## https://kieranhealy.org/blog/archives/2020/05/23/get-apples-mobility-data/
-        get_apple_target <- function(cdn_url = "https://covid19-static.cdn-apple.com",
-                                     json_file = "covid19-mobility-data/current/v3/index.json") {
-            tf <- tempfile(fileext = ".json")
-            curl::curl_download(paste0(cdn_url, "/", json_file), tf)
-            json_data <- jsonlite::fromJSON(tf)
-            paste0(cdn_url, json_data$basePath, json_data$regions$`en-us`$csvPath)
-        }
-        
-        aurl <- get_apple_target()
-        aurl
-        
-        amfl <- tail(strsplit(aurl, '/')[[1]], 1)
-        amfl
-        
+    ## tip from
+    ## https://kieranhealy.org/blog/archives/2020/05/23/get-apples-mobility-data/
+    get_apple_target <- function(cdn_url = "https://covid19-static.cdn-apple.com",
+                                 json_file = "covid19-mobility-data/current/v3/index.json") {
+        tf <- tempfile(fileext = ".json")
+        curl::curl_download(paste0(cdn_url, "/", json_file), tf)
+        json_data <- jsonlite::fromJSON(tf)
+        paste0(cdn_url, json_data$basePath, json_data$regions$`en-us`$csvPath)
+    }
+    
+    aurl <- get_apple_target()
+    amfl <- tail(strsplit(aurl, '/')[[1]], 1)
+    
+    if (d) {    
         ##system(paste0('wget ', aurl, ' -O data/', amfl))
         download.file(aurl, paste0('data/', amfl)) 
-    }
+    } else return(aurl)
     return(invisible())
 }
 
