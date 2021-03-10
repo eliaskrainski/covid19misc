@@ -12,7 +12,7 @@ diff(c('0630'=356189, '0707'=393980,
        '1214'=1029684,
        '0104'=1103284, '0111'=1136682))
 
-(fls <- system('ls data/INFLUD*202*.csv', TRUE))
+(fls <- system('ls data/INFLUD-*202*.csv', TRUE))
 if (length(fls)>0) {
     file <- fls[tail(order(as.Date(substr(
         fls, 13, 22), '%d-%m-%Y')), 1)]
@@ -70,16 +70,14 @@ if (file.exists(rfile)) {
     table(srags20$anoS, srags20$Classificação)
     table(srags20$Evolu, srags20$anoS)
 
-    addmargins(with(srags20[(
-        srags20$anoS==2020) & (srags20$Classificação=='COVID19'),],
+    addmargins(with(srags20[(srags20$Classificação=='COVID19'),],
         table(Evolução, anoS)))
 
     table(srags20$evolucao <- factor(ifelse(
               srags20$Evolução=='NA', 'Indef', as.character(srags20$Evolução)),
               c('Cura', 'Óbito', 'Indef')), 
           srags20$Evolução)
-    t0 <- with(srags20[(
-        srags20$anoS==2020) & (srags20$Classificação=='COVID19'),],
+    t0 <- with(srags20[(srags20$Classificação=='COVID19'),],
         table(evolucao, UTI))
     addmargins(t0)
     
@@ -107,6 +105,44 @@ if (file.exists(rfile)) {
               srags20$Idade, c(5*(0:18), 100, 199), right=FALSE))
     table(srags20$gIdade10 <- cut(
               srags20$Idade, c(10*(0:8), 100, 199), right=FALSE))
+    table(srags20$gIdade3 <- cut(
+              srags20$Idade, c(0, 10, 30, 40, 50, 60, 70, 80, 90, 199), right=FALSE))
+    i3m <- c(5, 20, 35, 35, 55, 65, 75, 85, 95)
+
+    mm.ev <- with(srags20[srags20$Classificação=='COVID19',],
+                  table(substr(dEvol, 1, 7), Evolução))
+    mm.ev
+
+    x.date <- as.Date(paste0(dimnames(id.ev)[[1]], '-15'))
+
+    p.id.ev <- sapply(c(0.025, 0.5, 0.975), function(p)
+        qbeta(p, 1 + id.ev[,3], 1 + rowSums(id.ev[,-3])))
+    
+    plot(x.date, id.ev[,3]/rowSums(id.ev),
+         ylim=0:1, type='n')
+    segments(x.date, p.id.ev[,1], x.date, p.id.ev[,3])
+    points(x.date, p.id.ev[,2], pch=19, col=2)
+    
+    id10ev <- with(srags20[srags20$Classificação=='COVID19',],
+                  table(substr(dEvol, 1, 7), gIdade10, Evolução))
+    dim(id10ev)
+    dimnames(id10ev)
+
+    apply(id10ev, 3, colSums)
+    apply(id10ev, 3, rowSums)
+
+    p.ob.id10 <- apply(id10ev, 1, function(m) m[,3]/rowSums(m))
+    dim(p.ob.id10)
+    dimnames(p.ob.id10)
+
+    p1ob.id10 <- apply(id10ev, 1, function(m)
+        pbeta(0.0210, 1+m[,3], 1+rowSums(m)-m[,3]))
+    p2ob.id10 <- apply(id10ev, 1, function(m)
+        pbeta(0.9710, 1+m[,3], 1+rowSums(m)-m[,3]))
+
+    plot(x.date, p.ob.id10[1,], pch=8,
+         ylim=range(p1ob.id10, p2ob.id10, na.rm=TRUE))
+    segments(x.date, p1ob.id10[1,], x.date, p2ob.id10[1,])
 
     system.time(save('srags20',
                      file=rfile,

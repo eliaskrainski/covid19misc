@@ -22,21 +22,166 @@ vd$date <- as.Date(as.character(vd$date))
 vd$daily_vaccinations_per_hundred <-
     100*vd$daily_vaccinations_per_million/1e6
 
-vd[(vd$location=='Brazil') &
-   (Sys.Date()-vd$date)<3, c(3:8)]
+vbr <- vd[vd$location=='Brazil', ]
+vbr[(Sys.Date()-vbr$date)<3, c(3:8)]
 100*220000/213e6
+
 if (FALSE)
-    with(vd[vd$location=='Brazil', ],
+    with(vbr,
          plot(date, daily_vaccinations, pch=19,
               xlab='')) 
 if (FALSE)
-    with(vd[vd$location=='Brazil', ],
+    with(vbr, 
          plot(date, people_vaccinated_per_hundred, 
               xlab='', pch=19, type='o'))
 if (FALSE)
     with(vd[vd$location=='Chile', ],
          plot(date, people_vaccinated_per_hundred, 
               xlab='', pch=19, type='o'))
+if (FALSE) {
+    
+    with(vd[vd$location=='Saudi Arabia', ],
+         plot(date, daily_vaccinations, 
+              xlab='', pch=19, type='o'))
+    axis(4, pretty(par()$usr[3:4]),
+         format(pretty(par()$usr[3:4])/343e3, dig=2))
+
+}
+
+if(FALSE){
+
+    nmax.o <- max(vbr$total_vaccinations, na.rm=TRUE)
+    vmax.o <- max(vbr$daily_vaccinations, na.rm=TRUE)
+    dtarg <- as.Date('2021-05-01')
+    (np <- as.integer(dtarg-Sys.Date())+1)
+    nvtarg <- 1.2e6
+    dv.pl <- vmax.o*1.05 + (nvtarg-vmax.o*1.05)*
+        (seq(1, 100, length=np/2)^0.75)/(100^0.75)
+    dv.pl
+    dv.pl[(np/2+1):np] <- nvtarg
+    dv.pl
+    
+    summary(dv.pl)
+    sum(dv.pl)
+    v.p <- cumsum(dv.pl) + nmax.o
+
+    xmin <- min(vbr$date, na.rm=TRUE)
+    xl <- list(x=pretty(c(xmin, dtarg)))
+    xl$l <- format(pretty(c(xmin, dtarg)), '%b,%d')
+    
+    yl <- list(y=2e5*(0:11))
+    yl$l <- c('0', paste(yl$y[yl$y<1e6][-1]/1e3, 'K'),
+              paste(yl$y[yl$y>=1e6]/1e6, 'M'))
+##               l=c(0, paste0(200*(1:4), 'mil'),
+  ##                 paste0(c(1,1.2), 'milhão')))
+    yl
+    yl2 <- list(y=seq(0, 100, 20)*1e6)
+    yl2$l <- c('0', paste(yl2$y[-1]/1e6, 'M'))
+    yl2
+    
+    csel <- c('Israel', 'United Arab Emirates',
+              'United Kingdom', 'United States', 'European Union')
+    psel <- c(9e6, 9.771e6, 6.665e7, 313e6, 4.477e8)
+    ccol <- c('magenta', 'green4', 'red4', 'blue', 'cyan')
+    
+    png('figures/vaccina-dia-projecao.png', 900, 600)
+    par(mfrow=c(2,2), mar=c(0,4.5,0,0), mgp=c(3.3,0.5,0), las=1)
+    with(vbr, 
+         plot(date, daily_vaccinations, axes=FALSE,
+              xlim=c(xmin, dtarg), ylim=c(0, nvtarg*2), 
+              xlab='', ylab='D O S E S    P O R    D I A', pch=19))
+    abline(h=pretty(par()$usr[3:4], 10),
+           lty=2, col=gray(.5,.5))
+    axis(2, yl$y, yl$l, las=1)
+    polygon(Sys.Date() + c(1:np, np:1, 1), 
+            c(dv.pl*.9, rev(dv.pl)*1.1, dv.pl[1]*.9), 
+            border='transparent', col=gray(.7,.5))
+    lines(Sys.Date()+1:np, dv.pl, lwd=3, lty=2)
+    legend('topright', c('realizado', 'projeção'), cex=1.5,
+           title='Brasil', ##' aplicadas de vacina anti-covid19',
+           pch=c(19,0), pt.cex=c(2,0), 
+           border='transparent',
+           lwd=c(0,2), lty=2,
+           fill=c('transparent', gray(.7,.5)), bty='n')
+    polygon(Sys.Date() + c(1:np, np:1, 1), 
+            c(dv.pl*.9, rev(dv.pl)*1.1, dv.pl[1]*.9), 
+            border='transparent', col=gray(.7,.5))
+    for (cc in 1:length(csel))  
+        with(vd[vd$location==csel[cc], ],
+             lines(date, daily_vaccinations,
+                   col=ccol[cc], lwd=3))
+    text(dtarg-12, 1.20e6, 'Butantã+Fiocruz\n=1.2Milhião/dia', cex=1.5)
+###    mtext('Doses(D)', 2, line=0.05, at=par()$usr[4]*.95)
+    par(mar=c(0,4.5,0,4.5))
+    with(vbr,
+         plot(date, 100*daily_vaccinations/213e6, axes=FALSE,
+              xlim=c(xmin, dtarg), ylim=c(0, 300*nvtarg)/2e8, 
+              xlab='', ylab='', pch=19))
+    abline(h=pretty(par()$usr[3:4], 10),
+           lty=2, col=gray(.5,.5))
+    polygon(Sys.Date() + c(1:np, np:1, 1), 
+            c(dv.pl*.9, rev(dv.pl)*1.1, dv.pl[1]*.9)/213e4, 
+            border='transparent', col=gray(.7,.5))
+    lines(Sys.Date()+1:np, dv.pl/213e4, lty=2)
+    a <- axis(2, las=1)
+    axis(4, a, a/2, las=1) 
+    for (cc in 1:length(csel))
+        with(vd[vd$location==csel[cc], ],
+             lines(date, 100*daily_vaccinations/psel[cc],
+                   col=ccol[cc], lwd=3)) 
+    legend('topright', csel, col=ccol, lty=1, bty='n', cex=1.3, lwd=3)
+###    mtext('Doses/\nPop.', 2, line=0.05, at=par()$usr[4]*.95)
+###    mtext('% Pop.\nVacinada\n(aprox.)', 4, line=0.05, at=par()$usr[4]*.925)
+    mtext('Doses diárias / População (%)', 2, 2.3, las=3)
+    mtext('% pessoas vacinadas por dia (aprox.)', 4, 2.3, las=3,
+          at=0.7*mean(par()$usr[3:4]))
+    par(mar=c(2,4.5,0,0))
+    with(vbr, 
+         plot(date, total_vaccinations, pch=19,
+              xlim=c(xmin, dtarg),
+              ylab='T O T A L    D E    D O S E S    A P L I C A D A S',
+              ylim=c(0, 10e7), axes=FALSE))
+    abline(h=pretty(par()$usr[3:4], 10),
+           lty=2, col=gray(.5,.5))
+    polygon(Sys.Date() + c(1:np, np:1, 1),
+            nmax.o+c(cumsum(dv.pl*.9), rev(cumsum(dv.pl*1.1)), dv.pl[1]*.91), 
+            border='transparent', col=gray(.7,.5))
+    lines(Sys.Date()+1:np, v.p, lty=2)
+    for (cc in 1:length(csel))  
+        with(vd[vd$location==csel[cc], ],
+             lines(date, total_vaccinations,
+                   col=ccol[cc], lwd=3))
+    axis(1, xl$x, xl$l)
+    axis(2, yl2$y, yl2$l, las=1)
+    abline(h=pretty(par()$usr[3:4], 10),
+           lty=2, col=gray(.5,.5))
+    par(mar=c(2,4.5,0,4.5))
+    with(vbr, 
+         plot(date, 100*total_vaccinations/213e6, pch=19,
+              xlim=c(xmin, dtarg),
+              ylab='',
+              ylim=c(0, 3*100*7e7/2e8), axes=FALSE))    
+    abline(h=pretty(par()$usr[3:4], 10),
+           lty=2, col=gray(.5,.5))
+    polygon(Sys.Date() + c(1:np, np:1, 1),
+            100*(nmax.o+c(cumsum(dv.pl*.9), rev(cumsum(dv.pl*1.1)), dv.pl[1]*.91))/213e6, 
+            border='transparent', col=gray(.7,.5))
+    lines(Sys.Date()+1:np, 100*v.p/213e6, lty=2)
+    for (cc in 1:length(csel))  
+        with(vd[vd$location==csel[cc], ],
+             lines(date, 100*total_vaccinations/psel[cc],
+                   col=ccol[cc], lwd=3))
+    a <- axis(2, las=1)
+    axis(4, a, a/2, las=1)
+    axis(1, xl$x, xl$l)
+    mtext('total vacinas aplicadas / população (%)', 2, 2.3, las=3)
+    mtext('% total população vacinada (aprox.)', 4, 2.3, las=3)
+    dev.off()
+
+    if(FALSE)
+        system('eog figures/vaccina-dia-projecao.png &')
+
+}
 
 plotxy2 <- function(x, y1, y2,
                     xlab, ylab1, ylab2,
@@ -103,7 +248,7 @@ for (j in 1:nrow(dcc)) {
            max(tmp$total_vaccinations_per_hundred, na.rm=TRUE))
     legend('topleft',
            paste0(c('Diaria', 'Acumulada'), ': ',
-                  format(v, digits=1), '%'),
+                  format(v, digits=2), '%'),
            col=1:2, lty=1, lwd=1, pch=19, title=dcc[j,1])
     (r1a <- range(tmp$daily_vaccinations_per_hundred, na.rm=TRUE))
     (r2a <- range(tmp$total_vaccinations_per_hundred, na.rm=TRUE))
@@ -111,14 +256,14 @@ for (j in 1:nrow(dcc)) {
     with(tmp, 
          plotxy2(date, daily_vaccinations_per_hundred,
                  total_vaccinations_per_hundred, 
-                 c1=3, c2=4, type='o', pch=19, lwd=2, 
+                 c1=3, c2=4, type='o', pch=19, lwd=3, 
                  add=TRUE, r1=r1a, r2=r2a))
     v <- c(mean(tmp$daily_vaccinations_per_hundred, na.rm=TRUE), 
            max(tmp$total_vaccinations_per_hundred, na.rm=TRUE))
     legend('left',
            paste0(c('Diaria', 'Acumulada'), ': ',
-                  format(v, digits=1), '%'),
-           col=3:4, lty=1, lwd=2, pch=19, title=dcc[j,2])
+                  format(v, digits=2), '%'),
+           col=3:4, lty=1, lwd=3, pch=19, title=dcc[j,2])
 }
 dev.off()
 if(FALSE)
@@ -129,7 +274,6 @@ if(FALSE)
 tail(tmp, 10)
 
 names(tmp)
-vbr <- vd[vd$location=='Brazil', ]
 jj <- c(3:5, 8, 10, 13)
 names(vbr)[jj]
 
