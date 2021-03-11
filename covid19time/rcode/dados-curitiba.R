@@ -23,7 +23,7 @@ dcwb$date <- as.Date(dcwb[,1], '%d/%m/%Y')
 summary(dcwb$date)
 
 if (!any(ls()=='alldates'))
-    alldates <- gsub('-', '', seq(as.Date('20200122', '%Y%m%d'),
+    alldates <- gsub('-', '', seq(as.Date('20200121', '%Y%m%d'),
                     Sys.Date(), 1))
 
 dcwb$fdate <- factor(gsub('-', '', 
@@ -31,93 +31,84 @@ dcwb$fdate <- factor(gsub('-', '',
                           fixed=TRUE), alldates)
 tail(dcwb)
 
-t3 <- table(dcwb$E, dcwb$fdate)
+if(FALSE) {
+    
+    table(cut(dcwb$IDADE, c(0, 20, 40, 60, Inf), right=F))
+    table(dcwb$g3idade <- cut(dcwb$IDADE, c(0, 30, 50, Inf), right=F))
+
+    ti3n <- table(substr(dcwb$fdate, 1, 6),
+                  dcwb$g3idade, dcwb$ENC)
+    dim(ti3n)
+    tx <- as.Date(paste0(dimnames(ti3n)[[1]], '15'), '%Y%m%d')
+    it <- 4:(length(tx)-1)
+
+    par(mfrow=c(2,2), mar=c(3,3,0.5,0.5), mgp=c(2,0.5,0))
+    for (k in 2:3) {
+        plot(tx, ti3n[,1,k], type='l',
+             ylim=range(ti3n[it,,k]), xlim=range(tx[it]))
+        for (i in 2:3) lines(tx, ti3n[,i,k], col=i)
+    }
+    plot(tx, ti3n[,1,2]/rowSums(ti3n[,1,2:3]), type='l',
+         ylim=c(0,0.15), xlim=range(tx[it]))
+    for (i in 2:3) lines(tx, ti3n[,i,2]/rowSums(ti3n[,i,2:3]), col=i)
+    plot(tx[it], tapply(dcwb$IDADE, substr(dcwb$fdate, 1, 6), mean, na.rm=TRUE)[it],
+         type='o', lwd=2, ylim=c(35, 75))
+    lines(tx[it],
+          tapply(dcwb$IDADE[dcwb$ENC=='ÓBITO CONF'],
+                 substr(dcwb$fdate, 1, 6)[dcwb$ENC=='ÓBITO CONF'],mean)[it], col=2)
+
+}
+
+t3 <- table(dcwb$fdate, dcwb$ENCE)
 str(t3)
 
-t3a <- apply(t3, 1, cumsum)
+t3a <- apply(t3, 2, cumsum)
+str(t3a)
 
-t3a[-20:0+nrow(t3a), ]
-tail(diff(c(0, t3a[,2])), 21)
+nc3 <- rowSums(t3a)
+tail(nc3)
 
-djj <- c(
-    paste0('202103', sprintf('%02d', 3:10)))
-(jj <- pmatch(djj, colnames(t3)))
-t3a[jj, ]
+(ntail <- which(diff(rev(nc3), na.rm=TRUE)<0)[1])
 
-atv <- c(5705, 6449, 6849, 7449, 7714, 8415, 9131,
-        9647, 10224, 11232, 11500, 12139, 12784, 12973,
-        13320, 13582, 13829, 13253, 12907, 12817, 13238,
-        13340, 13780, 14616, 14112, 14077, 13983, 13185,
-        13273, 13512, 13624, 12947, 12602, 12392,12029,
-        11562, 11693, 11884, 10940, 10209,
-        10209,10209,10209, 7980, 7980, 7530, 7275,
-        7201,7201,7201,5961,5961,5989,6213,6410,
-        6719, 6970, 6970, 7605,7319,7546,7888,
-        8466,8714,9000,9149,8993,8743,8295,
-        7846,7919,7800,7207,6854,6539,6134,5804,
-        5644, 5844, 5956, 5653, 5588, 5337, 5340,
-        5518, 5400, 5337, 5352, 5225, 5116, 4953, 4911,
-        5000, 5184, 5039, 4981, 4964, 4885, 5042,
-        5200, 5487, 5992, 6238, 6478, 6750,7116,
-        7700, 8211, 8279, 8670, 8476, 8816, 9069,
-        10000, 10747, 11035, 11308)
-length(atv)
+t3a[-ntail:0+nrow(t3a), ]
+tail(diff(c(0, t3a[,2])), ntail)
 
-djj
+dsm <- read.csv2('data/dadosSMCuritiba.csv')
+dsm$Date <- as.Date(as.character(dsm$date), '%Y%m%d')
+head(dsm)
+
+jj0 <- which(dsm$Date>tail(dcwb$date, ntail)[1])
+jj0
+
+jj <- pmatch(dsm$date[jj0], rownames(t3))
+jj
+
 if(FALSE) {
 
-    png('figures/casos-ativos-CuritibaSM.png', 600, 600)
-    par(mfrow=c(1,1), mar=c(3.5, 3.5, .5, .5), mgp=c(2, 0.5, 0), las=2)
-    plot(as.Date(tail(djj,1), '%Y%m%d')-(length(atv)-1):0, atv,
-         type='h', lwd=3, ylim=c(0, max(atv, na.rm=TRUE)),
-         xlab='', ylab='Casos ativos')
+    png('figures/casos-ativos-CuritibaSM.png', 700, 500)
+    par(mfrow=c(1,1), mar=c(3.5, 3.5, .5, 3.5), mgp=c(2.5, 0.5, 0), las=2)
+    with(dsm, plot(Date, ativos, axes=FALSE,
+         type='h', lwd=4, ylim=c(0, max(ativos, na.rm=TRUE)),
+         xlab='', ylab='Casos ativos'))
+    axis(2, pretty(c(0, dsm$ativos), 10), las=1)
+    axis(1, pretty(dsm$Date, 10),
+         format(pretty(dsm$Date, 10), '%b,%d'), las=2)
+    o.t <- diff(dsm$obitos)
+    y2 <- o.t/max(o.t, na.rm=TRUE)
+    points(dsm$Date[-1], y2*max(dsm$ativos), type='o', 
+           pch=8, col=2, cex=2, lwd=2)
+    axis(4, max(dsm$ativos)*pretty(c(0, max(o.t)), 10)/max(o.t),
+         pretty(c(0, max(o.t)), 10), las=1, line=0)
+    mtext('Óbitos', 4, 2, las=3)
+    legend('topright', c('Casos ativos', 'Óbitos'),
+           pch=8, pt.cex=c(0,2), lwd=2, col=1:2, bty='n')
     dev.off()
     if(FALSE)
         system('eog figures/casos-ativos-CuritibaSM.png &')
 
 }
 
-dim(t3a)
-jj
-
-t3a[jj, ] <- cbind(
-    tail(atv, length(jj)),
-    c(##1559, 1564, 1569, 1582, 1593, 1602, 1613,
-        ##1621, 1628, 1638, 1649, 1660, 1678, 1694,
-        ##1711, 1729, 1745, 1758, 1775, 1788, 1807,
-        ##1823, 1840, 1851, 1862, 1882, 1903, 1924,
-        ##1943, 1957, 1971, 1985, 2006, 2029,2048,
-        ##2061, 2075, 2091, 2112, 2129,
-        ##2129+9, 2129+18, 2129+27, 2179-13, 2179, 2200, 2223,
-        ##2223+9,2223+18,2249,2272-10,2272,2287,2304,2323,
-        ##2340, 2356, 2365, 2377,2389,2404,2403,
-        ##2439,2458,2469,2479,2499,2518,2530,
-        ##2537,2549,2555,2563,2574,
-        ##2585,2592,2603,2611,2620,2629,
-        ##2637,2646,2657,2667,2676,2682,2688,2699,
-        ##2709,2723,2734,2744,2753,2763,2775,
-        ##2784,2796,2807,2820,2830,2841,2852,
-        ##2867,2887,2905,2923,2934,2944,2961,
-        2980,3000,3020,3042,3058,3074,3094,
-        3116),
-    c(##52084, 52238, 52484, 52704, 53342, 54013, 54695,
-        ##55561, 55951, 56272, 57094, 58041, 58982, 60348,
-        ##61505, 62195, 63186, 65051, 66585, 68042, 69355,
-        ##70750, 71430, 72026, 73633, 75079, 76644, 78842,
-        ##80091, 80751, 81489, 83061, 84862, 86061,87393,
-        ##88686, 89311, 89950, 91694, 93157,
-        ##93157+674-9, 93157+2*674-18, 93157 +2022-27, 98148-350, 98148, 99349, 100398
-        ##100398+c(700,1200),102243,104186-300,104186,104887,105439,106027,
-        ##106487, 106864, 107200, 107319, 108336,108896,109411,
-        ##109624,110196,110400,110526,111506,112440,113372,
-        ##114220,114576,115000,115865,116662,
-        ##117369,118214,119011,119654,119800,120129,
-        ##120863,121396,122121,122525,122717,123000,123334,123654,
-        ##124123,124573,125192,125662,125800,125979,126463,
-        ##126886,127328,127806,128168,128500,128860,129178,
-        ##129620,129976,130605,131050,131400,131631,132423,
-        132905,134052,134674,135234,135300,135638,136435,
-        137414))
+t3a[jj, ] <- as.matrix(dsm[jj0, 2:4])
 
 
 if (!any(is.na(t3a[-2:0 + nrow(t3a), ]))) {

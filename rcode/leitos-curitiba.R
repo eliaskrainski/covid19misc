@@ -56,6 +56,11 @@ nl.t <- sapply(ldl, function(d) {
         return(colSums(d[, 4:7], na.rm=TRUE))
     return(rep(NA, 4))
 })
+nuti.t <- sapply(ldl, function(d) {
+    if (length(which(d$Tipo=='UTI'))>0)
+        return(colSums(d[which(d$Tipo=='UTI'), 4:7], na.rm=TRUE))
+    return(rep(NA, 4))
+})
 
 tail(ddates)
 tail(ddates[i0])
@@ -67,8 +72,9 @@ plot(ddates[i0], nl.t[1, ], las=1, pch=19,
      ylab='Numero de leitos', xlab='')
 for (j in 2:3)
     points(ddates[i0], nl.t[j,], col=j, pch=19)
-legend('left', c('Total', 'Ocupados', 'Livres'),
-       lty=1, col=1:4, ncol=1,
+points(ddates[i0], nuti.t[2,], col=6, pch=8, cex=1.5)
+legend('topleft', c('Total', 'Ocupados', 'Livres', 'UTI'),
+       pch=c(19,19,19,8), col=c(1:3,6), ncol=1,
        bty='n', bg=gray(.9))
 ##axis(1, 
   ##   format(pretty(ddates,10), '%m,%d'),
