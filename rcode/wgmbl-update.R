@@ -34,8 +34,12 @@ if (gmob) {
     colnames(gmbl) <- gsub(
         '_percent_change_from_baseline', '', colnames(gmbl))
 
-    for(j in which(sapply(gmbl, is.factor)))
-        gmbl[, j] <- as.character(gmbl[, j])
+    ##gmbl$local <- factor(paste0(gmbl$country_region, '_',
+      ##                          gmbl$sub_region_1, '_',
+        ##                        gmbl$sub_region_2, '_'))
+    
+    ##for(j in which(sapply(gmbl, is.factor)))
+      ##  gmbl[, j] <- as.character(gmbl[, j])
 
     ##unique(grep('municip', gmbl$sub_region_2, val=T))
     ##unique(grep('city', gmbl$sub_region_2, val=T))
@@ -50,6 +54,26 @@ if (gmob) {
     system.time(gmbl$fdate <- factor(gsub(
                     '-', '', gmbl$date), alldates))
     summary(as.integer(table(gmbl$fdate)))
+
+    names(gmbl)
+
+    if(FALSE){
+
+        system.time(lwgmbl <- lapply(5:10, function(j) {
+            tmp <- gmbl[, c(12:11, j)]
+            colnames(tmp)[1] <- 'y'
+            reshape(tmp, v.names='y', timevar='fdate',
+                    idvar='local', direction='wide')
+        }))
+        
+        system.time(reshape(gmbl[,c(12,11,10)], v.names='residential', timevar='fdate',
+                            idvar='local', direction='wide'))
+        
+        system.time(tapply(gmbl[,10], gmbl[, 11:12], mean))
+        system.time(reshape(gmbl[,c(12,11,10)], v.names='residential', timevar='fdate',
+                            idvar='local', direction='wide'))
+
+    }
     
     ##table(gmbl$country_region_code)
     
@@ -105,11 +129,11 @@ if (gmob) {
 
     }
 
-    gmbl$local <- paste(
-        gmbl$sub_region_2,
-        gmbl$sub_region_1,
-        gmbl$country_region_code, sep='_')
-
+    system.time(gmbl$local <- paste(
+                    gmbl$sub_region_2,
+                    gmbl$sub_region_1,
+                    gmbl$country_region_code, sep='_'))
+                
     sort(table(gmbl$local[icode <- substr(
                               gmbl$local, 1, 2)=='__']))
     table(icode)
@@ -158,7 +182,8 @@ if (gmob) {
                 mean))
 
     }
-    
+
+    names(wgmbl)
     str(wgmbl[1])
 
     grep('Curitiba', rownames(wgmbl[[1]]))

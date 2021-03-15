@@ -50,10 +50,11 @@ server <- function(input, output) {
                   popDivide=input$popDivide,
                   variables=input$variables,
                   dateRange=input$dateRange, 
-                  plots=input$plots,
+                  plots=c(input$plots,'parks', 'workplaces'),
                   showPoints=input$showPoints,
                   transf=input$transf, 
                   legpos=input$legend)
+
 
     })
     

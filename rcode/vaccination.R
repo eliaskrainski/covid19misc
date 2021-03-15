@@ -23,13 +23,18 @@ vd$daily_vaccinations_per_hundred <-
     100*vd$daily_vaccinations_per_million/1e6
 
 vbr <- vd[vd$location=='Brazil', ]
-vbr[(Sys.Date()-vbr$date)<3, c(3:8)]
+vbr[(Sys.Date()-vbr$date)<9, c(3:8)]
 100*220000/213e6
 
 if (FALSE)
     with(vbr,
          plot(date, daily_vaccinations, pch=19,
               xlab='')) 
+if (FALSE)
+    with(vd[vd$location=='Chile',],
+         plot(date, daily_vaccinations_per_hundred, pch=19,
+              xlab='')) 
+
 if (FALSE)
     with(vbr, 
          plot(date, people_vaccinated_per_hundred, 
@@ -45,6 +50,11 @@ if (FALSE) {
               xlab='', pch=19, type='o'))
     axis(4, pretty(par()$usr[3:4]),
          format(pretty(par()$usr[3:4])/343e3, dig=2))
+    with(vd[vd$location=='Saudi Arabia', ],
+         plot(date, total_vaccinations, 
+              xlab='', pch=19, type='o'))
+    axis(4, pretty(par()$usr[3:4]),
+         format(pretty(par()$usr[3:4])/343e3, dig=2))
 
 }
 
@@ -56,9 +66,9 @@ if(FALSE){
     (np <- as.integer(dtarg-Sys.Date())+1)
     nvtarg <- 1.2e6
     dv.pl <- vmax.o*1.05 + (nvtarg-vmax.o*1.05)*
-        (seq(1, 100, length=np/2)^0.75)/(100^0.75)
+        (seq(1, 100, length=trunc(np/2))^0.75)/(100^0.75)
     dv.pl
-    dv.pl[(np/2+1):np] <- nvtarg
+    dv.pl[(trunc(np/2)+1):np] <- nvtarg
     dv.pl
     
     summary(dv.pl)
@@ -80,9 +90,10 @@ if(FALSE){
     yl2
     
     csel <- c('Israel', 'United Arab Emirates',
-              'United Kingdom', 'United States', 'European Union')
-    psel <- c(9e6, 9.771e6, 6.665e7, 313e6, 4.477e8)
-    ccol <- c('magenta', 'green4', 'red4', 'blue', 'cyan')
+              'United Kingdom', 'United States',
+              'Chile', 'European Union')
+    psel <- c(9e6, 9.771e6, 6.665e7, 313e6, 18.95e6, 4.477e8)
+    ccol <- c('magenta', 'green4', 'red4', 'blue', 'orange', 'cyan')
     
     png('figures/vaccina-dia-projecao.png', 900, 600)
     par(mfrow=c(2,2), mar=c(0,4.5,0,0), mgp=c(3.3,0.5,0), las=1)

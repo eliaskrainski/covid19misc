@@ -765,8 +765,10 @@ data2plot <- function(d,
             ncwplot <- 1
         }
     }
+
+    mmar <- c(0.5, 4.5, 0.5, 0.5)
     par(mfrow=c(nrwplot, ncwplot), 
-        mar=c(0.5, 4.5, 0.5, 0.5), mgp=mgpp)
+        mar=mmar, mgp=mgpp)
     
     sxlm <- as.Date(dateRange, '%d/%m/%y')
     if (diff(sxlm)<3) {
@@ -1238,8 +1240,8 @@ data2plot <- function(d,
             axis(1, xl$x, format(xl$x, '%b,%d'))
 
     }
-        
-    par(mar=mgpp)
+    
+    par(mar=mmar)
     if (any(plots==3)) {
         iplot <- iplot + 1
         if ((nplot-iplot)<2) 
@@ -1366,7 +1368,7 @@ data2plot <- function(d,
                  col=gray(0.5, 0.5), lty=2)
     }    
     
-    par(mar=mgpp)
+    par(mar=mmar) 
     if (any(plots==4)) {
         iplot <- iplot + 1
         if ((nplot-iplot)<2) 

@@ -100,7 +100,7 @@ if(FALSE) {
     axis(4, max(dsm$ativos)*pretty(c(0, max(o.t)), 10)/max(o.t),
          pretty(c(0, max(o.t)), 10), las=1, line=0)
     mtext('Óbitos', 4, 2, las=3)
-    legend('topright', c('Casos ativos', 'Óbitos'),
+    legend('topleft', c('Casos ativos', 'Óbitos'),
            pch=8, pt.cex=c(0,2), lwd=2, col=1:2, bty='n')
     dev.off()
     if(FALSE)

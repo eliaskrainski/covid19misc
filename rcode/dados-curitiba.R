@@ -19,7 +19,7 @@ repeat {
 dcwb <- read.csv2('data/casosCuritibaSM.csv', encoding='latin1')
 head(dcwb)
 
-dcwb$date <- as.Date(dcwb[,1], '%d/%m/%Y')
+dcwb$date <- as.Date(dcwb[,2], '%d/%m/%Y')
 summary(dcwb$date)
 
 if (!any(ls()=='alldates'))
@@ -100,7 +100,7 @@ if(FALSE) {
     axis(4, max(dsm$ativos)*pretty(c(0, max(o.t)), 10)/max(o.t),
          pretty(c(0, max(o.t)), 10), las=1, line=0)
     mtext('Óbitos', 4, 2, las=3)
-    legend('topright', c('Casos ativos', 'Óbitos'),
+    legend('topleft', c('Casos ativos', 'Óbitos'),
            pch=8, pt.cex=c(0,2), lwd=2, col=1:2, bty='n')
     dev.off()
     if(FALSE)
@@ -132,3 +132,57 @@ str(wcwb)
 print(sapply(wcwb, function(x) tail(x, 15)))
 
 print(sapply(wcwb, function(x) tail(diff(c(0,x)), 15)))
+
+
+if(FALSE){
+
+    tno <- as.integer(difftime(
+        as.Date(dcwb$'DATA.ÓBITO', '%d/%m/%Y'),
+        dcwb$date, units='days'))
+
+    qtno <- quantile(tno, na.rm=TRUE)
+    qtno
+    mmtno <- c(mean(tno, na.rm=TRUE),
+               mean(tno[tno>0], na.rm=TRUE))
+
+    h <- hist(
+        tno, qtno[1]:(qtno[5]+1)-0.5, 
+        col=gray(.5), border=gray(.5))
+    segments(qtno[2:4], 25, qtno[2:4], 35)
+    text(qtno[2:4], rep(30, 3), format(qtno[2:4]))
+    rug(mmtno, lwd=2, col=2)
+    mtext(format(mmtno, digits=4),
+          1, 1,at=mmtno, las=2)
+
+    plot(h, xlim=c(-10, 70),
+         col=gray(.5), border=gray(.5))
+    segments(qtno[2:4], 25, qtno[2:4], 35)
+    text(qtno[2:4], rep(30, 3), format(qtno[2:4]))
+    rug(mmtno, lwd=2, col=2)
+    mtext(format(mmtno, digits=4),
+          1, 1,at=mmtno, las=2)
+
+}
+
+
+if (FALSE) {
+
+    date <- as.Date(names(wcwb[[1]]), '%Y%m%d')
+    mm <- substr(date,1,7)
+    
+    ww <- as.integer(difftime(date, min(date), un='days'))%/%7
+
+    nww <- list(tapply(diff(c(0, wcwb[[1]])), ww, sum),
+                tapply(diff(c(0, wcwb[[2]])), ww, sum))
+    
+    plot(nww[[1]], log='y', ylim=c(0.7, max(nww[[1]])))
+    points(nww[[2]], col=2, pch=8)
+
+    plot(nww[[2]]/nww[[1]])
+
+    plot(nww[[2]][4:(length(nww[[1]])-1)]/
+         nww[[1]][2:(length(nww[[2]])-3)])
+    points(nww[[2]][3:(length(nww[[1]])-1)]/
+         nww[[1]][2:(length(nww[[2]])-2)], col=2)
+    
+}
