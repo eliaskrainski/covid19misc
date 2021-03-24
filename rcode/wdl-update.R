@@ -502,7 +502,7 @@ system.time(source('rcode/dados-curitiba.R'))
             wdl[[k]],
             data.frame(code='', City='', 
                        Province.State=rownames(wbr.uf[[k]]),
-                       Country.Region='BR', Lat=NA, Long=NA,
+                       Country.Region='Brasil', Lat=NA, Long=NA,
                        wbr.uf[[k]]))
         reg.tmp <- rownames(wbr.rg[[k]])
         irr <- setdiff(1:length(reg.tmp), grep('Reg', reg.tmp))

@@ -22,6 +22,16 @@ vd$date <- as.Date(as.character(vd$date))
 vd$daily_vaccinations_per_hundred <-
     100*vd$daily_vaccinations_per_million/1e6
 
+with(vd[(vd$date<as.Date('2021-01-01')) & 
+        (vd$location=='World'), ],
+     plot(date, total_vaccinations))
+
+library(ggplot2)
+
+ggplot(vd[vd$date<as.Date('2021-01-01'), ]) +
+    geom_point(aes(x=date, y=total_vaccinations,
+                   group=location, col=location))
+
 vbr <- vd[vd$location=='Brazil', ]
 vbr[(Sys.Date()-vbr$date)<9, c(3:8)]
 100*220000/213e6
@@ -35,22 +45,44 @@ if (FALSE)
          plot(date, daily_vaccinations_per_hundred, pch=19,
               xlab='')) 
 
+if (FALSE) {
+
+    with(vd[vd$location=='United States',],
+         plot(date, daily_vaccinations, pch=19,
+              xlab='', col='blue4')) 
+    with(vbr, 
+         points(date, daily_vaccinations, pch=19, col='green4'))
+
+}
+    
+if (FALSE)
+    with(vd[vd$location=='United States',],
+         plot(date, people_vaccinated, pch=19,
+              xlab='')) 
+
 if (FALSE)
     with(vbr, 
          plot(date, people_vaccinated_per_hundred, 
               xlab='', pch=19, type='o'))
+
 if (FALSE)
     with(vd[vd$location=='Chile', ],
          plot(date, people_vaccinated_per_hundred, 
               xlab='', pch=19, type='o'))
+
 if (FALSE) {
-    
-    with(vd[vd$location=='Saudi Arabia', ],
+
+    csel1 <- 'Saudi Arabia' ##'United Arab Emirates'
+    vd[((Sys.Date()-vd$date)<5) &
+       (vd$location==csel1), c(3:8)]
+
+    par(mfrow=c(1,2), mar=c(3,3,.5,2), mgp=c(1.5,0.5,0))
+    with(vd[vd$location==csel1, ],
          plot(date, daily_vaccinations, 
               xlab='', pch=19, type='o'))
     axis(4, pretty(par()$usr[3:4]),
          format(pretty(par()$usr[3:4])/343e3, dig=2))
-    with(vd[vd$location=='Saudi Arabia', ],
+    with(vd[vd$location==csel1, ],
          plot(date, total_vaccinations, 
               xlab='', pch=19, type='o'))
     axis(4, pretty(par()$usr[3:4]),

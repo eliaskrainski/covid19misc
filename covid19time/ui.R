@@ -30,7 +30,7 @@ ui <- fluidPage(
         inputId = "plots", 
         label = 'To show', 
         choices = allpls, 
-        selected = allpls[c(1:2, 5)]),
+        selected = allpls[c(1, 3, 5, 11)]),
       checkboxInput(
         inputId = 'showPoints',
         label = 'Show points',

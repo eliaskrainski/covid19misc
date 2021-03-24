@@ -5,6 +5,7 @@ npretty <- 7
 ### load packages
 library(shiny)
 library(splines)
+library(mgcv)
 
 mgcv.ok <- FALSE
 if (FALSE)
@@ -216,10 +217,8 @@ y2positive <- function(y) {
     return(y)
 }
 
-tSmoothPoisson <- function(y, X, B, off=rep(0, nrow(X))) {
+tSmoothPoisson <- function(y, X, B) {
     n <- length(y)
-    if (is.null(off))
-        off <- rep(0, n)
     if (is.null(colnames(X)))
         colnames(X) <- paste0('x', 1:ncol(X))
     if (is.null(colnames(B)))
@@ -234,21 +233,19 @@ tSmoothPoisson <- function(y, X, B, off=rep(0, nrow(X))) {
         colnames(X) <- 'x0'
     }
 
-    ib <- which(diag(crossprod(bb))>0)
+    ib <- which(diag(crossprod(B))>0)
     nb <- length(ib) 
     if (nb>0)
         B <- B[, ib, drop = FALSE]
 
-    if (n>(3*(nx+nb))) { 
+    if (n>(3*(nx+nb))) {
         res <- glm.fit(
             cbind(X, B), y, 
-            family=poisson(),
-            offset=off)
+            family=poisson())
     } else {
         res <- glm.fit(
             X, y, 
-            family=poisson(),
-            offset=off)
+            family=poisson())
     }
     bg <- res$coef
     
@@ -496,14 +493,47 @@ dataPrepare <- function(slocal) {
         } 
     }
     
+###tSmoothPoisson <- function(y, X, B, off=rep(0, nrow(X))) 
     w <- weekdays(d$x)
     if (mgcv.ok) {
         d$sdy <- apply(yy[,,1, drop=FALSE], 2, SmoothFit, w=w)
         d$sdo <- apply(yy[,,2, drop=FALSE], 2, SmoothFit, w=w)
     } else {
-        d$sdy <- d$y
-        d$sdo <- d$o
+        ww <- model.matrix(~0+w, data.frame(w=w))
+        nt <- nrow(d$y)
+        tk0 <- seq(1, nt, length=round(nt/14))
+        bb <- bs(1:nt, knots=tk0)
+        bb <- bb[, which(colSums(bb)>0)]
+        bb[,2] <- bb[,1] + bb[,2]
+        bb[,ncol(bb)-1] <- bb[, ncol(bb)] + bb[, ncol(bb)-1]
+        bb <- bb[, 2:(ncol(bb)-1)]
+        d$sdy <- apply(yy[,,1, drop=FALSE], 2, function(y) {
+            i1 <- which(ifelse(is.na(y), 0, y)>0)[1]
+            i <- intersect(which(!is.na(y)), (i1+1):length(y))
+            r <- y
+            xxi <- cbind(bb, ww)[i, , drop=FALSE]
+            ff <- glm.fit(xxi, y[i], family=poisson())
+            ib <- which(!is.na(ff$coeff[1:ncol(bb)]))
+            ix <- which(!is.na(ff$coeff[ncol(bb)+1:ncol(ww)]))
+            mx <- ww[i, ix, drop=FALSE] %*% ff$coeff[ix+ncol(bb)]
+            r[i] <- exp(drop(bb[i, ib, drop=FALSE] %*% ff$coeff[ib] + mean(mx)))
+            return(r * sum(y, na.rm=TRUE)/sum(r, na.rm=TRUE)) 
+        })
+        d$sdo <- apply(yy[,,2, drop=FALSE], 2, function(y) {
+            i1 <- which(ifelse(is.na(y), 0, y)>0)[1]
+            i <- intersect(which(!is.na(y)), (i1+1):length(y))
+            r <- y
+            xxi <- cbind(bb, ww)[i, , drop=FALSE]
+            ff <- glm.fit(xxi, y[i], family=poisson())
+            ib <- which(!is.na(ff$coeff[1:ncol(bb)]))
+            ix <- which(!is.na(ff$coeff[ncol(bb)+1:ncol(ww)]))
+            mx <- ww[i, ix, drop=FALSE] %*% ff$coeff[ix+ncol(bb)]
+            r[i] <- exp(drop(bb[i, ib, drop=FALSE] %*% ff$coeff[ib] + mean(mx)))
+
+            return(r * sum(y, na.rm=TRUE)/sum(r, na.rm=TRUE)) 
+        })
     }
+##    print(str(d))
     
     d$yy <- yy
     
@@ -522,11 +552,32 @@ dataPrepare <- function(slocal) {
         d$gmob <- lapply(wgmbl, function(m)
             t(m[iim, jj, drop=FALSE]))
         
-        if (mgcv.ok) {
+        if (TRUE) {
             d$sgmob <- lapply(d$gmob, function(m)
                 apply(m[, drop=FALSE], 2, SmoothFitG, w=w))
         } else {
-            d$sgmob <- d$gmob
+            ww <- model.matrix(~0+w, data.frame(w=w))
+            nt <- nrow(d$y)
+            tk0 <- seq(1, nt, length=round(nt/14))
+            bb <- bs(1:nt, knots=tk0)
+            bb <- bb[, which(colSums(bb)>0)]
+            bb[,2] <- bb[,1] + bb[,2]
+            bb[,ncol(bb)-1] <- bb[, ncol(bb)] + bb[, ncol(bb)-1]
+            bb <- bb[, 2:(ncol(bb)-1)]
+            d$sgmob <- lapply(d$gmob, function(m) {
+                if (is.null(m)) return(NULL)
+                apply(m[, drop=FALSE], 2, function(y) {
+                    i <- which(!is.na(y)) 
+                    r <- y
+                    xxi <- cbind(bb, ww)[i, , drop=FALSE]
+                    ff <- glm.fit(xxi, y[i])
+                    ib <- which(!is.na(ff$coeff[1:ncol(bb)]))
+                    ix <- which(!is.na(ff$coeff[ncol(bb)+1:ncol(ww)]))
+                    mx <- ww[i, ix, drop=FALSE] %*% ff$coeff[ix+ncol(bb)]
+                    r[i] <- drop(bb[i, ib, drop=FALSE] %*% ff$coeff[ib] + mean(mx))
+                    return(r * sum(y, na.rm=TRUE)/sum(r, na.rm=TRUE)) 
+                })
+            })
         }
         
         attr(d, 'iim') <- iim
@@ -550,14 +601,27 @@ dataPrepare <- function(slocal) {
             return(NULL)
         })
         
-        if (mgcv.ok) {
+        if (TRUE) {
             d$samob <- lapply(d$amob, function(m) {
                 if (is.null(m)) return(NULL)
                 apply(m[, , drop=FALSE], 2, SmoothFitG,
                       w=weekdays(as.Date(rownames(m), 'X%Y.%m.%d')))
             })
         } else {
-            d$samob <- d$amob
+            d$samob <- lapply(d$amob, function(m) {
+                if (is.null(m)) return(NULL)
+                apply(m[, drop=FALSE], 2, function(y) {
+                    i <- which(!is.na(y))
+                    r <- y
+                    xxi <- cbind(bb, ww)[i, , drop=FALSE]
+                    ff <- glm.fit(xxi, y[i])
+                    ib <- which(!is.na(ff$coeff[1:ncol(bb)]))
+                    ix <- which(!is.na(ff$coeff[ncol(bb)+1:ncol(ww)]))
+                    mx <- ww[i, ix, drop=FALSE] %*% ff$coeff[ix+ncol(bb)]
+                    r[i] <- drop(bb[i, ib, drop=FALSE] %*% ff$coeff[ib] + mean(mx))
+                    return(r * sum(y, na.rm=TRUE)/sum(r, na.rm=TRUE)) 
+                })
+            })
         }
         
         attr(d, 'iam') <- iam
@@ -617,10 +681,21 @@ SmoothFitG <- function(y, w) {
         } else {
             if ((length(levels(dtmp$w))>1) &
                 all(table(dtmp$w)>2)) {
-                sfit <- gam(r ~ 0 + w + s(tt), data=dtmp)
-                p.t <- predict(sfit, type='terms')
+                rii <- range(ii, na.rm=TRUE)
+                kii <- seq(rii[1], rii[2], length=round(diff(rii)/14))
+                bb <- bs(ii, knots=kii)
+                bb <- bb[, which(colSums(bb)>0)]
+                bb[,2] <- bb[,1] + bb[,2]
+                bb[,ncol(bb)-1] <- bb[, ncol(bb)] + bb[, ncol(bb)-1]
+                dtmp$b <- bb[, 2:(ncol(bb)-1)]
+                sfit <- lm(r ~ 0 + w + b, data=dtmp)
+                dw <- dtmp
+                dw$b <- dtmp$b*0 
+                p.x <- predict(sfit, newdata=dw)
+                p.t <- predict(sfit) - p.x + mean(p.x)
                 ##              if (nrow(p.t)==length(ii)) {
-                rr[ii] <- (p.t[,2] + mean(p.t[,1]))
+                ##rr[ii] <- (p.t[,2] + mean(p.t[,1]))
+                rr[ii] <- p.t
                 ##            } else {
                 ##            rr[ii] <- mean(dtmp$y)
                 ##          }
@@ -652,25 +727,20 @@ Rtfit <- function(d, a=0.5, b=1) {
     ys[,,2] <- d$sdo
     
     d$ee <- array(0, c(n0 + n1, nl, 2))
-    ##  ee[1:n0] <- (1-w)*dtmp$y[1:n0] * exp(-(1:n0))/exp(-1)
-    for (k in 1:2)
-        for (l in 1:nl) {
-            ##            y0 <- (yy[, l, k] + ys[, l, k])/2
-            ##          y0[y0<0] <- 0
-            y0 <- ys[, l, k]
-            for (i in which(!is.na(y0))) 
-                d$ee[i+1:n0, l, k] <- 
-                    d$ee[i+1:n0, l, k] + y0[i] * w 
-        }
-    d$ee[d$ee<0.01] <- 0.01
-    ##    ee[1:n1] <- ee[1:n1]*(sum(dtmp$y[1:n1])/sum(ee[1:n1]))
     d$Rtupp <- d$Rtlow <- d$Rt <- array(NA, c(n1, nl, 2)) 
     
     for (k in 1:2) {
         for (l in 1:nl) {
-            i1 <- which(yy[, l, k]>0)[1]
-            ii <- which(!is.na(yy[, l, k]))
+            y0 <- ys[, l, k]
+            i1 <- which(y0>0)[1]
+            ii <- which(!is.na(y0)) 
             ii <- ii[ii>=i1]
+            ii0 <- 1:max(n0, i1+14)
+            d$ee[ii0, l, k] <- max(1, mean(y0[ii0], na.rm=TRUE))
+            for (i in ii) 
+                d$ee[i+1:n0, l, k] <- 
+                    d$ee[i+1:n0, l, k] + y0[i] * w 
+            d$ee[d$ee<0.01] <- 0.01
             if ((length(ii)>19) & (mgcv.ok)) {
                 fRt <- gam(y ~ 0 + w + s(x, m=1), poisson(),
                            knots=list(x=x0t), 
@@ -682,24 +752,21 @@ Rtfit <- function(d, a=0.5, b=1) {
                 ytmp <- exp(tpred$fit[, 2] + 
                             mean(tpred$fit[,1]))*d$ee[ii,l,k]
 ### consider gamma(a+y, b+E) with a=2, b=1
-                d$Rt[ii, l, k] <- (ytmp + a)/(d$ee[ii,l,k] + b)
             } else {
-                d$Rt[ii, l, k] <- 
-                    mean(yy[ii, l, k])/mean(d$e[ii,l,k])
+                ytmp <- ys[ii, l, k]
             }
-            d$Rt[1:n0, l, k] <- NA
+            ytmp[intersect(1:n0, which(yy[ii, l, k]<0))] <- NA
+            d$Rt[ii, l, k] <- (ytmp + a)/(d$ee[ii,l,k] + b)
+            d$Rtlow[ii,l,k] <- qgamma(
+                0.025, ytmp+a, d$ee[ii,l,k]+b)
+            d$Rtupp[ii,l,k] <- qgamma(
+                0.975, ytmp+a, d$ee[ii,l,k]+b)
         }
     }
-    d$Rt[c(d$dy, d$do)<0] <- NA
     
 ### IC consider gamma(a+y, b+E) with a=2, b=1
     for (k in 1:2) {
         for (l in 1:nl) {
-            ytmp <- d$Rt[,l,k]*d$ee[1:n1,l,k]
-            d$Rtlow[,l,k] <- qgamma(
-                0.025, ytmp+a, d$ee[1:n1,l,k]+b)
-            d$Rtupp[,l,k] <- qgamma(
-                0.975, ytmp+a, d$ee[1:n1,l,k]+b)
         }
     }
     
@@ -733,6 +800,7 @@ data2plot <- function(d,
         c('cases', 'deaths'))
     
     plots <- pmatch(plots, allpls)
+    
     wplot <- integer(5)
     if (any(plots==1))
         wplot[1] <- 1
@@ -1072,7 +1140,7 @@ data2plot <- function(d,
                 }
         }
         }
-        if ((nplot-iplot)<2)
+        if ((nplot-iplot)<ncwplot)
             axis(1, xl$x, format(xl$x, '%b,%d'))
 
         ##    abline(v=xl$x, col=gray(0.5, 0.5), lty=2)
@@ -1087,7 +1155,7 @@ data2plot <- function(d,
         iplot <- iplot + 1        
         
         y.ex1 <- y.ex1*ifelse(any(plots==1), 3, 1)
-        if ((nplot-iplot)<2)
+        if ((nplot-iplot)<ncwplot)
             par(mar=c(2, 4.5, 0, 0.5))
         
         d$y.plot <- d$y
@@ -1236,7 +1304,7 @@ data2plot <- function(d,
             }
         }
 
-        if ((nplot-iplot)<2)
+        if ((nplot-iplot)<ncwplot)
             axis(1, xl$x, format(xl$x, '%b,%d'))
 
     }
@@ -1244,7 +1312,7 @@ data2plot <- function(d,
     par(mar=mmar)
     if (any(plots==3)) {
         iplot <- iplot + 1
-        if ((nplot-iplot)<2) 
+        if ((nplot-iplot)<ncwplot) 
             par(mar=c(2, 4.5, 0, 0.5), mgp=c(2,0.5,0))
         
         ylm <- range(1, d$Rtlow[jj,,v], 
@@ -1359,7 +1427,7 @@ data2plot <- function(d,
                    ncol=leg.ncols)
         }
         
-        if ((nplot-iplot)<2) 
+        if ((nplot-iplot)<ncwplot) 
             axis(1, xl$x, format(xl$x, '%b,%d'))
         
         ##  abline(v=xl$x, col=gray(0.5, 0.5), lty=2)
@@ -1371,7 +1439,7 @@ data2plot <- function(d,
     par(mar=mmar) 
     if (any(plots==4)) {
         iplot <- iplot + 1
-        if ((nplot-iplot)<2) 
+        if ((nplot-iplot)<ncwplot) 
             par(mar=c(2, 4.5, 0, 0.5))
         
         arate <- 100*d$o/d$y
@@ -1410,23 +1478,23 @@ data2plot <- function(d,
                        cex=1-log(nl,10)/2, pch=19, col=scol[l])
         }
         
-        if ((nplot-iplot)<2) 
+        if ((nplot-iplot)<ncwplot) 
             axis(1, xl$x, format(xl$x, '%b,%d'))
         
         if(transf=='none'){
             axis(2,pretty(par()$usr[3:4],n=10),las=1)
             ##      abline(h=pretty(par()$usr[3:4],n=20),lty=2)
             yy00 <- pretty(par()$usr[3:4], n=20)
-            segments(rep(xlm[1], length(yy00)), yy00,
-                     rep(xlm[2], length(yy00)),
+            segments(rep(d$x[1], length(yy00)), yy00,
+                     rep(d$x[length(d$x)], length(yy00)),
                      lty=2, col=gray(0.5, 0.5))
         } else{
             y0l <- c(0, c(1, 3, 5), c(1, 2, 4)*10) 
             axis(2, xTransf(y0l, transf), y0l, las=1) 
             ##    abline(h=xTransf(y0l, transf),
             ##          lty=2, col=gray(0.5,0.5))
-            segments(rep(xlm[1], length(y0l)), y0l,
-                     rep(xlm[2], length(y0l)), y0l,
+            segments(rep(d$x[1], length(y0l)), y0l,
+                     rep(d$x[length(d$x)], length(y0l)), y0l,
                      lty=2, col=gray(0.5, 0.5))
         }
         
@@ -1435,7 +1503,7 @@ data2plot <- function(d,
         } else {
             lleg3 <- c('Daily', 'Accumulated')
         }
-        if (any(plots%in%c(1,2,3,4))) {
+        if (any(plots%in%c(1,2,3))) {
             legend(legpos, lleg3, lty=1:2, lwd=c(2,1), 
                    ncol=2-(legpos=='right'), bty='n')
         } else {
@@ -1443,17 +1511,17 @@ data2plot <- function(d,
                    col=scol[oloc], ncol=leg.ncols, bty='n')
         }
         ##    abline(v=xl$x, col=gray(0.5, 0.5), lty=2)
-        segments(xl$x, rep(ylm[1], length(xl$x)),
-                 xl$x, rep(ylm[2], length(xl$x)),
-                 col=gray(0.5, 0.5), lty=2)
+##        segments(xl$x, rep(ylm[1], length(xl$x)),
+  ##               xl$x, rep(ylm[2], length(xl$x)),
+    ##             col=gray(0.5, 0.5), lty=2)
         
     }
-    
+
     if (any((plots>4) & (plots<11))) {
         
         iplot <- iplot + 1
         
-        if ((nplot-iplot)<2) 
+        if ((nplot-iplot)<ncwplot) 
             par(mar=c(2, 4.5, 0, 0.5))
         
         i2i <- attr(d, 'i2i')
@@ -1541,7 +1609,7 @@ data2plot <- function(d,
                 }
             }            
             
-            if ((nplot-iplot)<2) 
+            if ((nplot-iplot)<ncwplot) 
                 axis(1, xl$x, format(xl$x, '%b,%d'))
             
             axis(2, las=1)

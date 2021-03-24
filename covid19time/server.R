@@ -17,7 +17,7 @@ server <- function(input, output) {
           ##              'Brasil',
                         'NY - US', 'US'),
                 dateRange=c('01/01/20', '10/10/21'),
-                plots=allpls[c(1:2,5,12)],
+                plots=allpls[c(1,3)],
                 ##c("Daily counts",
                   ##      "Reproduction number",
                     ##    "Fatality rate (%)",
@@ -50,7 +50,7 @@ server <- function(input, output) {
                   popDivide=input$popDivide,
                   variables=input$variables,
                   dateRange=input$dateRange, 
-                  plots=c(input$plots,'parks', 'workplaces'),
+                  plots=input$plots,
                   showPoints=input$showPoints,
                   transf=input$transf, 
                   legpos=input$legend)

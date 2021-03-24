@@ -76,6 +76,7 @@ tail(diff(c(0, t3a[,2])), ntail)
 dsm <- read.csv2('data/dadosSMCuritiba.csv')
 dsm$Date <- as.Date(as.character(dsm$date), '%Y%m%d')
 head(dsm)
+tail(dsm)
 
 jj0 <- which(dsm$Date>tail(dcwb$date, ntail)[1])
 jj0
@@ -85,14 +86,14 @@ jj
 
 if(FALSE) {
 
-    png('figures/casos-ativos-CuritibaSM.png', 700, 500)
-    par(mfrow=c(1,1), mar=c(3.5, 3.5, .5, 3.5), mgp=c(2.5, 0.5, 0), las=2)
+    png('figures/casos-ativos-CuritibaSM.png', 750, 500)
+    par(mfrow=c(1,1), mar=c(4, 3.5, .5, 3.5), mgp=c(2.5, 0.5, 0), las=2)
     with(dsm, plot(Date, ativos, axes=FALSE,
-         type='h', lwd=4, ylim=c(0, max(ativos, na.rm=TRUE)),
+         type='h', lwd=6, ylim=c(0, max(ativos, na.rm=TRUE)),
          xlab='', ylab='Casos ativos'))
     axis(2, pretty(c(0, dsm$ativos), 10), las=1)
     axis(1, pretty(dsm$Date, 10),
-         format(pretty(dsm$Date, 10), '%b,%d'), las=2)
+         format(pretty(dsm$Date, 10), '%d%b%y'), las=2)
     o.t <- diff(dsm$obitos)
     y2 <- o.t/max(o.t, na.rm=TRUE)
     points(dsm$Date[-1], y2*max(dsm$ativos), type='o', 

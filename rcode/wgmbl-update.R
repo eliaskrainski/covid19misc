@@ -169,7 +169,7 @@ if (gmob) {
 
         system.time(
             wgmbl <- mclapply(
-                gmbl[im.inc, 9:14], tapply,
+                gmbl[im.inc, 10:15], tapply,
                 gmbl[im.inc, c('local', 'fdate')], 
                 mean, mc.cores=min(6L, ncores)))
 
@@ -177,7 +177,7 @@ if (gmob) {
 
         system.time(
             wgmbl <- lapply(
-                gmbl[im.inc, 9:14], tapply,
+                gmbl[im.inc, 10:15], tapply,
                 gmbl[im.inc, c('local', 'fdate')], 
                 mean))
 
