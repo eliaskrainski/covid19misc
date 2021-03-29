@@ -73,7 +73,7 @@ tail(nc3)
 t3a[-ntail:0+nrow(t3a), ]
 tail(diff(c(0, t3a[,2])), ntail)
 
-dsm <- read.csv2('data/dadosSMCuritiba.csv')
+dsm <- read.csv('data/boletinsSMCuritiba.csv')
 dsm$Date <- as.Date(as.character(dsm$date), '%Y%m%d')
 head(dsm)
 tail(dsm)
@@ -104,6 +104,7 @@ if(FALSE) {
     legend('topleft', c('Casos ativos', 'Óbitos'),
            pch=8, pt.cex=c(0,2), lwd=2, col=1:2, bty='n')
     dev.off()
+
     if(FALSE)
         system('eog figures/casos-ativos-CuritibaSM.png &')
 

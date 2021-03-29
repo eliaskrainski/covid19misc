@@ -59,6 +59,11 @@ if (gmob) {
 
     if(FALSE){
 
+        with(gmbl[gmbl$country_region=='India', ],
+             table(sub_region_1))
+        unique(as.character(gmbl$sub_region_1[gmbl$country_region=='India']))
+        table(is.na(gmbl$sub_region_1[gmbl$country_region=='India']))
+
         system.time(lwgmbl <- lapply(5:10, function(j) {
             tmp <- gmbl[, c(12:11, j)]
             colnames(tmp)[1] <- 'y'
@@ -130,8 +135,10 @@ if (gmob) {
     }
 
     system.time(gmbl$local <- paste(
-                    gmbl$sub_region_2,
-                    gmbl$sub_region_1,
+                    ifelse(is.na(gmbl$sub_region_2), '',
+                           gmbl$sub_region_2),
+                    ifelse(is.na(gmbl$sub_region_1), '',
+                           gmbl$sub_region_1),
                     gmbl$country_region_code, sep='_'))
                 
     sort(table(gmbl$local[icode <- substr(
