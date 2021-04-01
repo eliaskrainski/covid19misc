@@ -17,13 +17,15 @@ ui <- fluidPage(
         label = "Local",
         choices = olocals,
         multiple = TRUE, 
-        selected = c('Curitiba(SM), PR - BR', 
-                     'PR - BR', 
+        selected = c('Curitiba, PR - BR', 
+		     'Curitiba(SM), PR - BR',
+		     'Curitiba(SMB), PR - BR', 
+                     'PR - Brasil', 
                      'Brasil', 'NY - US', 'US')),
       dateRangeInput(
         inputId = 'dateRange',
         label = 'Date (interval):',
-        start = as.Date('2020-01-20'),
+        start = as.Date('2020-12-01'),
         end = Sys.Date(),
         format = "dd/mm/yy"),
       checkboxGroupInput(

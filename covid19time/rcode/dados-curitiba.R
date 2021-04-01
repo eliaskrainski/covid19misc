@@ -73,32 +73,39 @@ tail(nc3)
 t3a[-ntail:0+nrow(t3a), ]
 tail(diff(c(0, t3a[,2])), ntail)
 
-dsm <- read.csv('data/boletinsSMCuritiba.csv')
-dsm$Date <- as.Date(as.character(dsm$date), '%Y%m%d')
-head(dsm)
-tail(dsm)
+bsm <- read.csv('data/boletinsSMCuritiba.csv')
+bsm$Date <- as.Date(as.character(bsm$date), '%Y%m%d')
+head(bsm)
+tail(bsm)
 
-jj0 <- which(dsm$Date>tail(dcwb$date, ntail)[1])
+bsm$casos <- bsm$ativos + bsm$obitos + bsm$recuperados
+bsm$fdate <- factor(bsm$date, alldates)
+
+wbsm <- lapply(bsm[c('casos', 'obitos')], tapply, 
+               bsm[c('fdate')], as.integer)
+str(wbsm)
+
+jj0 <- which(bsm$Date>tail(dcwb$date, ntail)[1])
 jj0
 
-jj <- pmatch(dsm$date[jj0], rownames(t3))
+jj <- pmatch(bsm$date[jj0], rownames(t3))
 jj
 
 if(FALSE) {
 
     png('figures/casos-ativos-CuritibaSM.png', 750, 500)
     par(mfrow=c(1,1), mar=c(4, 3.5, .5, 3.5), mgp=c(2.5, 0.5, 0), las=2)
-    with(dsm, plot(Date, ativos, axes=FALSE,
+    with(bsm, plot(Date, ativos, axes=FALSE,
          type='h', lwd=6, ylim=c(0, max(ativos, na.rm=TRUE)),
          xlab='', ylab='Casos ativos'))
-    axis(2, pretty(c(0, dsm$ativos), 10), las=1)
-    axis(1, pretty(dsm$Date, 10),
-         format(pretty(dsm$Date, 10), '%d%b%y'), las=2)
-    o.t <- diff(dsm$obitos)
+    axis(2, pretty(c(0, bsm$ativos), 10), las=1)
+    axis(1, pretty(bsm$Date, 10),
+         format(pretty(bsm$Date, 10), '%d%b%y'), las=2)
+    o.t <- diff(bsm$obitos)
     y2 <- o.t/max(o.t, na.rm=TRUE)
-    points(dsm$Date[-1], y2*max(dsm$ativos), type='o', 
+    points(bsm$Date[-1], y2*max(bsm$ativos), type='o', 
            pch=8, col=2, cex=2, lwd=2)
-    axis(4, max(dsm$ativos)*pretty(c(0, max(o.t)), 10)/max(o.t),
+    axis(4, max(bsm$ativos)*pretty(c(0, max(o.t)), 10)/max(o.t),
          pretty(c(0, max(o.t)), 10), las=1, line=0)
     mtext('Óbitos', 4, 2, las=3)
     legend('topleft', c('Casos ativos', 'Óbitos'),
@@ -110,7 +117,7 @@ if(FALSE) {
 
 }
 
-t3a[jj, ] <- as.matrix(dsm[jj0, 2:4])
+t3a[jj, ] <- as.matrix(bsm[jj0, 2:4])
 
 
 if (!any(is.na(t3a[-2:0 + nrow(t3a), ]))) {

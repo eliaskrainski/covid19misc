@@ -123,6 +123,7 @@ for (k in 1:2) {
                    Long=as.numeric(NA),
                    wuscl[[k]]))
 }
+sapply(wdl, dim)
 
 w2i.usc <- pmatch(
     paste(wuscl.loc[1,], wuscl.loc[2,], sep='_'),
@@ -150,6 +151,8 @@ grep('New York', paste(wuscl.loc[1,], wuscl.loc[2,], sep='_'), val=T)
 wuscl[[1]][grep('New York', paste(wuscl.loc[1,], wuscl.loc[2,], sep='_')),
            c(-3:0+ncol(wuscl[[1]]))]
 
+sapply(wdl, nrow)
+length(c(wpop.c, wpop.uss, wpop.usc))
 
 ### BR regions
 r.pt <- c("Norte", "Nordeste", "Sudeste", "Sul", "Centro-Oeste")
@@ -402,17 +405,29 @@ if (usems) {
     str(wbr.uf)
 
     table(dbr$Regiao)
-    idd <- which((dbr$Regiao=='') & duplicated(dbr$fdate))
-    if (length(idd)>0) {
-        system.time(wbr.R <- lapply(
-                        dbr[-idd, c('casosAcumulado', 'obitosAcumulado')], tapply,
-                        dbr[-idd, c('Regiao', 'fdate')], sum))
-    } else {
-        system.time(wbr.R <- lapply(
-                        dbr[, c('casosAcumulado', 'obitosAcumulado')], tapply,
-                        dbr[, c('Regiao', 'fdate')], sum))
-    }
+    str(which(is.na(dbr$estado)))
+    i.br <- which(is.na(dbr$estado))
+    i.br <- i.br[which(!duplicated(dbr$fdate[i.br]))]
+    i.Rg <- setdiff(which(dbr$estado!=''), i.mu.l)
+
+    table(dbr$Regiao[c(i.br, i.Rg)])
+
+    system.time(wbr.R <- lapply(
+                    dbr[c(i.br, i.Rg),
+                        c('casosAcumulado', 'obitosAcumulado')], tapply,
+                    dbr[c(i.br, i.Rg), c('Regiao', 'fdate')], sum))
     str(wbr.R)
+    
+    if(FALSE) {
+        
+        tail(sapply(wbr.mu, colSums), 2)
+        tail(sapply(wbr.rg, colSums), 2)
+        tail(sapply(wbr.uf, colSums), 2)
+        tail(sapply(wbr.R, function(x)
+            colSums(x[-1,])), 2) 
+        tail(sapply(wbr.R, function(x) x[1,]), 2)
+        
+    }    
     
 }
 
@@ -530,6 +545,15 @@ system.time(source('rcode/dados-curitiba.R'))
                 Country.Region='BR', Lat=NA, Long=NA,
                 matrix(wcwb[[k]], 1,
                        dimnames=list(NULL, alldates))))
+        wdl[[k]] <- rbind(
+            wdl[[k]],
+            data.frame(
+                code='4104902', 
+                City='Curitiba(SMB)',
+                Province.State='PR', 
+                Country.Region='BR', Lat=NA, Long=NA,
+                matrix(wbsm[[k]], 1,
+                       dimnames=list(NULL, alldates))))
     }
 
 if (FALSE) {
@@ -584,12 +608,15 @@ paste(wdl[[1]]$City,
                        wdl[[1]]$Country))]
 
 (wpop.cwb <- brmpop$X2019[brmpop[,2]=='Curitiba (PR)'])
+(wpop.cwbb <- brmpop$X2019[brmpop[,2]=='Curitiba (PR)'])
 
-length(c(wpop.c, wpop.uss, wpop.usc, wpop.brm,
-         wpop.rg, wpop.uf, wpop.R, wpop.cwb))
+sapply(wdl, nrow)
+length(c(wpop.c, wpop.uss, wpop.usc, wpop.R, 
+         wpop.uf, wpop.rg, wpop.brm, wpop.cwb, wpop.cwbb))
+
 attr(wdl, 'population') <- c(
     wpop.c, wpop.uss, wpop.usc, wpop.R, 
-    wpop.uf, wpop.rg, wpop.brm, wpop.cwb)
+    wpop.uf, wpop.rg, wpop.brm, wpop.cwb, wpop.cwbb)
 
 attr(wdl, 'Sys.time') <- Sys.time()
 
