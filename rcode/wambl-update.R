@@ -140,6 +140,10 @@ if (amob) {
             rownames(wacwb) <- ncwb
             tmp <- rbind(tmp, wacwb)
             tlocal <- c(tlocal, ncwb)
+            ncwb <- gsub('Curitiba', 'Curitiba(SMB)', tlocal[ii])
+            rownames(wacwb) <- ncwb 
+            tmp <- rbind(tmp, wacwb)
+            tlocal <- c(tlocal, ncwb)
         }
         
         ii <- which(tlocal %in% paste0(c('NY', nycc[-1]), '_NY_US'))

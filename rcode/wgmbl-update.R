@@ -202,6 +202,10 @@ if (gmob) {
         rownames(new) <- gsub(
             'Curitiba', 'Curitiba(SM)', rownames(new))
         wgmbl[[k]] <- rbind(wgmbl[[k]], new)
+        rownames(new) <- gsub(
+            'Curitiba(SM)', 'Curitiba(SMB)',
+            rownames(new), fixed=TRUE)
+        wgmbl[[k]] <- rbind(wgmbl[[k]], new)
     }
 
     for (k in 1:length(wgmbl)) {

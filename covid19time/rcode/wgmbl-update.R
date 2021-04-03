@@ -25,7 +25,7 @@ if (gmob) {
     
     system.time(gmbl <- as.data.frame(read_csv(
                     "data/Global_Mobility_Report.csv",
-                    col_types='cccccccciiiiii')))
+                    col_types='ccccccccciiiiii')))
     
     dim(gmbl)
     head(gmbl,2)
@@ -34,8 +34,12 @@ if (gmob) {
     colnames(gmbl) <- gsub(
         '_percent_change_from_baseline', '', colnames(gmbl))
 
-    for(j in which(sapply(gmbl, is.factor)))
-        gmbl[, j] <- as.character(gmbl[, j])
+    ##gmbl$local <- factor(paste0(gmbl$country_region, '_',
+      ##                          gmbl$sub_region_1, '_',
+        ##                        gmbl$sub_region_2, '_'))
+    
+    ##for(j in which(sapply(gmbl, is.factor)))
+      ##  gmbl[, j] <- as.character(gmbl[, j])
 
     ##unique(grep('municip', gmbl$sub_region_2, val=T))
     ##unique(grep('city', gmbl$sub_region_2, val=T))
@@ -50,6 +54,31 @@ if (gmob) {
     system.time(gmbl$fdate <- factor(gsub(
                     '-', '', gmbl$date), alldates))
     summary(as.integer(table(gmbl$fdate)))
+
+    names(gmbl)
+
+    if(FALSE){
+
+        with(gmbl[gmbl$country_region=='India', ],
+             table(sub_region_1))
+        unique(as.character(gmbl$sub_region_1[gmbl$country_region=='India']))
+        table(is.na(gmbl$sub_region_1[gmbl$country_region=='India']))
+
+        system.time(lwgmbl <- lapply(5:10, function(j) {
+            tmp <- gmbl[, c(12:11, j)]
+            colnames(tmp)[1] <- 'y'
+            reshape(tmp, v.names='y', timevar='fdate',
+                    idvar='local', direction='wide')
+        }))
+        
+        system.time(reshape(gmbl[,c(12,11,10)], v.names='residential', timevar='fdate',
+                            idvar='local', direction='wide'))
+        
+        system.time(tapply(gmbl[,10], gmbl[, 11:12], mean))
+        system.time(reshape(gmbl[,c(12,11,10)], v.names='residential', timevar='fdate',
+                            idvar='local', direction='wide'))
+
+    }
     
     ##table(gmbl$country_region_code)
     
@@ -105,11 +134,13 @@ if (gmob) {
 
     }
 
-    gmbl$local <- paste(
-        gmbl$sub_region_2,
-        gmbl$sub_region_1,
-        gmbl$country_region_code, sep='_')
-
+    system.time(gmbl$local <- paste(
+                    ifelse(is.na(gmbl$sub_region_2), '',
+                           gmbl$sub_region_2),
+                    ifelse(is.na(gmbl$sub_region_1), '',
+                           gmbl$sub_region_1),
+                    gmbl$country_region_code, sep='_'))
+                
     sort(table(gmbl$local[icode <- substr(
                               gmbl$local, 1, 2)=='__']))
     table(icode)
@@ -141,12 +172,25 @@ if (gmob) {
 
     table(im.inc <- gmbl$local %in% aa)
 
-    system.time(
-        wgmbl <- mclapply(
-            gmbl[im.inc, 9:14], tapply,
-            gmbl[im.inc, c('local', 'fdate')], 
-            mean, mc.cores=min(6L, ncores)))
+    if (FALSE) {
 
+        system.time(
+            wgmbl <- mclapply(
+                gmbl[im.inc, 10:15], tapply,
+                gmbl[im.inc, c('local', 'fdate')], 
+                mean, mc.cores=min(6L, ncores)))
+
+    } else {
+
+        system.time(
+            wgmbl <- lapply(
+                gmbl[im.inc, 10:15], tapply,
+                gmbl[im.inc, c('local', 'fdate')], 
+                mean))
+
+    }
+
+    names(wgmbl)
     str(wgmbl[1])
 
     grep('Curitiba', rownames(wgmbl[[1]]))
@@ -157,6 +201,10 @@ if (gmob) {
         new <- wgmbl[[k]][ii,, drop=FALSE]
         rownames(new) <- gsub(
             'Curitiba', 'Curitiba(SM)', rownames(new))
+        wgmbl[[k]] <- rbind(wgmbl[[k]], new)
+        rownames(new) <- gsub(
+            'Curitiba(SM)', 'Curitiba(SMB)',
+            rownames(new), fixed=TRUE)
         wgmbl[[k]] <- rbind(wgmbl[[k]], new)
     }
 

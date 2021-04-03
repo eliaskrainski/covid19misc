@@ -52,6 +52,7 @@ if (FALSE) {
               xlab='', col='blue4')) 
     with(vbr, 
          points(date, daily_vaccinations, pch=19, col='green4'))
+    legend('topleft', c('US', 'Brazil'), col=c('blue4', 'green4'), pch=19, bty='n')
 
 }
     
@@ -111,13 +112,13 @@ if(FALSE){
     xl <- list(x=pretty(c(xmin, dtarg)))
     xl$l <- format(pretty(c(xmin, dtarg)), '%b,%d')
     
-    yl <- list(y=2e5*(0:11))
+    yl <- list(y=4e5*(0:8))
     yl$l <- c('0', paste(yl$y[yl$y<1e6][-1]/1e3, 'K'),
               paste(yl$y[yl$y>=1e6]/1e6, 'M'))
 ##               l=c(0, paste0(200*(1:4), 'mil'),
   ##                 paste0(c(1,1.2), 'milhão')))
     yl
-    yl2 <- list(y=seq(0, 100, 20)*1e6)
+    yl2 <- list(y=seq(0, 200, 20)*1e6)
     yl2$l <- c('0', paste(yl2$y[-1]/1e6, 'M'))
     yl2
     
@@ -131,7 +132,7 @@ if(FALSE){
     par(mfrow=c(2,2), mar=c(0,4.5,0,0), mgp=c(3.3,0.5,0), las=1)
     with(vbr, 
          plot(date, daily_vaccinations, axes=FALSE,
-              xlim=c(xmin, dtarg), ylim=c(0, nvtarg*2), 
+              xlim=c(xmin, dtarg), ylim=c(0, nvtarg*3), 
               xlab='', ylab='D O S E S    P O R    D I A', pch=19))
     abline(h=pretty(par()$usr[3:4], 10),
            lty=2, col=gray(.5,.5))
@@ -180,10 +181,10 @@ if(FALSE){
           at=0.7*mean(par()$usr[3:4]))
     par(mar=c(2,4.5,0,0))
     with(vbr, 
-         plot(date, total_vaccinations, pch=19,
-              xlim=c(xmin, dtarg),
-              ylab='T O T A L    D E    D O S E S    A P L I C A D A S',
-              ylim=c(0, 10e7), axes=FALSE))
+         plot(date, total_vaccinations,
+              pch=19, axes=FALSE, 
+              xlim=c(xmin, dtarg), ylim=c(0, 2e8), 
+              ylab='T O T A L    D E    D O S E S    A P L I C A D A S'))
     abline(h=pretty(par()$usr[3:4], 10),
            lty=2, col=gray(.5,.5))
     polygon(Sys.Date() + c(1:np, np:1, 1),
@@ -336,7 +337,7 @@ pbr <- data.frame(date=Sys.Date()+c(0,180),
 pbr$people_vaccinated_per_hundred <- 100*pbr$people_vaccinated/213e6
 pbr$daily_vaccinations_per_hundred <- 100*c(nvday, nvday)/213e6
 
-tail(rbind(vbr[, jj], pbr))
+##tail(rbind(vbr[, jj], pbr))
 
 par(mfrow=c(1,1), mar=c(2,5,1,5), mgp=c(4,0.5,0), las=1)
 with(vbr, ##rbind(vbr[,jj], pbr),
@@ -408,7 +409,7 @@ vd$location <- factor(
     vd$location,
     rownames(tsmax)[o1])
 
-(nsel <- pmin(which(names(tsmax[o1, 1])=='Brazil'), 60))
+(nsel <- pmin(which(names(tsmax[o1, 1])=='Brazil'), 15))
 
 library(ggplot2)
 
@@ -436,14 +437,41 @@ dev.off()
 if (FALSE)
     system('eog figures/vaccination-time-countries.png &')
 
-csel <- c('Israel', 'United Arab Emirates', 'United Kingdom', 
-          'United States', 'Brazil', 'Chile', 'Saudi Arabia')
-table(as.character(vd[vd$location%in%csel, ]$location))
+csel <- c('United Kingdom', 'Israel', 'United Arab Emirates', 
+          'Brazil', 'Chile', 'Saudi Arabia', 'United States')
+vdcsel <- vd[which(vd$location %in% csel), ]
+vdcsel$País <- factor(vdcsel$location, csel)
+table(vdcsel$País)
+vdcsel$total_vaccinations_per_hundred[
+           vdcsel$total_vaccinations_per_hundred>100] <- 100
 
-ggplot(vd[vd$location%in%csel, ]) + 
+ocsel <- names(rev(sort(tapply(
+    vdcsel$total_vaccinations_per_hundred,
+    vdcsel$location, max, na.rm=TRUE))))
+ocsel
+
+tapply(vdcsel$daily_vaccinations_per_hundred,
+       vdcsel$País, range, na.rm=TRUE)
+
+gs0 <- ggplot(vdcsel) 
+gs1 <- gs0 +
+    geom_point(aes(x=date, y=daily_vaccinations_per_hundred,
+                   group=País, color=País)) + 
+    xlab('') + ylab('VELOCIDADE\n% vacinados por dia') +
+    scale_colour_hue(breaks=ocsel) 
+gs2 <- gs0 + 
     geom_point(aes(x=date, y=total_vaccinations_per_hundred,
-                   group=location, color=location)) +
-    scale_y_sqrt()
+                   group=País, color=País)) + 
+    xlab('') + ylab('ACUMULADO\n% com pelo menos 1 dose') +
+    scale_colour_hue(breaks=ocsel) +
+    ylim(c(0,100)) 
+
+png('figures/vacinacaoBRtops.png', 700, 500)
+grid.arrange(gs1, gs2)
+dev.off()
+
+if(FALSE)
+    system('eog figures/vacinacaoBRtops.png &')
 
 nsel <- 20
 isel <- head(o1, nsel)
