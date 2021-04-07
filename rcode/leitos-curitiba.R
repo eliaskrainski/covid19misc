@@ -80,7 +80,7 @@ legend('topleft', c('Total', 'Ocupados', 'Livres', 'UTI'),
   ##   format(pretty(ddates,10), '%m,%d'),
     ## lty=2, col=gray(.5,.5))
 abline(v=pretty(ddates,10),
-       h=50*(0:20), lty=2, col=gray(.5,.5))
+       h=100*(0:15), lty=2, col=gray(.5,.5))
 dev.off()
 if (FALSE)
     system("eog figures/leitosCuritiba.png &")

@@ -22,15 +22,17 @@ vd$date <- as.Date(as.character(vd$date))
 vd$daily_vaccinations_per_hundred <-
     100*vd$daily_vaccinations_per_million/1e6
 
-with(vd[(vd$date<as.Date('2021-01-01')) & 
-        (vd$location=='World'), ],
-     plot(date, total_vaccinations))
+if(FALSE)
+    with(vd[(vd$date<as.Date('2021-01-01')) & 
+            (vd$location=='World'), ],
+         plot(date, total_vaccinations))
 
 library(ggplot2)
 
-ggplot(vd[vd$date<as.Date('2021-01-01'), ]) +
-    geom_point(aes(x=date, y=total_vaccinations,
-                   group=location, col=location))
+if(FALSE)
+    ggplot(vd[vd$date<as.Date('2021-01-01'), ]) +
+        geom_point(aes(x=date, y=total_vaccinations,
+                       group=location, col=location))
 
 vbr <- vd[vd$location=='Brazil', ]
 vbr[(Sys.Date()-vbr$date)<9, c(3:8)]
@@ -47,12 +49,58 @@ if (FALSE)
 
 if (FALSE) {
 
-    with(vd[vd$location=='United States',],
-         plot(date, daily_vaccinations, pch=19,
-              xlab='', col='blue4')) 
-    with(vbr, 
-         points(date, daily_vaccinations, pch=19, col='green4'))
-    legend('topleft', c('US', 'Brazil'), col=c('blue4', 'green4'), pch=19, bty='n')
+    ctsel <- c('Israel', 'United Kingdom', 'Chile', 
+               'United States', 'European Union', 'Brazil')
+    clsel <- c('blue4', 'red1', 'orange', 
+               'blue1', 'magenta', 'green3')
+    xl <- list(x=pretty(vd$date, 10))    
+    par(mfcol=c(2,2), mar=c(2,3,0,0), mgp=c(2,0.5,0))
+    for (v in c('daily_vaccinations', 'daily_vaccinations_per_hundred',
+                'people_vaccinated', 'people_vaccinated_per_hundred')) {
+        plot(vd[vd$location==ctsel[1], c('date', v)],
+             ylim=c(0, max(vd[vd$location%in%ctsel, v], na.rm=TRUE)),
+             type='n', xlab='', axes=FALSE)
+        axis(1, xl$x, format(xl$x, '%b,%d'))
+        axis(2)
+        for(j in 1:length(ctsel))
+            lines(vd[vd$location==ctsel[j], c('date', v)],
+                  pch=19, col=clsel[j], lwd=2)
+        abline(h=pretty(par()$usr[3:4], 7),
+               v=pretty(par()$usr[1:2], 15),
+               lty=2, col=gray(0.5,0.5))
+    }
+    legend('topleft', ctsel, col=clsel, lty=1, lwd=2, bg=gray(0.95))
+
+
+    ctsel <- c('Israel', 'United Arab Emirates', 'United Kingdom', 'Chile', 
+               'United States', 'Saudi Arabia', 'European Union', 'Brazil')
+    clsel <- c('blue4', 'green4',  'red1', 'orange', 
+               'blue1', 'red4', 'magenta', 'green2')
+
+    par(mfcol=c(2,2), mar=c(2,3,0,0), mgp=c(2,0.5,0))
+    for (v in c('daily_vaccinations', 'daily_vaccinations_per_hundred',
+                'total_vaccinations', 'total_vaccinations_per_hundred')) {
+        gt <- length(grep('hundred', v))+1
+        plot(vd[vd$location==ctsel[1], c('date', v)],
+             ylim=c(c(50,0)[gt] + 
+                    range(vd[vd$location%in%ctsel, v], na.rm=TRUE)),
+             type='n', xlab='', log=c('y', '')[gt], axes=FALSE)
+        axis(1, xl$x, format(xl$x, '%b,%d'))
+        axis(2)
+        for(j in 1:length(ctsel))
+            lines(vd[vd$location==ctsel[j], c('date', v)],
+                  pch=19, col=clsel[j], lwd=2)
+        if(gt==1) {
+            abline(h=10^pretty(par()$usr[3:4], 7),
+                   v=pretty(par()$usr[1:2], 15),
+                   lty=2, col=gray(0.5,0.5))
+        } else {
+            abline(h=pretty(par()$usr[3:4], 7),
+               v=pretty(par()$usr[1:2], 15),
+               lty=2, col=gray(0.5,0.5))
+        }
+    }
+    legend('topleft', ctsel, col=clsel, lty=1, lwd=2, bg=gray(0.95))
 
 }
     

@@ -80,6 +80,7 @@ tail(bsm)
 
 bsm$casos <- bsm$ativos + bsm$obitos + bsm$recuperados
 bsm$fdate <- factor(bsm$date, alldates)
+tail(diff(bsm$casos))
 
 wbsm <- lapply(bsm[c('casos', 'obitos')], tapply, 
                bsm[c('fdate')], as.integer)

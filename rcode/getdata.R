@@ -79,6 +79,15 @@ brio.f <- function(d=FALSE) {
     return(invisible())
 }
 
+### data from the braziliam deaths registry
+brio.oc.f <- function(d=FALSE) {
+    url.c <- 'https://data.brasil.io/dataset/covid19/obito_cartorio.csv.gz'
+    if(d)
+        try(download.file(
+            url.c, 'data/obito_cartorio.csv.gv'), TRUE)
+    return(invisible())
+}
+
 wcota.f <- function(d=TRUE) {
 ### Brazilian data put together by Wesley Cota
     
