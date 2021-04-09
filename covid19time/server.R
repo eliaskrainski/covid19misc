@@ -34,8 +34,6 @@ server <- function(input, output) {
 
 ##        stop(safeError('testing'))
 
-        sdata <- dataPrepare(input$local)
-        
         if (length(input$plots)<1)
           if (pt) {
             stop(safeError(
@@ -45,6 +43,8 @@ server <- function(input, output) {
               'Please select at least one plot to be shown!'))
           }
 
+        
+        sdata <- dataPrepare(input$local)
         
         data2plot(d=sdata, 
                   popDivide=input$popDivide,
@@ -58,4 +58,31 @@ server <- function(input, output) {
 
     })
     
+    output$cRttab <- renderTable({
+        sdata <- dataPrepare(input$local)
+        nd <- as.integer(input$last)
+        itt <- rev(tail(1:length(sdata$x), nd))
+        rtt <- data.frame(sapply(1:length(input$local), function(l)
+            paste0(
+                sprintf("%0.2f", sdata$Rt[itt,l,1]), ' (',
+                sprintf("%0.2f", sdata$Rtlow[itt,l,1]), '-',
+                sprintf("%0.2f", sdata$Rtupp[itt,l,1]), ')')))
+        colnames(rtt) <- input$local
+        rtt <- data.frame(Date=rev(as.character(tail(sdata$x, nd))), rtt)
+        rtt
+    })
+
+    output$dRttab <- renderTable({
+        sdata <- dataPrepare(input$local)
+        nd <- as.integer(input$last)
+        itt <- rev(tail(1:length(sdata$x), nd))
+        rtt <- data.frame(sapply(1:length(input$local), function(l)
+            paste0(
+                sprintf("%0.2f", sdata$Rt[itt,l,2]), ' (',
+                sprintf("%0.2f", sdata$Rtlow[itt,l,2]), '-',
+                sprintf("%0.2f", sdata$Rtupp[itt,l,2]), ')')))
+        colnames(rtt) <- input$local
+        rtt <- data.frame(Date=rev(as.character(tail(sdata$x, nd))), rtt)
+        rtt
+    })
 }

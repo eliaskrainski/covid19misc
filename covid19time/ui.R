@@ -50,10 +50,18 @@ ui <- fluidPage(
 	                'sqrt'='sqrt', 
 	                'log10'='log10'), 
         selected = 'none'),
+      numericInput('last',
+                   'Mostrar Rt nos últimos "n" dias',
+                    7),
       actionButton(
         inputId="exit", 
         label="Exit")),
     mainPanel(
-      plotOutput("plot"))
-    ),
+      plotOutput("plot"),
+      h4("Rt cases"),
+      tableOutput("cRttab"),
+      h4("Rt deaths"),
+      tableOutput("dRttab")
+    )
+    )
 ) # fluidPage

@@ -428,7 +428,9 @@ axTransfTicks <- function(transf, lim, n=npretty) {
 accMax <- function(x) {
 ### fix an accumulated serie to
 ### evitate negative differences
-    x[is.na(x)] <- 0
+    x.ori <- x
+    i.ok <- which(!is.na(x))
+    x <- x.ori[i.ok] 
 ###    k <- 0
     d <- diff(x)
     dn <- which(d<0)
@@ -447,7 +449,8 @@ accMax <- function(x) {
 ###        print(dn)
     }
 ###    cat('\n')
-    return(x) 
+    x.ori[i.ok] <- x
+    return(x.ori) 
 }
 
 ### select the data for the selected local(s) 
@@ -507,31 +510,25 @@ dataPrepare <- function(slocal) {
         bb[,2] <- bb[,1] + bb[,2]
         bb[,ncol(bb)-1] <- bb[, ncol(bb)] + bb[, ncol(bb)-1]
         bb <- bb[, 2:(ncol(bb)-1)]
-        d$sdy <- apply(yy[,,1, drop=FALSE], 2, function(y) {
+        print(tail(yy[,,1]))
+        print(tail(yy[,,2]))
+        
+        fSloc <- function(y) {
             i1 <- which(ifelse(is.na(y), 0, y)>0)[1]
-            i <- intersect(which(!is.na(y)), (i1+1):length(y))
+            i.ok <- intersect(which(!is.na(y)), (i1+1):length(y))
+            print(tail(y))
+            print(tail(i.ok))
             r <- y
-            xxi <- cbind(bb, ww)[i, , drop=FALSE]
-            ff <- glm.fit(xxi, y[i], family=poisson())
+            xxi <- cbind(bb, ww)[i.ok, , drop=FALSE]
+            ff <- glm.fit(xxi, y[i.ok], family=poisson())
             ib <- which(!is.na(ff$coeff[1:ncol(bb)]))
             ix <- which(!is.na(ff$coeff[ncol(bb)+1:ncol(ww)]))
-            mx <- ww[i, ix, drop=FALSE] %*% ff$coeff[ix+ncol(bb)]
-            r[i] <- exp(drop(bb[i, ib, drop=FALSE] %*% ff$coeff[ib] + mean(mx)))
+            mx <- ww[i.ok, ix, drop=FALSE] %*% ff$coeff[ix+ncol(bb)]
+            r[i.ok] <- exp(drop(bb[i.ok, ib, drop=FALSE] %*% ff$coeff[ib] + mean(mx)))
             return(r * sum(y, na.rm=TRUE)/sum(r, na.rm=TRUE)) 
-        })
-        d$sdo <- apply(yy[,,2, drop=FALSE], 2, function(y) {
-            i1 <- which(ifelse(is.na(y), 0, y)>0)[1]
-            i <- intersect(which(!is.na(y)), (i1+1):length(y))
-            r <- y
-            xxi <- cbind(bb, ww)[i, , drop=FALSE]
-            ff <- glm.fit(xxi, y[i], family=poisson())
-            ib <- which(!is.na(ff$coeff[1:ncol(bb)]))
-            ix <- which(!is.na(ff$coeff[ncol(bb)+1:ncol(ww)]))
-            mx <- ww[i, ix, drop=FALSE] %*% ff$coeff[ix+ncol(bb)]
-            r[i] <- exp(drop(bb[i, ib, drop=FALSE] %*% ff$coeff[ib] + mean(mx)))
-
-            return(r * sum(y, na.rm=TRUE)/sum(r, na.rm=TRUE)) 
-        })
+        }
+        d$sdy <- apply(yy[,,1, drop=FALSE], 2, fSloc)
+        d$sdo <- apply(yy[,,2, drop=FALSE], 2, fSloc) 
     }
 ##    print(str(d))
     
@@ -751,25 +748,19 @@ Rtfit <- function(d, a=0.5, b=1) {
                 tpred <- predict(fRt, type='terms', se=TRUE)
                 ytmp <- exp(tpred$fit[, 2] + 
                             mean(tpred$fit[,1]))*d$ee[ii,l,k]
-### consider gamma(a+y, b+E) with a=2, b=1
             } else {
                 ytmp <- ys[ii, l, k]
             }
-            ytmp[intersect(1:n0, which(yy[ii, l, k]<0))] <- NA
+            ytmp[union(1:n0, which(yy[ii, l, k]<0))] <- NA
             d$Rt[ii, l, k] <- (ytmp + a)/(d$ee[ii,l,k] + b)
+### IC consider gamma(a+y, b+E) 
             d$Rtlow[ii,l,k] <- qgamma(
                 0.025, ytmp+a, d$ee[ii,l,k]+b)
             d$Rtupp[ii,l,k] <- qgamma(
                 0.975, ytmp+a, d$ee[ii,l,k]+b)
         }
     }
-    
-### IC consider gamma(a+y, b+E) with a=2, b=1
-    for (k in 1:2) {
-        for (l in 1:nl) {
-        }
-    }
-    
+
     return(d) 
     
 }
