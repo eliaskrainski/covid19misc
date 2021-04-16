@@ -20,13 +20,19 @@ ls()
 sapply(wdl, dim)
 
 ### US states data
-us.d <- read.csv('data/daily.csv')
+us.d <- read.csv('data/us-states.csv')
 
-us.d$date <- factor(us.d$date, alldates)
+us.d$fdate <- factor(gsub('-', '', as.character(us.d$date)), alldates)
 
-w.us <- lapply(us.d[c('positive', 'death')], tapply, 
-               us.d[c('state', 'date')], as.integer)
+w.us <- lapply(us.d[c('cases', 'deaths')], tapply, 
+               us.d[c('state', 'fdate')], as.integer)
+lapply(lapply(w.us, colSums), tail)
 
+for(k in 1:2) {
+    i2us.s <- pmatch(rownames(w.us[[k]]), ussabb$State.District)
+    rownames(w.us[[k]]) <- ussabb$Postal.Code[i2us.s]
+}
+    
 for (k in 1:2) {
     wdl[[k]] <- rbind(
         wdl[[k]],

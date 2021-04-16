@@ -36,11 +36,14 @@ if (amob) {
     tail(sort(table(wambl0$region[grep('County', wambl0$region)])))
     tail(sort(table(wambl0$region[grep('City', wambl0$region)])))
     tail(sort(table(wambl0$region[grep('Municipio', wambl0$region)])))
+
     wambl0$region <- gsub(' County', '', wambl0$region)
     wambl0$region <- gsub(' City', '', wambl0$region)
     wambl0$region <- gsub(' Municipio', '', wambl0$region)
 
     table(wambl0$region=='Brazil')
+    wambl0[grep('Brazil', wambl0$region), 1:7]
+    wambl0[grep('Brazil', wambl0$country), 1:7]
     table(wambl0$region=='United States')
     table(wambl0$sub.region=='Brazil')
     table(wambl0$sub.region=='United States')
@@ -52,11 +55,19 @@ if (amob) {
     wambl0$country <- gsub(
         'United States', 'US', wambl0$country)
 
-    table(wambl0$region=='BR')
-    wambl0$region <- gsub('Brazil', 'BR', wambl0$region)
-    table(wambl0$country=='BR')
-    wambl0$country <- gsub('Brazil', 'BR', wambl0$country)
+    table(wambl0$region=='Brazil')
+###    wambl0$region <- gsub('Brazil', 'BR', wambl0$region)
+    table(wambl0$country=='Brazil')
+###    wambl0$country <- gsub('Brazil', 'BR', wambl0$country)
     
+    grep('Distrito', wambl0$region, val=T)
+    grep('Distrito', wambl0$sub.region, val=T)
+    grep('Distrito', wambl0$country, val=T)
+
+    wambl0$region <- gsub(
+        'Distrito Federal (Brazil)',
+        'DF', wambl0$region, fixed=TRUE)
+
     grep('state', wambl0$region, val=T)
     grep('state', wambl0$sub.region, val=T)
     grep('state', wambl0$country, val=T)
@@ -78,7 +89,7 @@ if (amob) {
         cat(length(ii), '\n')
         wambl0$country[ii] <- ussabb$Postal[j]
     }
-
+    
     head(uf,2)
     for (j in 1:nrow(uf)) {
         ii <- which(wambl0$region==uf$State[j])
@@ -91,7 +102,7 @@ if (amob) {
         cat(length(ii), '\n')
         wambl0$country[ii] <- uf$UF[j]
     }
-
+    
     grep('Bras', wambl0$region)
     grep('Bras', wambl0$alternative_name, val=T)
     grep('Bras', wambl0$sub.region)
@@ -121,6 +132,7 @@ if (amob) {
     table(wambl0$geo_type)
     
     for (k in 1:length(wambl)) {
+        
         tlocal <- paste(
             ifelse(wambl[[k]]$geo_type %in% c('city', 'county'),
                    wambl[[k]]$region, ''), 
@@ -160,14 +172,32 @@ if (amob) {
         
         wambl[[k]] <- tmp 
         attr(wambl[[k]], 'local') <- tlocal 
-        attr(wambl[[k]], 'Date') <-
-            as.Date(colnames(wambl[[k]]), 'X%Y.%m.%d')
     }
 
     sapply(wambl, nrow)
     sapply(wambl, function(x) length(attr(x, 'local')))
 
-    grep('Curitiba', attr(wambl[[1]], 'local'),value=TRUE)
+    for (k in 1:length(wambl)) {
+        l3l <- attr(wambl[[k]], 'local')
+        grep('Curitiba', l3l,value=TRUE)
+        
+        grep('Bra', l3l, val=TRUE)
+        l3l <- gsub('Brazil', 'Brasil', l3l)
+        
+        im.br <- intersect(which(substr(l3l, 1, 1)!='_'),
+                           grep('Brasil', l3l))
+        l3l[im.br] <- gsub('Brasil', 'BR', l3l[im.br])
+        l3l[im.br]
+        
+        ibr <- which(l3l=='__Brasil')
+        l3l[ibr]
+        
+        wambl[[k]] <- rbind(wambl[[k]], wambl[[k]][ibr,])
+        attr(wambl[[k]], 'local') <- c(l3l, '__Brazil')
+        attr(wambl[[k]], 'Date') <-
+            as.Date(colnames(wambl[[k]]), 'X%Y.%m.%d')
+    }
+    
     
     system.time(save(
         'wambl',

@@ -510,14 +510,10 @@ dataPrepare <- function(slocal) {
         bb[,2] <- bb[,1] + bb[,2]
         bb[,ncol(bb)-1] <- bb[, ncol(bb)] + bb[, ncol(bb)-1]
         bb <- bb[, 2:(ncol(bb)-1)]
-        print(tail(yy[,,1]))
-        print(tail(yy[,,2]))
         
         fSloc <- function(y) {
             i1 <- which(ifelse(is.na(y), 0, y)>0)[1]
             i.ok <- intersect(which(!is.na(y)), (i1+1):length(y))
-            print(tail(y))
-            print(tail(i.ok))
             r <- y
             xxi <- cbind(bb, ww)[i.ok, , drop=FALSE]
             ff <- glm.fit(xxi, y[i.ok], family=poisson())
@@ -1664,6 +1660,8 @@ data2plot <- function(d,
             for (j in jjl2) {
                 if (any(!is.na(i3i[[jjp2[j]]]))) {
                     for (l in 1:sum(!is.na(i3i[[jjp2[j]]])))  {
+                        print(str(attr(wambl[[jjp2[j]]], 'Date')))
+                        print(str(d$amob[[jjp2[j]]][, l]))
                         if (showPoints)
                             points(attr(wambl[[jjp2[j]]], 'Date'),
                                    d$amob[[jjp2[j]]][, l],

@@ -72,10 +72,10 @@ if (FALSE) {
     legend('topleft', ctsel, col=clsel, lty=1, lwd=2, bg=gray(0.95))
 
 
-    ctsel <- c('Israel', 'United Arab Emirates', 'United Kingdom', 'Chile', 
-               'United States', 'Saudi Arabia', 'European Union', 'Brazil')
-    clsel <- c('blue4', 'green4',  'red1', 'orange', 
-               'blue1', 'red4', 'magenta', 'green2')
+    ctsel <- c('Israel', 'United Arab Emirates', 'Chile', 'United Kingdom', 
+               'United States', 'European Union', 'Saudi Arabia', 'Brazil')
+    clsel <- c('blue4', 'green4', 'orange', 'red1',  
+               'blue1', 'magenta', 'red4', 'green2')
 
     par(mfcol=c(2,2), mar=c(2,3,0,0), mgp=c(2,0.5,0))
     for (v in c('daily_vaccinations', 'daily_vaccinations_per_hundred',
@@ -189,7 +189,7 @@ if(FALSE){
             c(dv.pl*.9, rev(dv.pl)*1.1, dv.pl[1]*.9), 
             border='transparent', col=gray(.7,.5))
     lines(Sys.Date()+1:np, dv.pl, lwd=3, lty=2)
-    legend('topright', c('realizado', 'projeção'), cex=1.5,
+    legend('topleft', c('realizado', 'projeção'), cex=1.5,
            title='Brasil', ##' aplicadas de vacina anti-covid19',
            pch=c(19,0), pt.cex=c(2,0), 
            border='transparent',
@@ -202,7 +202,7 @@ if(FALSE){
         with(vd[vd$location==csel[cc], ],
              lines(date, daily_vaccinations,
                    col=ccol[cc], lwd=3))
-    text(dtarg-12, 1.20e6, 'Butantã+Fiocruz\n=1.2Milhião/dia', cex=1.5)
+###    text(dtarg-12, 1.20e6, 'Butantã+Fiocruz\n=1.2Milhião/dia', cex=1.5)
 ###    mtext('Doses(D)', 2, line=0.05, at=par()$usr[4]*.95)
     par(mar=c(0,4.5,0,4.5))
     with(vbr,

@@ -128,6 +128,8 @@ if (!any(is.na(t3a[-2:0 + nrow(t3a), ]))) {
     if (any((t3a[nrow(t3a), 2:3] - 
              t3a[nrow(t3a)-1, 2:3])<0))
         t3a[nrow(t3a), ] <- t3a[nrow(t3a)-1, ]
+    if(sum(t3a[nrow(t3a), 1:3])==sum(t3a[nrow(t3a)-1, 1:3]))
+        t3a[nrow(t3a), 1:3] <- NA
 }
 
 tail(t3a, 14)

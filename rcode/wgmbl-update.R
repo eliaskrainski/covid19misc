@@ -90,24 +90,26 @@ if (gmob) {
     system.time(gmbl$sub_region_1[iaux] <- substring(gmbl$sub_region_1[iaux], 10))
 
     system.time(gmbl$sub_region_2 <- gsub(' County', '', gmbl$sub_region_2))
-    
+
+###    if(FALSE) {
+
     ussabb <- read.csv('data/us-states-abbreviation.csv')
     head(ussabb,2)
     for (j in 1:ncol(ussabb))
         ussabb[,j] <- as.character(ussabb[,j])
-
+    
     for (j in 1:nrow(ussabb)) {
         iij <- which(gmbl$sub_region_1==ussabb$State[j])
         cat(j, as.character(ussabb$State)[j], length(iij), '\n')
         gmbl$sub_region_1[iij] <- ussabb$Postal[j]
     }
-
+    
     for (j in 1:nrow(uf)) {
         iij <- which(gmbl$sub_region_1==uf$State[j])
         cat(j, as.character(uf$State)[j], length(iij), '\n')
         gmbl$sub_region_1[iij] <- uf$UF[j]
     }
-
+    
     if (!any(ls()=='wdl'))
         system.time(load('data/wdl.RData'))
     
@@ -134,6 +136,9 @@ if (gmob) {
 
     }
 
+    length(grep('Paulo', gmbl$sub_region_1))
+    length(grep('Paulo', gmbl$sub_region_2))
+    table(grep('Paulo', gmbl$sub_region_2, val=T))
     system.time(gmbl$local <- paste(
                     ifelse(is.na(gmbl$sub_region_2), '',
                            gmbl$sub_region_2),

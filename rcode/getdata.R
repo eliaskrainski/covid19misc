@@ -28,9 +28,11 @@ cssegis.f <- function(d=TRUE) {
 
 uss.f <- function(d=TRUE) {
 ### USdata
-    us.fl <- 'data/daily.csv'
-    us.url <- paste0('https://api.covidtracking.com/v1/states/',
-                     'daily.csv')
+    us.fl <- 'data/us-states.csv'
+    us.url <- paste0(
+        'https://raw.githubusercontent.com/nytimes/',
+        'covid-19-data/master/',
+        'us-states.csv')
     if (d)
         download.file(us.url, us.fl)
     return(invisible())
