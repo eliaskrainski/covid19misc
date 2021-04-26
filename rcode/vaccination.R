@@ -41,11 +41,11 @@ vbr[(Sys.Date()-vbr$date)<9, c(3:8)]
 if (FALSE)
     with(vbr,
          plot(date, daily_vaccinations, pch=19,
-              xlab='')) 
+              xlab='', type='o')) 
 if (FALSE)
     with(vd[vd$location=='Chile',],
          plot(date, daily_vaccinations_per_hundred, pch=19,
-              xlab='')) 
+              xlab='', type='o')) 
 
 if (FALSE) {
 

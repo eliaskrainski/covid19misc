@@ -5,29 +5,38 @@ if(FALSE)
 ### download from links available at 
 ### https://opendatasus.saude.gov.br/dataset/covid-19-vacinacao/resource/ef3bd0b8-b605-474b-9ae5-c97390c197a8
 
-source('rcode/ocommon.R')
-
-url0 <- paste0('https://s3-sa-east-1.amazonaws.com/',
-               'ckan.saude.gov.br/PNI/vacina/uf/2021-04-19/uf=')
-fl0 <- 'part-00000-51e5ff2c-513f-4d37-8a45-5ee2c98cb342.c000.csv'
-
-if(FALSE) {
-    
-    options(timeout=60*60)
-
-    for (u in uf$UF) {
-        cat(u, '...')
-        download.file(paste0(url0, u, '/', fl0),
-                      paste0('data/', u, fl0))
-        cat('\n')
+### automatic download function
+brvac.uf <- function(d=FALSE, uf=NULL) { 
+    url0 <- paste0('https://opendatasus.saude.gov.br/',
+                   'dataset/covid-19-vacinacao/resource/',
+                   'ef3bd0b8-b605-474b-9ae5-c97390c197a8')
+### non elegant way to get the file names... 
+    d0 <- readLines(url0)
+    urls <- grep('c000.csv', d0, value=TRUE)[-1]
+    ufls <- substr(urls, 14, 155)
+    if(!is.null(uf)) {
+        ufls <- ufls[substr(ufls, 84, 85) %in% uf]
     }
-
+    lfls <- gsub('/', '_', substring(ufls, 84), fixed=TRUE)
+### download if asked and do not exists locally
+    if(d) {
+        for(j in 1:length(lfls)) {
+            fl.j <- paste0('data/', lfls[j])
+            if(!file.exists(fl.j))
+                download.file(ufls[j], fl.j)
+        }
+    } else {  ### return the local filename
+        return(paste0('data/', lfls))
+    }
 }
 
-fls <- paste0('data/', uf$UF, fl0)
-tail(fls, 10)
+options(timeout=60*10) ### to work with bad internet...
+brvac.uf(TRUE) ## download each UF file
 
-### look at the first lines 
+### get each UF local file: 'data/UF_....csv"
+fls <- brvac.uf(d=FALSE)
+
+### look at the first lines from one of the files
 (tmp <- read.csv2(fls[1], nrow=2))
 
 ### desired variables 
@@ -36,210 +45,124 @@ xsel <- c(###'paciente_id',
           'paciente_enumSexoBiologico',
           'paciente_endereco_coIbgeMunicipio',
           'vacina_dataAplicacao',
-          'vacina_descricao_dose', 'vacina_nome')
+          'vacina_descricao_dose') ###, 'vacina_nome')
 
 jj <- pmatch(xsel, colnames(tmp))
 jj
 
 library(data.table)
 
-t1 <- Sys.time()
-dvbr <- Reduce('rbind', lapply(fls, fread, select=jj))
-###dvbr <- lapply(fls[1:5], fread, select=jj)
-Sys.time()-t1
+### read and rbind each UF data
+dvbr <- Reduce('rbind',
+               lapply(fls, fread, select=jj))
 
-dim(dvbr)
-head(dvbr, 3)
-table(substr(dvbr$paciente_endereco_coIbgeMunicipio,1,2))
-
-t1 <- Sys.time()
-dvbr <- setorder(dvbr, vacina_dataAplicacao) 
-Sys.time()-t1
-
+### look at the first lines
 head(dvbr, 3)
 
-t1 <- Sys.time()
-dt.d <- dvbr[, .N, by=vacina_descricao_dose]
-Sys.time()-t1
+### tabulate by gender and dose
+ds <- c('vacina_descricao_dose',
+        'paciente_enumSexoBiologico')
+n.dg <- dvbr[, .N, by=ds]
+n.dg
 
-dt.d
+### dose levels, for later use
+dlevels <- sort(unique(n.dg$vacina_descricao_dose))
+dlevels
 
-t1 <- Sys.time()
-dt.v <- dvbr[, .N, by=vacina_nome]
-Sys.time()-t1
+### select desired levels and order it for later use
+n.dg <- setorder(
+    n.dg[vacina_descricao_dose %in% dlevels[1:2] &
+         paciente_enumSexoBiologico %in% c('F', 'M')],
+    vacina_descricao_dose,
+    paciente_enumSexoBiologico)
+n.dg
 
-dt.v
+### tabulate by age, dose and gender
+ids <- c('paciente_idade', ds)
+n.ids <- dvbr[
+    vacina_descricao_dose %in% dlevels[1:2] &
+    paciente_enumSexoBiologico %in% c('F', 'M'),
+    .N,by=ids]
 
-gc(reset=TRUE)
+### set it inder of age, for later use
+n.ids <- setorder(
+    n.ids,
+    paciente_idade,
+    vacina_descricao_dose,
+    paciente_enumSexoBiologico)
+n.ids
 
-t1 <- Sys.time()
-dt.sx <- dvbr[, .N, by=paciente_enumSexoBiologico]
-Sys.time()-t1
-
-dt.sx
-
-t1 <- Sys.time()
-dt.dv <- dvbr[,.N,by=c('vacina_nome', 'vacina_descricao_dose')]
-Sys.time()-t1
-
-dt.dv
-
-t1 <- Sys.time()
-dvbr[, .(mean=mean(paciente_idade, na.rm=TRUE),
-         min=min(paciente_idade, na.rm=TRUE),
-         max=max(paciente_idade, na.rm=TRUE))]
-Sys.time()-t1
-
-gc(reset=TRUE)
-
-t1 <- Sys.time()
-dvbr <- dvbr[(paciente_enumSexoBiologico=='F' |
-              paciente_enumSexoBiologico=='M') & 
-             (vacina_descricao_dose=='    1ª Dose') |
-             (vacina_descricao_dose=='    2ª Dose')]
-Sys.time()-t1
-
-nrow(dvbr)
-sum(dt.dv$N)
-
-t1 <- Sys.time()
-dt.i.d.s <- dvbr[,.N,by=c('paciente_idade',
-                        'vacina_descricao_dose',
-                        'paciente_enumSexoBiologico')]
-Sys.time()-t1
-
-dt.i.d.s <- setorder(dt.i.d.s, paciente_idade) 
-dt.i.d.s
-
-cF <- rgb(1.0,c(0.3,0),c(0.1,0),0.5)
-cM <- rgb(c(0.1,0),c(0.5,0.1),1.0,0.5)
-##plot(1:4, col=c(cF, cM), pch=19, cex=5)
-
-t1 <- Sys.time()
-dvbr1F <- dvbr[paciente_enumSexoBiologico=='F' &
-               vacina_descricao_dose=='    1ª Dose']
-dvbr1M <- dvbr[paciente_enumSexoBiologico=='M' &
-               vacina_descricao_dose=='    1ª Dose']
-Sys.time()-t1
-
-t1 <- Sys.time()
-hFi <- hist(dvbr1F$paciente_idade,
-            0:222-0.5, plot=FALSE)
-Sys.time()-t1
-
-t1 <- Sys.time()
-hMi <- hist(dvbr1M$paciente_idade,
-            0:222-0.5, plot=FALSE)
-Sys.time()-t1
-
-gc(reset=TRUE)
-
-dt.d
-c(sum(hFi$counts), sum(hMi$counts),
-  sum(hFi$counts) + sum(hMi$counts))
-c(sum(hFi$counts), sum(hMi$counts))/nrow(dvbr)
-    
-if(FALSE) {
-    
-    png('figures/vacinados_histogram_idade_sexo.png', 900, 500)
-    par(mfrow=c(1,1), mar=c(3,3,0,0), mgp=c(1.7,0.5,0))
-    plot(hFi, col=cF[1], border='transparent', xlim=c(0,105),
-         main='', xlab='Idade')
-    plot(hMi, col=cM[1], add=TRUE, border='transparent')
-    legend('topleft', c('Feminino', 'Masculino'),
-           fill=c(cF[1], cM[1]), cex=1.5)
-    dev.off()
-    
-    if(FALSE)
-        system('eog figures/vacinados_histogram_idade_sexo.png &')
-
-}
-
+### consider the population data
 p21i <- read.csv('data/estPNADCpopBR202004IdadeSexo.csv')
 tail(p21i,3)
 
-w90i <- exp(-(1:29)/3.3); w90i <- w90i/sum(w90i)
-c(p21i$Fem[87:90], 
-  round(w90i*p21i$Fem[90+1]))
+### define colors for the pyramid plot 
+cF <- rgb(1.0,c(0.5,.3,0),c(0.4,0.2,0))
+cM <- rgb(c(0.4,0.2,0),c(0.7,0.5,0.1),1.0)
 
-pFi <- c(p21i$Fem[1:90], round(p21i$Fem[91]*w90i))
-pMi <- c(p21i$Masc[1:90], round(p21i$Masc[91]*w90i))
+### define axis labels 
+xl <- list(x=seq(-1.5e6, 1.5e6, 5e5)) 
+xl$l <- paste(c(1.5, 1, 500, 0, 500, 1, 1.5),
+              rep(c('Milhão', 'mil', '', 'mil', 'Milhão'),
+                  c(2,1,1,1,2)))
 
-HFi <- hFi
-HFi$counts <- pFi
-HMi <- hMi
-HMi$counts <- pMi
-    
-if(FALSE) {
-
-    png('figures/vacinados_histogram_idade_sexo_Pop.png', 900, 500)
-    par(mfrow=c(1,1), mar=c(3,3,0,0), mgp=c(1.7,0.5,0))
-    plot(HFi, col=cF[1], border='transparent', 
-         main='', xlab='Idade', xlim=c(0,105))
-    plot(hFi, col=cF[2], add=TRUE, border='transparent')
-    plot(HMi, col=cM[1], add=TRUE, border='transparent')
-    plot(hMi, col=cM[2], add=TRUE, border='transparent')
-    legend('topright', paste(c('Fem', 'Masc'), rep(c('Pop', 'Vac'), each=2)),
-           fill=c(cF, cM)[c(1,3,2,4)], cex=1.5)
-    dev.off()
-    
-}
-
-if(FALSE)
-    system('eog figures/vacinados_histogram_idade_sexo_Pop.png &')
-
-png('figures/vacinados_pyramid_idade_sexo_Pop.png', 700, 700)
-par(mar=c(2, 0, 0, 0))
-barplot(-pFi, names.arg='', horiz=TRUE, space=0, axes=FALSE,
+### make the plot
+png('figures/vacinados_pyramid_idade_sexo_Pop.png', 2500, 2000, res=300)
+par(mar=c(5, 0, 0, 0), mgp=c(1.5,0.5,0), xaxs='i', yaxs='i')
+barplot(-p21i$Fem, names.arg='', horiz=TRUE, space=0, axes=FALSE,
         border='transparent', col=cF[1],
-        xlim=c(-1,1)*max(HFi$counts, HMi$counts), ylim=c(-0.5,105.5))
-barplot(pMi, horiz=TRUE, space=0, add=TRUE,
+        xlim=c(-1,1)*max(p21i$Fem, p21i$Masc), 
+        ylim=c(-0.2, 105))
+barplot(p21i$Masc, horiz=TRUE, space=0, add=TRUE,
         border='transparent', col=cM[1], axes=FALSE)
-axis(1, pretty(par()$usr[1:2], 7),
-     paste0(abs(pretty(par()$usr[1:2], 7)/1e3), 'K'))
-barplot(-hFi$counts, horiz=TRUE, space=0, add=TRUE,
+axis(1, xl$x, xl$l)
+barplot(-n.ids[vacina_descricao_dose==dlevels[1] &
+                 paciente_enumSexoBiologico=='F']$N,
+        horiz=TRUE, space=0, add=TRUE,
         border='transparent', col=cF[2], axes=FALSE)
-barplot(hMi$counts, horiz=TRUE, space=0, add=TRUE,
+barplot(-n.ids[vacina_descricao_dose==dlevels[2] &
+                 paciente_enumSexoBiologico=='F']$N,
+        horiz=TRUE, space=0, add=TRUE,
+        border='transparent', col=cF[3], axes=FALSE)
+barplot(n.ids[vacina_descricao_dose==dlevels[1] &
+                paciente_enumSexoBiologico=='M']$N,
+        horiz=TRUE, space=0, add=TRUE,
         border='transparent', col=cM[2], axes=FALSE)
-text(rep(0, 10), 10*(0:9), 10*(0:9))
+barplot(n.ids[vacina_descricao_dose==dlevels[2] &
+                 paciente_enumSexoBiologico=='M']$N,
+        horiz=TRUE, space=0, add=TRUE,
+        border='transparent', col=cM[3], axes=FALSE)
+text(rep(0, 9), 10*(1:9), 10*(1:9), cex=0.7)
+text(-5e3, 4, 'Idade', srt=90, cex=0.7)
 legend('topleft',
-       paste0(c('Pop. est. 2021', 'Vacinadas'), ": ", 
-              sprintf("%2.2f",
-                      c(sum(HFi$counts), sum(hFi$counts))/1e6), 'M'), 
-       fill=cF, bty='n', box.col='transparent', cex=1.5)
+       paste0(c('Pop. 2020', 'Dose 1', 'Dose 2'), ": ", 
+              sprintf("%2.2f", 
+                      c(sum(p21i$Fem), n.dg[paciente_enumSexoBiologico=='F']$N)/1e6),
+              ' Milhões'), 
+       fill=cF, bty='n', border='transparent', cex=1.00, title='Mulheres')
 legend('topright',
-       paste0(c('Pop. est. 2021', 'Vacinados'), ": ", 
+       paste0(c('Pop. 2020', 'Dose 1', 'Dose 2'), ": ", 
               sprintf("%2.2f",
-                      c(sum(HMi$counts), sum(hMi$counts))/1e6), 'M'), 
-       fill=cM, bty='n', box.col='transparent', cex=1.5)
+                      c(sum(p21i$Masc), n.dg[paciente_enumSexoBiologico=='M']$N)/1e6),
+              ' Milhões'), 
+       fill=cM, bty='n', border='transparent', cex=1.00, title='Homens')
+mtext(paste('Atualizado em ',
+            format(Sys.Date(), '%d de %B de %Y')),
+      1, 2, adj=0, cex=0.7)
+mtext(paste0('Fonte 1: https://www.ibge.gov.br/estatisticas/sociais/trabalho/',
+             '17270-pnad-continua.html',
+             ' (expansão amostral + suavização)'), 1, 3, adj=0, cex=0.7)
+mtext('Fonte 2: https://opendatasus.saude.gov.br/dataset/covid-19-vacinacao', 1, 4, adj=0, cex=0.7)
+mtext('@eliaskrainski', 1, 4, adj=1, cex=1.00)
 dev.off()
 
 if(FALSE)
     system('eog figures/vacinados_pyramid_idade_sexo_Pop.png &')
 
-if(FALSE) {
-    
-    t1 <- Sys.time()
-    tDate <- dvbr[,.N,by=vacina_dataAplicacao]
-    Sys.time()-t1
-    
-    wD <- Sys.time()-60*60*24*c(90,0)
-    
-    plot(tDate, xlim=wD,
-         xlab='', ylab='', type='h', axes=FALSE)
-    axis(1, pretty(wD, 7), 
-         format(pretty(wD, 7), '%b,%d'))
 
-}
-
-
-head(dvbr,3)
-
-t1 <- Sys.time()
 tMunDate <- dvbr[,.N,by=c('paciente_endereco_coIbgeMunicipio',
                           'vacina_dataAplicacao',
                           'vacina_descricao_dose')]
-Sys.time()-t1
 
 str(tMunDate)
 

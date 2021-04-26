@@ -3,8 +3,6 @@ if(FALSE)
 
 source('rcode/ocommon.R')
 
-fld <- '~/dados/pnadc/PNADC_042020.txt'
-
 library(readr)
 
 ww <- fwf_positions(c(6, 50, 83, 92),
@@ -12,9 +10,24 @@ ww <- fwf_positions(c(6, 50, 83, 92),
                     c('uf', 'w', 'sexo', 'idade'))
 colcl <- do.call('cols', list('i', 'd', 'i', 'i'))
 
+if(FALSE) {
+
+    fls4 <- paste0('~/dados/pnadc/PNADC_0', 1:4, '2020.txt')
+    names(fls4) <- paste0('Trim', 1:4)
+
+    ld <- lapply(fls4,
+                 read_fwf, ww, colcl)
+
+    round(t(sapply(ld, function(x)
+        c(sum(x$w),
+          tapply(x$w, cut(x$idade, c(0,14,18,25,40, 60,Inf), right=FALSE), sum))/1e3)))
+    
+}
+
+fld <- '~/dados/pnadc/PNADC_042020.txt'
 dat <- read_fwf(fld, ww, colcl)
 
-tapply(dat$w, dat$sexo, sum)/1e6
+round(tapply(dat$w, dat$sexo, sum)/1e6, 2)
 
 b.i <- c(0:115,Inf)
 m.i <- 0:115
@@ -34,10 +47,13 @@ nFHi.o <- tapply(
     list(Idade=factor(m.i[findInterval(dat$idade, b.i)], m.i),
          Sexo=factor(dat$sexo, 2:1, c('Fem', 'Masc'))), sum)
 tail(nFHi.o,3)
-rownames(nFHi.o)[nrow(nFHi.o)] <- paste0(tail(rownames(nFHi.o), 1), '+')
+
+dimnames(nFHi.o)[[1]][dim(nFHi.o)[1]] <-
+    paste0(tail(dimnames(nFHi.o)[[1]], 1), '+')
 
 source('rcode/functions.R')
 bbb <- bs3f(m.i, seq(m.i[1], tail(m.i,1), 5))
+
 nFHi <- apply(nFHi.o, 2, function(y) {
     y[is.na(y)] <- 0
     y <- round(y)
@@ -62,16 +78,6 @@ if(FALSE)
     write.csv(round(nFHi),
               file='data/estPNADCpopBR202004IdadeSexo.csv')
 
-
-if(FALSE) {
-    
-    p21i <- read.csv('data/popBR2021idadeSexo.csv')
-    tail(p21i,3)
-
-    data.frame(proj=sapply(p21i[,2:3], tapply, m.i[i21i], sum),
-               pnadc=round(nFHi[,2:1]))
-
-}
 
 ### faixas etarias por UFs
 table(m5i[i <- findInterval(dat$idade, b5i)])
@@ -104,6 +110,7 @@ head(longd)
 source('rcode/functions.R')
 
 bbi <- bs3f(1:dim(t5cl)[1], seq(1, dim(t5cl)[1], 3))
+str(bbi)
 
 spop <- lapply(1:27, function(u) {
     y1 <- round(t5cl[,1,u])
@@ -119,8 +126,19 @@ spop <- lapply(1:27, function(u) {
 sum(sapply(spop, sum))
 sum(t5cl)
 
-t5clbr <- apply(t5cl, 1, rowSums)
-t5clbr
+
+t5clbr <- aggregate(
+    data.frame(nFHi.o),
+    list(i5=findInterval(1:nrow(nFHi.o)-0.5, b5i)), sum, na.rm=TRUE)
+str(t5clbr)
+
+str(spopbr <- sapply(t5clbr[,2:3], function(y) {
+    y[is.na(y)] <- 0
+    y <- round(y)
+    ff <- glm.fit(bbi, y, family=poisson())
+    y1 <- exp(bbi %*% ff$coeff)
+    round(y1*sum(y)/sum(y1))
+}))
 
 png('figures/piramidesUF202004.png', 1000, 700)
 par(mfrow=c(4,7), mar=c(0,0,0,0), xaxs='i', yaxs='i')
@@ -138,12 +156,14 @@ for(u in 1:27) {
     legend('topleft', uf$State[ufi[u]], bty='n')
 }
 xr <- c(-1,1)*max(t5clbr)
-barplot(-t5clbr[1,], names.arg='', xlim=xr,
+barplot(-t5clbr[,2], names.arg='', xlim=xr,
         horiz=TRUE, space=0, axes=FALSE,
         border='transparent', col=cF[1])
-barplot(t5clbr[2,], add=TRUE, names.arg='',
+barplot(t5clbr[,3], add=TRUE, names.arg='',
         horiz=TRUE, space=0, axes=FALSE,
         border='transparent', col=cM[1])
+lines(-spopbr[,1], 1:19-0.5, lwd=2)
+lines(spopbr[,2], 1:19-0.5, lwd=2)
 text(rep(0,8), seq(2, 16, 2), paste(10*(1:8)))
 legend('topleft', 'Brasil', bty='n')
 dev.off()

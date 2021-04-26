@@ -1,10 +1,8 @@
 if (FALSE)
     setwd('..')
 
-options(timeout=60*5)
-
-library(parallel)
-(ncores <- as.integer(detectCores()/2))
+if(!any(ls()=='dupdate'))
+    dupdate <- TRUE
 
 cssegis.f <- function(d=TRUE) {
 ### download the cssegis data (the famous one) 
@@ -225,48 +223,56 @@ others.f <- function() {
     amob.f()
 }
 
-if (ncores<39) {
-    cat('1\n')
-    system.time(mclapply(list(
-        others='others.f()',
-        google='gmob.f()'), 
-        function(x)
-            ##        eval(str2lang(x))
-            eval(parse(text=x)), 
-        mc.cores = ncores))
-} else {
-    if (ncores<69) {
-        cat('2\n')
+options(timeout=60*5)
+
+library(parallel)
+(ncores <- as.integer(detectCores()/2))
+
+if(dupdate) {
+    
+    if (ncores<39) {
+        cat('1\n')
         system.time(mclapply(list(
-            gus='gus.f()',
-            brms='brms.f()',    
-            ##brio='brio.f()',
-            ##wcota=wcota.f(),
-            ##fnd='fnd.f()',
-            ##sesa='sesa.f()')
-            apple='amob.f()',
+            others='others.f()',
             google='gmob.f()'), 
             function(x)
                 ##        eval(str2lang(x))
                 eval(parse(text=x)), 
             mc.cores = ncores))
     } else {
-        cat('3\n')
-        system.time(mclapply(list(
-            global='cssegis.f()',
-            uss='uss.f()',
-            usc='usc.f()',
-            brms=brms.f(),
-            ##brio='brio.f()',
-            ##wcota='wcota.f()',
-            ##fnd='fnd.f()',
-            ##sesa='sesa.f()')
-            apple='amob.f()',
-            google='gmob.f()'),
-            function(x)
-                ##        eval(str2lang(x))
-                eval(parse(text=x)),
+        if (ncores<69) {
+            cat('2\n')
+            system.time(mclapply(list(
+                gus='gus.f()',
+                brms='brms.f()',    
+                ##brio='brio.f()',
+                ##wcota=wcota.f(),
+                ##fnd='fnd.f()',
+                ##sesa='sesa.f()')
+                apple='amob.f()',
+                google='gmob.f()'), 
+                function(x)
+                    ##        eval(str2lang(x))
+                    eval(parse(text=x)), 
             mc.cores = ncores))
+        } else {
+            cat('3\n')
+            system.time(mclapply(list(
+                global='cssegis.f()',
+                uss='uss.f()',
+                usc='usc.f()',
+                brms=brms.f(),
+                ##brio='brio.f()',
+                ##wcota='wcota.f()',
+                ##fnd='fnd.f()',
+                ##sesa='sesa.f()')
+                apple='amob.f()',
+                google='gmob.f()'),
+                function(x)
+                    ##        eval(str2lang(x))
+                    eval(parse(text=x)),
+                mc.cores = ncores))
+        }
     }
 }
 

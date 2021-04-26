@@ -942,9 +942,9 @@ data2plot <- function(d,
         scol <- rgb(.1,.1,.1,.7)
         shad.col <- rgb(.5,.5,.5,.35)
     } else {
-        ucol <- 1:nl/nl
+        ucol <- 0:(nl-1)/(nl-1)
         gcol <- 1-2*abs(ucol-mean(ucol))
-        scol <- rgb(ucol, gcol, 1-ucol, 0.7)
+        scol <- rgb(ucol, gcol, 1-ucol, 0.9)
         shad.col <- rgb(0.3+0.7*ucol, 
                         0.3+0.7*gcol, 
                         0.3+0.7*(1-ucol), 0.35)

@@ -96,7 +96,7 @@ stopifnot(all(table(paste(uscl$county, uscl$ST), uscl$fdate)<2))
 
 unique(paste(uscl$county, uscl$ST)[is.na(uscl$fips)])
 
-if (FALSE) {
+if(FALSE) {
     grep('ounty', uscl$county,val=T)
     unique(grep('unicip', uscl$county,val=T))
     length(unique(grep('city', uscl$county,val=T)))
@@ -340,11 +340,10 @@ if (usems) {
 
     } else {
         
+        library(data.table)
         system.time(
             dbr <- as.data.frame(
-                readr::read_csv2(
-                           'data/HIST_PAINEL_COVIDBR.csv',
-                           col_types='cccccccciiiiiiiic')))
+                fread('data/HIST_PAINEL_COVIDBR.csv')))
 
     }
     
@@ -355,7 +354,7 @@ if (usems) {
     i.mu.l <- which(dbr$municipio!='')
     i.rg.l <- which(dbr$nomeRegiaoSaude!='')
     
-    dbr$fdate <- factor(gsub('-', '', dbr$data, 
+    dbr$fdate <- factor(gsub('-', '', as.Date(dbr$data, '%d/%m/%Y'),
                              fixed=TRUE), alldates)
     head(dbr, 3)
 
@@ -383,7 +382,7 @@ if (usems) {
 
     }
 
-    system.time(wbr.mu <- mclapply(
+    system.time(wbr.mu <- lapply(
                     dbr[i.mu.l, c('casosAcumulado', 'obitosAcumulado')], tapply,
                     dbr[i.mu.l, c('mun.uf', 'fdate')], as.integer))
     str(wbr.mu)
@@ -412,10 +411,12 @@ if (usems) {
 
     table(dbr$Regiao)
     str(which(is.na(dbr$estado)))
-    i.br <- which(is.na(dbr$estado))
+        i.br <- which(dbr$Regiao=='')
     i.br <- i.br[which(!duplicated(dbr$fdate[i.br]))]
-    i.Rg <- setdiff(which(dbr$estado!=''), i.mu.l)
+    i.Rg <- which(dbr$municipio=='' & dbr$estado!='')
 
+    table(dbr$Regiao[c(i.br)])
+    table(dbr$Regiao[c(i.Rg)])
     table(dbr$Regiao[c(i.br, i.Rg)])
 
     system.time(wbr.R <- lapply(
