@@ -77,20 +77,24 @@ n.dg <- setorder(
     paciente_enumSexoBiologico)
 n.dg
 
+dvbr$Idade <- factor(
+    findInterval(dvbr$paciente_idade, c(0:115,Inf)-1e-5),
+    1:116, 0:115)
+
 ### tabulate by age, dose and gender
-ids <- c('paciente_idade', ds)
-n.ids <- dvbr[
+Ids <- c('Idade', ds)
+n.Ids <- dvbr[
     vacina_descricao_dose %in% dlevels[1:2] &
     paciente_enumSexoBiologico %in% c('F', 'M'),
-    .N,by=ids]
+    .N,by=Ids]
 
 ### set it order of age, for later use
-n.ids <- setorder(
-    n.ids,
-    paciente_idade,
+n.Ids <- setorder(
+    n.Ids,
+    Idade, 
     vacina_descricao_dose,
     paciente_enumSexoBiologico)
-n.ids
+n.Ids
 
 tMunDate <- dvbr[,.N,by=c('paciente_endereco_coIbgeMunicipio',
                           'vacina_dataAplicacao',
@@ -111,16 +115,25 @@ dvbr$i5 <- findInterval(dvbr$paciente_idade, b5i-1e-3)
 dvbr$UF <- substr(dvbr$paciente_endereco_coIbgeMunicipio,1,2)
 
 
+t1 <- Sys.time()
 i5dsu <- c('i5', ds, 'UF')
 n.i5dsu <- dvbr[
     vacina_descricao_dose %in% dlevels[1:2] &
     paciente_enumSexoBiologico %in% c('F', 'M'),
     .N,by=i5dsu]
-
 n.i5dsu <- setorder(
     n.i5dsu,
     i5, 
     vacina_descricao_dose,
     paciente_enumSexoBiologico)
-n.i5dsu
+Sys.time()-t1
+
+t1 <- Sys.time()
+t.i5dsu <- with(dvbr[vacina_descricao_dose %in% dlevels[1:2] &
+                     paciente_enumSexoBiologico %in% c('F', 'M')],
+                table(i5, paciente_enumSexoBiologico,
+                      vacina_descricao_dose, UF))
+Sys.time()-t1
+dim(t.i5dsu)
+dimnames(t.i5dsu)
 
