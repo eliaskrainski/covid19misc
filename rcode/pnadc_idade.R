@@ -85,13 +85,16 @@ t5cl <- tapply(dat$w, list(i=l5i[i], sexo=dat$sexo, uf=dat$uf), sum)
 
 t5cl[1:2, , 1:2]
 
+apply(t5cl, 2, sum)
+
 flPis <- 'data/estimativaPopulacaoUF202004SexoFaixa5a.csv'
 
 if(FALSE) {
 
     cat('FaixaEtaria;UF;Fem;Masc\n', file=flPis)
     for(u in 1:dim(t5cl)[3])
-        write.table(data.frame(UF=dimnames(t5cl)[[3]][u], round(t5cl[,,u])),
+        write.table(data.frame(UF=dimnames(t5cl)[[3]][u],
+                               round(t5cl[,2:1,u])),
                     sep=';', file=flPis, append=TRUE,
                     row.names=TRUE, col.names=FALSE)
 

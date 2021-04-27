@@ -84,7 +84,7 @@ n.ids <- dvbr[
     paciente_enumSexoBiologico %in% c('F', 'M'),
     .N,by=ids]
 
-### set it inder of age, for later use
+### set it order of age, for later use
 n.ids <- setorder(
     n.ids,
     paciente_idade,
@@ -104,4 +104,23 @@ save('dMunDateDose',
      file='data/dMunDateDose.RData',
      compress='xz')
 
+
+b5i <- c(seq(0, 105, 5), Inf)
+dvbr$i5 <- findInterval(dvbr$paciente_idade, b5i-1e-3)
+
+dvbr$UF <- substr(dvbr$paciente_endereco_coIbgeMunicipio,1,2)
+
+
+i5dsu <- c('i5', ds, 'UF')
+n.i5dsu <- dvbr[
+    vacina_descricao_dose %in% dlevels[1:2] &
+    paciente_enumSexoBiologico %in% c('F', 'M'),
+    .N,by=i5dsu]
+
+n.i5dsu <- setorder(
+    n.i5dsu,
+    i5, 
+    vacina_descricao_dose,
+    paciente_enumSexoBiologico)
+n.i5dsu
 

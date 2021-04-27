@@ -70,4 +70,66 @@ dev.off()
 if(FALSE)
     system('eog figures/vacinados_pyramid_idade_sexo_Pop.png &')
 
+source('rcode/ocommon.R')
+uf
 
+n.u <- dvbr[UF %in% rownames(uf), .N, UF]
+n.u
+
+uds <- c('UF', ds)
+n.uds <- dvbr[UF %in% rownames(uf) &
+              vacina_descricao_dose %in% dlevels[1:2] &
+              paciente_enumSexoBiologico %in% c('F', 'M'),.N,uds]
+n.uds
+
+ius.p <- read.csv2('data/estimativaPopulacaoUF202004SexoFaixa5a.csv')
+head(ius.p)
+
+
+png('figures/pyramidsUFs.png', 1800, 2400, res=200)
+par(mfrow=c(9,3), mar=c(1.5, 0, 0, 0), mgp=c(1.5,0.5,0), xaxs='i', yaxs='i')
+for(i in order(rownames(uf))) {
+    u <- rownames(uf)[i] 
+    p.sel <- ius.p[ius.p$UF==u,]
+    xM <- max(p.sel$Fem, p.sel$Masc)
+    barplot(-p.sel$Fem, names.arg='', horiz=TRUE, space=0, axes=FALSE,
+            border='transparent', col=cF[1],  xlim=c(-1,1)*xM, ylim=c(0,23))
+    barplot(p.sel$Masc, horiz=TRUE, space=0, add=TRUE,
+            border='transparent', col=cM[1], axes=FALSE)
+    xl <- pretty(c(0,0.6*xM), 3)
+    axis(1, c(-rev(xl), xl), round(c(rev(xl), xl)/1000))
+    barplot(-n.i5dsu[vacina_descricao_dose==dlevels[1] &
+                     paciente_enumSexoBiologico=='F' & UF==u]$N,
+            horiz=TRUE, space=0, add=TRUE,
+            border='transparent', col=cF[2], axes=FALSE)
+    barplot(-n.i5dsu[vacina_descricao_dose==dlevels[2] &
+                     paciente_enumSexoBiologico=='F' & UF==u]$N,
+            horiz=TRUE, space=0, add=TRUE,
+            border='transparent', col=cF[3], axes=FALSE)
+    barplot(n.i5dsu[vacina_descricao_dose==dlevels[1] &
+                    paciente_enumSexoBiologico=='M' & UF==u]$N,
+            horiz=TRUE, space=0, add=TRUE,
+            border='transparent', col=cM[2], axes=FALSE)
+    barplot(n.i5dsu[vacina_descricao_dose==dlevels[2] &
+                    paciente_enumSexoBiologico=='M' & UF==u]$N,
+            horiz=TRUE, space=0, add=TRUE,
+            border='transparent', col=cM[3], axes=FALSE)
+    text(rep(0, 9), 2*(1:9), 10*(1:9), cex=0.7)
+    llab1 <- n.uds[UF==u & paciente_enumSexoBiologico=='F']
+    llab2 <- n.uds[UF==u & paciente_enumSexoBiologico=='M']
+    legend('top', '', title=uf$State[i], bty='n')
+    legend('topleft',
+           c(paste(format(sum(p.sel$Fem)/1e6, digits=3), 'Milhões'), 
+             paste0('D', 1:2, ': ', 
+                    format(llab1$N/1e3, digits=1), 'mil')),
+           fill=cF, bty='n', border='transparent')
+    legend('topright',
+           c(paste(format(sum(p.sel$Masc)/1e6, digits=3), 'Milhões'), 
+             paste0('D', 1:2, ': ', 
+                    format(llab2$N/1e3, digits=1), 'mil')),
+           fill=cM, bty='n', border='transparent')
+}
+dev.off()
+
+if(FALSE)
+    system('eog figures/pyramidsUFs.png &')
