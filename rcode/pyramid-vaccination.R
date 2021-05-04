@@ -100,6 +100,7 @@ n.uds
 
 ius.p <- read.csv2('data/estimativaPopulacaoUF202004SexoFaixa5a.csv')
 head(ius.p)
+tail(ius.p)
 
 png('figures/pyramidsUFs.png', 2000, 2500, res=200)
 par(mfrow=c(9,3), mar=c(1.5, 0, 0, 0), mgp=c(1.5,0.5,0), xaxs='i', yaxs='i')
@@ -157,6 +158,7 @@ dev.off()
 if(FALSE)
     system('eog figures/pyramidsUFs.png &')
 
+png('figures/pyramidsUFs_prop.png', 2000, 2500, res=200)
 par(mfrow=c(9,3), mar=c(1.5, 0, 0, 0), mgp=c(1.5,0.5,0), xaxs='i', yaxs='i')
 for(i in 1:27) {
     u <- dimnames(t.i5dsu)$UF[i]
@@ -165,12 +167,20 @@ for(i in 1:27) {
     pF2 <- t.i5dsu[,1,2,i]/p.sel$Fem
     pM1 <- t.i5dsu[,2,1,i]/p.sel$Masc
     pM2 <- t.i5dsu[,2,2,i]/p.sel$Masc
-    xM <- max(pF1, pM1)
+    xM <- max(pF1, pM1, 1)
     barplot(-pF1, names.arg='', horiz=TRUE, space=0, axes=FALSE,
             border='transparent', col=cF[1],  xlim=c(-1,1)*xM, ylim=c(0,23))
-    barplot(pM1, horiz=TRUE, space=0, add=TRUE, axes=FALSE,
+    barplot(pM1, names.arg='', horiz=TRUE, space=0, add=TRUE, axes=FALSE,
             border='transparent', col=cM[1])
-##    text(rep(0, 4), 4*(1:4), 20*(1:4), cex=0.7)
+    barplot(-pF2, names.arg='', horiz=TRUE, space=0, add=TRUE, axes=FALSE,
+            border='transparent', col=cF[2])
+    barplot(pM2, names.arg='', horiz=TRUE, space=0, add=TRUE, axes=FALSE,
+            border='transparent', col=cM[2])
+    ##    text(rep(0, 4), 4*(1:4), 20*(1:4), cex=0.7)
+    xl <- pretty(par()$usr[1:2], 10)
+    xl <- xl[2:(length(xl)-1)]
+    axis(1, xl, abs(xl*100))
+    abline(v=-1:1)
     N1n <- sum(p.sel$Fem)
     if(N1n>=1e6) {
         llN1 <- paste0('Pop Fem: ', format(N1n/1e6, digits=2), 'M')
@@ -188,12 +198,16 @@ for(i in 1:27) {
     nn1 <- n.uds[UF==u & paciente_enumSexoBiologico=='F']$N
     nn2 <- n.uds[UF==u & paciente_enumSexoBiologico=='M']$N
     legend('top', '', title=uf$State[rownames(uf)==u], bty='n')
-    legend('topleft',
+    legend('bottomleft',
            c(llN1, paste0('D', 1:2, ': ', llab1, "(",
                           format(100*nn1/N1n, dig=1), "%)")),
-           fill=cF, bty='n', border='transparent')
-    legend('topright',
+           fill=cF, border='transparent', bg=gray(0.9,0.5))
+    legend('bottomright',
            c(llN2, paste0('D', 1:2, ': ', llab2, "(",
                           format(100*nn2/N2n, dig=1), "%)")), 
-           fill=cM, bty='n', border='transparent')
+           fill=cM, border='transparent', bg=gray(0.9,0.5))
 }
+dev.off()
+
+if(FALSE)
+    system('eog figures/pyramidsUFs_prop.png &')

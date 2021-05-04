@@ -85,8 +85,13 @@ table(m5i[i <- findInterval(dat$idade, b5i)])
 t5cl <- tapply(dat$w, list(i=m5i[i], sexo=dat$sexo, uf=dat$uf), sum)
 
 dimnames(t5cl)
-t5cl[1:4, , 1:2]
-tail(t5cl[, , 1:2])
+
+n12c <- round(apply(t5cl, 3, function(m) colSums(m[1:3, ], na.rm=TRUE)))
+n12c
+round(100*n12c[1,]/n12c[2,]) ### indice de masculinidade ate 15 anos, cada UF
+n12o <- round(apply(t5cl, 3, function(m) colSums(m[-2:0+nrow(m), ], na.rm=TRUE)))
+n12o
+round(100*n12o[1,]/n12o[2,]) ### indice de masculinidade apos 90 anos, cada UF
 
 apply(t5cl, 2, sum, na.rm=TRUE)
 
@@ -113,12 +118,24 @@ spop <- lapply(1:27, function(u) {
 })
 names(spop) <- dimnames(t5cl)[[3]][1:length(spop)]
 
-round(sapply(spop, function(x) colSums(x[1:3,])))
-round(sapply(spop, function(x) colSums(x[-2:0+nrow(x),])))
+n12c.s <- round(sapply(spop, function(x) colSums(x[1:3,])))
+round(100*n12c.s[1,]/n12c.s[2,]) ### indice de masculinidade ate 15 anos, cada UF
+n12o.s <- round(sapply(spop, function(x) colSums(x[-2:0+nrow(x),])))
+round(100*n12o.s[1,]/n12o.s[2,]) ### indice de masculinidade apos 90 anos, cada UF
+
+barplot(100*rbind(n12c[1,]/n12c[2,],
+              n12c.s[1,]/n12c.s[2,],
+              n12o[1,]/n12o[2,],
+              n12o.s[1,]/n12o.s[2,]), beside=TRUE)
+abline(h=50*(1:3), col=2)
+     
 sapply(spop,colSums)
 
 c(n0=sum(sapply(spop, sum)),
   nS=sum(t5cl, na.rm=TRUE))
+
+m5i
+round(sapply(spop, function(x) c(sum(x[1:3,]), sum(x[13:nrow(x),])))/1e3)
 
 t5cl[,,1]
 
