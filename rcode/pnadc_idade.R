@@ -67,7 +67,6 @@ nFHi <- apply(nFHi.o, 2, function(y) {
 c(sum(nFHi.o, na.rm=TRUE), sum(nFHi))/1e3
 tail(nFHi,3)
 
-
 if(FALSE) {
     par(mar=c(3,0,0,0), mgp=c(2,1,0))
     barplot(-nFHi[,1], col=2, xlim=c(-1,1)*max(nFHi), space=0, 
@@ -85,22 +84,11 @@ if(FALSE)
 table(m5i[i <- findInterval(dat$idade, b5i)])
 t5cl <- tapply(dat$w, list(i=m5i[i], sexo=dat$sexo, uf=dat$uf), sum)
 
+dimnames(t5cl)
 t5cl[1:4, , 1:2]
 tail(t5cl[, , 1:2])
 
 apply(t5cl, 2, sum, na.rm=TRUE)
-
-if(FALSE) {
-
-    flPis <- 'data/estimativaPopulacaoUF202004SexoFaixa5a_raw.csv'
-    cat('FaixaEtaria;UF;Fem;Masc\n', file=flPis)
-    for(u in 1:dim(t5cl)[3])
-        write.table(data.frame(UF=dimnames(t5cl)[[3]][u],
-                               round(t5cl[,2:1,u])),
-                    sep=';', file=flPis, append=TRUE,
-                    row.names=TRUE, col.names=FALSE)
-
-}
 
 uf[1,]
 ufi <- pmatch(dimnames(t5cl)[[3]], rownames(uf))
@@ -124,6 +112,10 @@ spop <- lapply(1:27, function(u) {
           F=p2 * sum(y2)/sum(p2))
 })
 names(spop) <- dimnames(t5cl)[[3]][1:length(spop)]
+
+round(sapply(spop, function(x) colSums(x[1:3,])))
+round(sapply(spop, function(x) colSums(x[-2:0+nrow(x),])))
+sapply(spop,colSums)
 
 c(n0=sum(sapply(spop, sum)),
   nS=sum(t5cl, na.rm=TRUE))

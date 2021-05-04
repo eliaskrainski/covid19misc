@@ -82,7 +82,7 @@ if(FALSE)
     system('eog figures/vacinados_pyramid_idade_sexo_Pop.png &')
 
 source('rcode/ocommon.R')
-uf
+head(uf,3)
 
 n.u <- dvbr[UF %in% rownames(uf), .N, UF]
 n.u
@@ -127,13 +127,13 @@ for(i in 1:27) {
             border='transparent', col=cM[3], axes=FALSE)
     text(rep(0, 4), 4*(1:4), 20*(1:4), cex=0.7)
     N1n <- sum(p.sel$Fem)
-    if(llN1>=1e6) {
+    if(N1n>=1e6) {
         llN1 <- paste0('Pop Fem: ', format(N1n/1e6, digits=2), 'M')
     } else {
         llN1 <- paste0('Pop Fem: ', format(N1n/1e3, digits=2), 'K')
     }
     N2n <- sum(p.sel$Masc)
-    if(llN2>=1e6) {
+    if(N2n>=1e6) {
         llN2 <- paste0('Pop Masc: ', format(N2n/1e6, digits=2), 'M')
     } else {
         llN2 <- paste0('Pop Masc: ', format(N2n/1e3, digits=2), 'K')
@@ -157,3 +157,43 @@ dev.off()
 if(FALSE)
     system('eog figures/pyramidsUFs.png &')
 
+par(mfrow=c(9,3), mar=c(1.5, 0, 0, 0), mgp=c(1.5,0.5,0), xaxs='i', yaxs='i')
+for(i in 1:27) {
+    u <- dimnames(t.i5dsu)$UF[i]
+    p.sel <- ius.p[ius.p$UF==u,]
+    pF1 <- t.i5dsu[,1,1,i]/p.sel$Fem
+    pF2 <- t.i5dsu[,1,2,i]/p.sel$Fem
+    pM1 <- t.i5dsu[,2,1,i]/p.sel$Masc
+    pM2 <- t.i5dsu[,2,2,i]/p.sel$Masc
+    xM <- max(pF1, pM1)
+    barplot(-pF1, names.arg='', horiz=TRUE, space=0, axes=FALSE,
+            border='transparent', col=cF[1],  xlim=c(-1,1)*xM, ylim=c(0,23))
+    barplot(pM1, horiz=TRUE, space=0, add=TRUE, axes=FALSE,
+            border='transparent', col=cM[1])
+##    text(rep(0, 4), 4*(1:4), 20*(1:4), cex=0.7)
+    N1n <- sum(p.sel$Fem)
+    if(N1n>=1e6) {
+        llN1 <- paste0('Pop Fem: ', format(N1n/1e6, digits=2), 'M')
+    } else {
+        llN1 <- paste0('Pop Fem: ', format(N1n/1e3, digits=2), 'K')
+    }
+    N2n <- sum(p.sel$Masc)
+    if(N2n>=1e6) {
+        llN2 <- paste0('Pop Masc: ', format(N2n/1e6, digits=2), 'M')
+    } else {
+        llN2 <- paste0('Pop Masc: ', format(N2n/1e3, digits=2), 'K')
+    }
+    llab1 <- n.uds[UF==u & paciente_enumSexoBiologico=='F']$nleg
+    llab2 <- n.uds[UF==u & paciente_enumSexoBiologico=='M']$nleg
+    nn1 <- n.uds[UF==u & paciente_enumSexoBiologico=='F']$N
+    nn2 <- n.uds[UF==u & paciente_enumSexoBiologico=='M']$N
+    legend('top', '', title=uf$State[rownames(uf)==u], bty='n')
+    legend('topleft',
+           c(llN1, paste0('D', 1:2, ': ', llab1, "(",
+                          format(100*nn1/N1n, dig=1), "%)")),
+           fill=cF, bty='n', border='transparent')
+    legend('topright',
+           c(llN2, paste0('D', 1:2, ': ', llab2, "(",
+                          format(100*nn2/N2n, dig=1), "%)")), 
+           fill=cM, bty='n', border='transparent')
+}
