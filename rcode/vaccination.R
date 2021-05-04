@@ -34,6 +34,9 @@ if(FALSE)
         geom_point(aes(x=date, y=total_vaccinations,
                        group=location, col=location))
 
+vd[vd$location=='United States' &
+   (Sys.Date()-vd$date)<4, ]
+
 vbr <- vd[vd$location=='Brazil', ]
 vbr[(Sys.Date()-vbr$date)<9, c(3:8)]
 100*220000/213e6
@@ -44,6 +47,10 @@ if (FALSE)
               xlab='', type='o')) 
 if (FALSE)
     with(vd[vd$location=='Chile',],
+         plot(date, daily_vaccinations_per_hundred, pch=19,
+              xlab='', type='o')) 
+if (FALSE)
+    with(vd[vd$location=='United States',],
          plot(date, daily_vaccinations_per_hundred, pch=19,
               xlab='', type='o')) 
 
@@ -71,9 +78,11 @@ if (FALSE) {
     }
     legend('topleft', ctsel, col=clsel, lty=1, lwd=2, bg=gray(0.95))
 
+    names(vd)
+    ntots <- sapply(vd[, 
 
     ctsel <- c('Israel', 'United Arab Emirates', 'Chile', 'United Kingdom', 
-               'United States', 'European Union', 'Saudi Arabia', 'Brazil')
+             'United States', 'European Union', 'Saudi Arabia', 'Brazil')
     clsel <- c('blue4', 'green4', 'orange', 'red1',  
                'blue1', 'magenta', 'red4', 'green2')
 
@@ -432,7 +441,7 @@ if (FALSE)
     with(vd[vd$location=='Saudi Arabia', ],
          plot(date, daily_vaccinations, pch=19)) 
 
-vars <- names(vd)[9:12]
+vars <- names(vd)[c(4, 8, 9, 13)]
 
 t(apply(vd[vars], 2, summary))
 
@@ -442,22 +451,27 @@ ts0 <- lapply(vd[vars], tapply,
 sapply(ts0, dim)
 
 tsmax <- sapply(ts0, apply, 1, function(x) {
-    x <- tail(x, 10)
+    x <- tail(x, 14)
     x <- x[complete.cases(x)]
     if (length(x)>1)
-        return(max(x))
+        return(mean(x))
     return(NA)
 })
-tsmax[,4] <- rowMeans(ts0[[4]], na.rm=TRUE)
+dim(tsmax)
+###tsmax[,4] <- rowMeans(ts0[[4]], na.rm=TRUE)
 
-o1 <- order(tsmax[,1], decreasing=TRUE)
+head(tsmax,2)
+
+o1 <- order(tsmax[,3]*(tsmax[,1]>2e7), decreasing=TRUE)
 which(names(tsmax[o1, 1])=='Brazil')
+
+head(tsmax[o1,],20)
 
 vd$location <- factor(
     vd$location,
-    rownames(tsmax)[o1])
+    c('Brazil', setdiff(rownames(tsmax)[o1], 'Brazil')))
 
-(nsel <- pmin(which(names(tsmax[o1, 1])=='Brazil'), 15))
+(nsel <- pmin(which(names(tsmax[o1, 1])=='Brazil'), 12))
 
 library(ggplot2)
 
@@ -521,7 +535,7 @@ dev.off()
 if(FALSE)
     system('eog figures/vacinacaoBRtops.png &')
 
-nsel <- 20
+nsel <- 10
 isel <- head(o1, nsel)
 datel <- Sys.Date()-c(50,0)
 

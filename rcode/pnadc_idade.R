@@ -5,10 +5,10 @@ source('rcode/ocommon.R')
 
 library(readr)
 
-ww <- fwf_positions(c(6, 50, 83, 92),
-                    c(7, 65, 83, 94),
-                    c('uf', 'w', 'sexo', 'idade'))
-colcl <- do.call('cols', list('i', 'd', 'i', 'i'))
+ww <- fwf_positions(c(6, 8, 10, 50, 83, 92),
+                    c(7, 9, 11, 65, 83, 94),
+                    c('uf', 'cap', 'rg', 'w', 'sexo', 'idade'))
+colcl <- do.call('cols', list('i', 'i', 'i', 'd', 'i', 'i'))
 
 if(FALSE) {
 
@@ -37,7 +37,8 @@ n5i <- 21
 (m5i <- 5*1:n5i-2.5)
 l5i <- paste0('[', b5i[1:n5i],
               rep(c('-',''), c(n5i-1,1)),
-              c(b5i[2:n5i], '+'), ')')
+              c(b5i[2:n5i], '+'),
+              rep(c(')', ''), c(n5i-1,1)))
 l5i
 
 table(cut(dat$idade, b5i, right=FALSE))
@@ -101,15 +102,14 @@ if(FALSE) {
 
 }
 
-cF <- rgb(1.0,c(0.3,0),c(0.1,0),0.5)
-cM <- rgb(c(0.1,0),c(0.5,0.1),1.0,0.5)
-
 uf[1,]
 ufi <- pmatch(dimnames(t5cl)[[3]], rownames(uf))
 ufi
 
 bbi <- bs3f(1:dim(t5cl)[1], seq(1, dim(t5cl)[1], 3))
 str(bbi)
+
+apply(t5cl,2,sum,na.rm=T)
 
 spop <- lapply(1:27, function(u) {
     y1 <- round(t5cl[,1,u])
@@ -120,9 +120,10 @@ spop <- lapply(1:27, function(u) {
     f2 <- glm.fit(bbi, y2, family=poisson())
     p1 <- exp(drop(bbi %*% f1$coeff))
     p2 <- exp(drop(bbi %*% f2$coeff))
-    cbind(p1 * sum(y1)/sum(p1),
-          p2 * sum(y2)/sum(p2))
+    cbind(M=p1 * sum(y1)/sum(p1),
+          F=p2 * sum(y2)/sum(p2))
 })
+names(spop) <- dimnames(t5cl)[[3]][1:length(spop)]
 
 c(n0=sum(sapply(spop, sum)),
   nS=sum(t5cl, na.rm=TRUE))
@@ -130,14 +131,19 @@ c(n0=sum(sapply(spop, sum)),
 t5cl[,,1]
 
 flPis <- 'data/estimativaPopulacaoUF202004SexoFaixa5a.csv'
-cat('FaixaEtaria;UF;Fem;Masc\n', file=flPis)
-for(u in 1:27)
-    write.table(data.frame(
-        UF=dimnames(t5cl)[[3]][u],
-        round(spop[[u]][,2:1]),
-        row.names=l5i),
-        sep=';', file=flPis, append=TRUE,
-        row.names=TRUE, col.names=FALSE)
+
+if(FALSE) {
+    
+    cat('FaixaEtaria;UF;Fem;Masc\n', file=flPis)
+    for(u in 1:27)
+        write.table(data.frame(
+            UF=dimnames(t5cl)[[3]][u],
+            round(spop[[u]][,2:1]),
+            row.names=l5i),
+            sep=';', file=flPis, append=TRUE,
+            row.names=TRUE, col.names=FALSE)
+
+}
 
 longd <- read.csv2(flPis)
 head(longd,3)
@@ -155,35 +161,60 @@ str(spopbr <- sapply(t5clbr, function(y) {
     round(y1*sum(y)/sum(y1))
 }))
 
-png('figures/piramidesUF202004.png', 1000, 700)
-par(mfrow=c(4,7), mar=c(0,0,0,0), xaxs='i', yaxs='i')
-for(u in 1:27) {
-    xr <- c(-1,1)*max(t5cl[,,u], na.rm=TRUE)
-    barplot(-t5cl[,1,u], names.arg='', xlim=xr,
+if(FALSE) {
+
+    jp <- c(-2,-4,-6,-8); names(jp) <- paste0(9:6, '0+')
+    sapply(jp, function(n) colSums(spopbr[n:0+nrow(spopbr),]))/colSums(spopbr)
+
+    p.olds <- lapply(jp, function(n) 
+        sapply(spop, function(x) colSums(x[n:0+nrow(x),])/colSums(x)))
+    
+    par(mfrow=c(2,2), mar=c(3,3,0,0), mgp=c(1.5,0.5,0), las=1)
+    for(j in 1:4) {
+        barplot(p.olds[[j]][2:1,], beside=TRUE, col=c(cF[2], cM[2]))
+        legend('topleft', c("Fem", "Masc"),
+               fill=c(cF[2], cM[2]), title=names(p.olds)[j])
+    }    
+
+}
+
+cF <- rgb(1.0,c(0.3,0),c(0.1,0),0.5)
+cM <- rgb(c(0.1,0),c(0.5,0.1),1.0,0.5)
+
+if(FALSE) {
+
+    png('figures/piramidesUF202004.png', 1000, 700)
+    par(mfrow=c(4,7), mar=c(0,0,0,0), xaxs='i', yaxs='i')
+    for(u in 1:27) {
+        xr <- c(-1,1)*max(t5cl[,,u], na.rm=TRUE)
+        barplot(-t5cl[,1,u], names.arg='', xlim=xr,
+                horiz=TRUE, space=0, axes=FALSE,
+                border='transparent', col=cF[1])
+        barplot(t5cl[,2,u], add=TRUE, names.arg='',
+                horiz=TRUE, space=0, axes=FALSE,
+                border='transparent', col=cM[1])
+        lines(-spop[[u]][,1], 1:n5i-0.5, lwd=2)
+        lines(spop[[u]][,2], 1:n5i-0.5, lwd=2)
+        text(rep(0,8), seq(2, 16, 2), paste(10*(1:8)))
+        legend('topleft', uf$State[ufi[u]], bty='n')
+    }
+    xr <- c(-1,1)*max(t5clbr)
+    barplot(-t5clbr[,1], names.arg='', xlim=xr,
             horiz=TRUE, space=0, axes=FALSE,
             border='transparent', col=cF[1])
-    barplot(t5cl[,2,u], add=TRUE, names.arg='',
+    barplot(t5clbr[,2], add=TRUE, names.arg='',
             horiz=TRUE, space=0, axes=FALSE,
             border='transparent', col=cM[1])
-    lines(-spop[[u]][,1], 1:n5i-0.5, lwd=2)
-    lines(spop[[u]][,2], 1:n5i-0.5, lwd=2)
+    lines(-spopbr[,1], 1:n5i-0.5, lwd=2)
+    lines(spopbr[,2], 1:n5i-0.5, lwd=2)
     text(rep(0,8), seq(2, 16, 2), paste(10*(1:8)))
-    legend('topleft', uf$State[ufi[u]], bty='n')
-}
-xr <- c(-1,1)*max(t5clbr)
-barplot(-t5clbr[,1], names.arg='', xlim=xr,
-        horiz=TRUE, space=0, axes=FALSE,
-        border='transparent', col=cF[1])
-barplot(t5clbr[,2], add=TRUE, names.arg='',
-        horiz=TRUE, space=0, axes=FALSE,
-        border='transparent', col=cM[1])
-lines(-spopbr[,1], 1:n5i-0.5, lwd=2)
-lines(spopbr[,2], 1:n5i-0.5, lwd=2)
-text(rep(0,8), seq(2, 16, 2), paste(10*(1:8)))
-legend('topleft', 'Brasil', bty='n')
-dev.off()
+    legend('topleft', 'Brasil', bty='n')
+    dev.off()
+    
+    if(FALSE)
+        system('eog figures/piramidesUF202004.png &')
 
-if(FALSE)
-    system('eog figures/piramidesUF202004.png &')
+}
+
 
 

@@ -3,6 +3,13 @@ if(FALSE)
 
 system.time(source('rcode/dados-vacinacao-brasil-uf.R'))
 
+n.t <- tapply(tMunDate$N, substr(tMunDate$vacina_dataAplicacao,1,10),sum)
+
+tail(n.t,21)/1e6
+
+plot(as.Date(names(n.t)), n.t, xlab='', ylab='',
+     xlim=Sys.Date()-c(120,0), type='o')
+
 ### consider the population data
 p21i <- read.csv('data/estPNADCpopBR202004IdadeSexo.csv')
 tail(p21i,3)
@@ -43,20 +50,24 @@ barplot(n.Ids[vacina_descricao_dose==dlevels[2] &
                  paciente_enumSexoBiologico=='M']$N,
         horiz=TRUE, space=0, add=TRUE,
         border='transparent', col=cM[3], axes=FALSE)
-text(rep(0, 9), 10*(1:9), 10*(1:9), cex=0.7)
-text(-5e3, 4, 'Idade', srt=90, cex=0.7)
-legend('topleft',
+abline(v=seq(-10, 10, 1)*2e5,
+       h=10*(0:10), lty=2, col=gray(0.7,0.5))
+axis(1, seq(-10,10,1)*2e5, labels=FALSE)
+legend(-1.5e6, 105, ##'topleft',
        paste0(c('Pop. 2020', 'Dose 1', 'Dose 2'), ": ", 
-              sprintf("%2.2f", 
+              sprintf("%2.1f", 
                       c(sum(p21i$Fem), n.dg[paciente_enumSexoBiologico=='F']$N)/1e6),
-              ' Milhões'), 
-       fill=cF, bty='n', border='transparent', cex=1.00, title='Mulheres')
-legend('topright',
+              'M'), bg='white', box.col='transparent',
+       fill=cF, border='transparent', cex=1.00, title='Mulheres')
+legend(5e5, 105, ##'topright',
        paste0(c('Pop. 2020', 'Dose 1', 'Dose 2'), ": ", 
-              sprintf("%2.2f",
+              sprintf("%2.1f",
                       c(sum(p21i$Masc), n.dg[paciente_enumSexoBiologico=='M']$N)/1e6),
-              ' Milhões'), 
-       fill=cM, bty='n', border='transparent', cex=1.00, title='Homens')
+              'M'), bg='white', box.col='transparent',
+       fill=cM, border='transparent', cex=1.00, title='Homens')
+text(rep(1.65,11)*1e6, ##rep(c(1.6,1.65,1.6,1.4,1,0.8,0.4)*1e6, c(1,3,1,1,1,1,1)),
+     10*(0:10), 10*(0:10), cex=0.7, xpd=TRUE)
+text(1.7e6, 4, 'Idade', srt=90, cex=0.7)
 mtext(paste('Atualizado em',
             format(Sys.Date()-1*(as.integer(format(Sys.time(), '%H'))<17), '%d de %B de %Y')),
       1, 2, adj=0, cex=0.7)
@@ -90,7 +101,6 @@ n.uds
 ius.p <- read.csv2('data/estimativaPopulacaoUF202004SexoFaixa5a.csv')
 head(ius.p)
 
-
 png('figures/pyramidsUFs.png', 2000, 2500, res=200)
 par(mfrow=c(9,3), mar=c(1.5, 0, 0, 0), mgp=c(1.5,0.5,0), xaxs='i', yaxs='i')
 for(i in 1:27) {
@@ -116,26 +126,30 @@ for(i in 1:27) {
     barplot(as.integer(t.i5dsu[,2,2,i]), horiz=TRUE, space=0, add=TRUE,
             border='transparent', col=cM[3], axes=FALSE)
     text(rep(0, 4), 4*(1:4), 20*(1:4), cex=0.7)
-    llN1 <- sum(p.sel$Fem)
+    N1n <- sum(p.sel$Fem)
     if(llN1>=1e6) {
-        llN1 <- paste0('Pop Fem: ', format(llN1/1e6, digits=2), 'M')
+        llN1 <- paste0('Pop Fem: ', format(N1n/1e6, digits=2), 'M')
     } else {
-        llN1 <- paste0('Pop Fem: ', format(llN1/1e3, digits=2), 'K')
+        llN1 <- paste0('Pop Fem: ', format(N1n/1e3, digits=2), 'K')
     }
-    llN2 <- sum(p.sel$Masc)
+    N2n <- sum(p.sel$Masc)
     if(llN2>=1e6) {
-        llN2 <- paste0('Pop Masc: ', format(llN2/1e6, digits=2), 'M')
+        llN2 <- paste0('Pop Masc: ', format(N2n/1e6, digits=2), 'M')
     } else {
-        llN2 <- paste0('Pop Masc: ', format(llN2/1e3, digits=2), 'K')
+        llN2 <- paste0('Pop Masc: ', format(N2n/1e3, digits=2), 'K')
     }
     llab1 <- n.uds[UF==u & paciente_enumSexoBiologico=='F']$nleg
     llab2 <- n.uds[UF==u & paciente_enumSexoBiologico=='M']$nleg
+    nn1 <- n.uds[UF==u & paciente_enumSexoBiologico=='F']$N
+    nn2 <- n.uds[UF==u & paciente_enumSexoBiologico=='M']$N
     legend('top', '', title=uf$State[rownames(uf)==u], bty='n')
     legend('topleft',
-           c(llN1, paste0('Dose', 1:2, ': ', llab1)),
+           c(llN1, paste0('D', 1:2, ': ', llab1, "(",
+                          format(100*nn1/N1n, dig=1), "%)")),
            fill=cF, bty='n', border='transparent')
     legend('topright',
-           c(llN2, paste0('Dose', 1:2, ': ', llab2)), 
+           c(llN2, paste0('D', 1:2, ': ', llab2, "(",
+                          format(100*nn2/N2n, dig=1), "%)")), 
            fill=cM, bty='n', border='transparent')
 }
 dev.off()

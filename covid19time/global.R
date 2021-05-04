@@ -5,7 +5,7 @@ npretty <- 7
 ### load packages
 library(shiny)
 library(splines)
-library(mgcv)
+###library(mgcv)
 
 mgcv.ok <- FALSE
 if (FALSE)
@@ -498,19 +498,20 @@ dataPrepare <- function(slocal) {
     
 ###tSmoothPoisson <- function(y, X, B, off=rep(0, nrow(X))) 
     w <- weekdays(d$x)
+    ww <- model.matrix(~0+w, data.frame(w=w))
+    nt <- nrow(ww)
+    tk0 <- seq(1, nt, length=round(nt/14))
+    bb <- bs(1:nt, knots=tk0)
+    bb <- bb[, which(colSums(bb)>0)]
+    bb[,2] <- bb[,1] + bb[,2]
+    bb[,ncol(bb)-1] <- bb[, ncol(bb)] + bb[, ncol(bb)-1]
+    bb <- bb[, 2:(ncol(bb)-1)]
+
     if (mgcv.ok) {
         d$sdy <- apply(yy[,,1, drop=FALSE], 2, SmoothFit, w=w)
         d$sdo <- apply(yy[,,2, drop=FALSE], 2, SmoothFit, w=w)
     } else {
-        ww <- model.matrix(~0+w, data.frame(w=w))
-        nt <- nrow(d$y)
-        tk0 <- seq(1, nt, length=round(nt/14))
-        bb <- bs(1:nt, knots=tk0)
-        bb <- bb[, which(colSums(bb)>0)]
-        bb[,2] <- bb[,1] + bb[,2]
-        bb[,ncol(bb)-1] <- bb[, ncol(bb)] + bb[, ncol(bb)-1]
-        bb <- bb[, 2:(ncol(bb)-1)]
-        
+##        i0 <- ii0[1]:nrow(ww) 
         fSloc <- function(y) {
             i1 <- which(ifelse(is.na(y), 0, y)>0)[1]
             i.ok <- intersect(which(!is.na(y)), (i1+1):length(y))
@@ -540,17 +541,18 @@ dataPrepare <- function(slocal) {
     nl <- length(iim)
     if (nl>0) {
         
-        jj <- (1:ncol(wgmbl[[1]]))[ii0[1]:ncol(y)]
+##        jj <- (1:ncol(wgmbl[[1]]))[ii0[1]:ncol(y)]
         
         d$gmob <- lapply(wgmbl, function(m)
-            t(m[iim, jj, drop=FALSE]))
+            t(m[iim, , drop=FALSE]))
         
-        if (TRUE) {
+        if (FALSE) {
             d$sgmob <- lapply(d$gmob, function(m)
                 apply(m[, drop=FALSE], 2, SmoothFitG, w=w))
         } else {
+            w <- weekdays(vecDate)
             ww <- model.matrix(~0+w, data.frame(w=w))
-            nt <- nrow(d$y)
+            nt <- nrow(ww)
             tk0 <- seq(1, nt, length=round(nt/14))
             bb <- bs(1:nt, knots=tk0)
             bb <- bb[, which(colSums(bb)>0)]
@@ -560,7 +562,9 @@ dataPrepare <- function(slocal) {
             d$sgmob <- lapply(d$gmob, function(m) {
                 if (is.null(m)) return(NULL)
                 apply(m[, drop=FALSE], 2, function(y) {
-                    i <- which(!is.na(y)) 
+                    i <- which(!is.na(y))
+                    if(length(i)==0) return(y)
+                    if(length(i)<20) return(rep(mean(y, na.rm=TRUE), length(y)))
                     r <- y
                     xxi <- cbind(bb, ww)[i, , drop=FALSE]
                     ff <- glm.fit(xxi, y[i])
@@ -583,40 +587,59 @@ dataPrepare <- function(slocal) {
     i3i <- lapply(1:length(iam), function(k)
         pmatch(alocals[[k]][iam[[k]]], locals[ii]))    
     n3 <- sum(!is.na(unique(unlist(iam))))
-    
+
     if (n3>0) {
-        
+
+        wD3 <- as.Date(colnames(wambl[[1]]), 'X%Y.%m.%d')
+        w <- weekdays(wD3)
+        ww <- model.matrix(~0+w, data.frame(w=w))
+        nt <- nrow(ww)
+        tk0 <- seq(1, nt, length=round(nt/14))
+        bb <- bs(1:nt, knots=tk0)
+        bb <- bb[, which(colSums(bb)>0)]
+        bb[,2] <- bb[,1] + bb[,2]
+        bb[,ncol(bb)-1] <- bb[, ncol(bb)] + bb[, ncol(bb)-1]
+        bb <- bb[, 2:(ncol(bb)-1)]
+
         d$amob <- lapply(1:length(iam), function(k) {
+            r <- matrix(NA, nrow(ww), length(slocal))
             ia <- iam[[k]]
-            ia <- ia[!is.na(ia)]
-            if (length(ia)>0)
-                return(t(wambl[[k]][ia, , drop=FALSE]))
-            return(NULL)
+            nnaa <- which(!is.na(ia))
+            if (length(nnaa)>0)
+                r[, nnaa] <- t(wambl[[k]][ia[nnaa], , drop=FALSE])
+            return(r)
         })
-        
-        if (TRUE) {
+
+        if (FALSE) {
             d$samob <- lapply(d$amob, function(m) {
-                if (is.null(m)) return(NULL)
-                apply(m[, , drop=FALSE], 2, SmoothFitG,
-                      w=weekdays(as.Date(rownames(m), 'X%Y.%m.%d')))
+                apply(m, 2, SmoothFitG, w=wD3)
             })
         } else {
             d$samob <- lapply(d$amob, function(m) {
-                if (is.null(m)) return(NULL)
-                apply(m[, drop=FALSE], 2, function(y) {
+                apply(m, 2, function(y) {
                     i <- which(!is.na(y))
-                    r <- y
-                    xxi <- cbind(bb, ww)[i, , drop=FALSE]
-                    ff <- glm.fit(xxi, y[i])
-                    ib <- which(!is.na(ff$coeff[1:ncol(bb)]))
-                    ix <- which(!is.na(ff$coeff[ncol(bb)+1:ncol(ww)]))
-                    mx <- ww[i, ix, drop=FALSE] %*% ff$coeff[ix+ncol(bb)]
-                    r[i] <- drop(bb[i, ib, drop=FALSE] %*% ff$coeff[ib] + mean(mx))
-                    return(r * sum(y, na.rm=TRUE)/sum(r, na.rm=TRUE)) 
+                    if(length(i)==0) {
+                        r <- rep(NA, length(y))
+                    } else {
+                        if(length(i)<30) {
+                            r <- rep(mean(y, na.rm=TRUE), length(i))
+                        }
+                        if(length(i)>29) {
+                            r <- y
+                            xxi <- cbind(bb, ww)[i, , drop=FALSE]
+                            ff <- glm.fit(xxi, y[i])
+                            ib <- which(!is.na(ff$coeff[1:ncol(bb)]))
+                            ix <- which(!is.na(ff$coeff[ncol(bb)+1:ncol(ww)]))
+                            mx <- ww[i, ix, drop=FALSE] %*% ff$coeff[ix+ncol(bb)]
+                            r[i] <- drop(bb[i, ib, drop=FALSE] %*% ff$coeff[ib] + mean(mx))
+                            r <- r * sum(y, na.rm=TRUE)/sum(r, na.rm=TRUE)
+                        }
+                    }
+                    return(r)
                 })
             })
         }
-        
+
         attr(d, 'iam') <- iam
         attr(d, 'i3i') <- i3i
     }
@@ -662,6 +685,7 @@ SmoothFit <- function(y, w) {
 
 SmoothFitG <- function(y, w) {
     ii <- which((!is.na(y)) & (!is.na(w)))
+    if(length(ii)==0) return(y)
     dtmp <- list(tt=ii, r=y[ii], w=factor(w[ii]))
     rr <- y
     if (length(ii)<10) {
@@ -1302,7 +1326,7 @@ data2plot <- function(d,
         if ((nplot-iplot)<ncwplot) 
             par(mar=c(2, 4.5, 0, 0.5), mgp=c(2,0.5,0))
         
-        ylm <- range(1, d$Rtlow[jj,,v], 
+        ylm <- range(0.91, 1.1, d$Rtlow[jj,,v], 
                      d$Rtupp[jj,,v], na.rm=TRUE)
         if (showPoints) {
             rtobs <- array(NA, c(nrow(d$dy), nl, 2))
@@ -1517,23 +1541,20 @@ data2plot <- function(d,
             jjp <- plots[(plots>4) & (plots<11)]-4
             
             if (length(jjp)>0) {
+              
+              print(range(jj))
                 
-                if (showPoints) {
-                    ylm <- range(unlist(lapply(
-                        d$gmob[jjp], function(m)
-                            range(c(-15, m[jj, ], 15),
-                                  na.rm=TRUE))), na.rm=TRUE)
-                } else {
-                    ylm <- range(unlist(lapply(
-                        d$sgmob[jjp], function(m)
-                            range(c(-10, m[jj, ], 10),
-                                  na.rm=TRUE))), na.rm=TRUE)
-                }
-                
-                if (all(is.finite(ylm))) {                
+                ylm2 <- range(c(unlist(lapply(
+                    d$sgmob[jjp], function(m) m[jj,])),
+                    -25, 25), na.rm=TRUE)
+                if (showPoints) 
+                    ylm2 <- range(c(unlist(lapply(
+                        d$gmob[jjp], function(m) m[jj,])), 
+                        -15, 15, ylm2), na.rm=TRUE)
+                if (all(is.finite(ylm2))) {
                     plot(d$x, ##d$mob[[1]][,1],
                          type='n', axes=FALSE,
-                         xlim=xlm, ylim=ylm,
+                         xlim=xlm, ylim=ylm2,
                          ylab=paste(ylmob,'(Google)'))
                 } else {
                     plot(d$x,
@@ -1556,13 +1577,12 @@ data2plot <- function(d,
                     }
                 }
                 jlwd <- 2*jlwd
-                
                 for (l in 1:length(i2i)) { ##ncol(d$mob[[1]])) {
                     for (j in jjl) {
                         if (showPoints)
-                            points(d$x, d$gmob[[jjp[j]]][, l],
+                            points(vecDate, d$gmob[[jjp[j]]][, l],
                                    pch=jjp[j], col=scol[i2i[l]])
-                        lines(d$x, d$sgmob[[jjp[j]]][, l],
+                        lines(vecDate, d$sgmob[[jjp[j]]][, l],
                               lty=jlty[j], lwd=jlwd[j],
                               col=scol[i2i[l]])
                     }
@@ -1600,17 +1620,15 @@ data2plot <- function(d,
                 axis(1, xl$x, format(xl$x, '%b,%d'))
             
             axis(2, las=1)
-            ##abline(v=xl$x, h=pretty(ylm), 
-            ##     col=gray(0.5, 0.5), lty=2)
-            segments(xl$x, rep(ylm[1], length(xl$x)),
-                     xl$x, rep(ylm[2], length(xl$x)),
+
+            segments(xl$x, rep(ylm2[1], length(xl$x)),
+                     xl$x, rep(ylm2[2], length(xl$x)),
                      col=gray(0.5, 0.5), lty=2)
-            yy00 <- pretty(ylm) 
+            yy00 <- pretty(ylm2, 10) 
             segments(rep(xlm[1], length(yy00)), yy00,
-                     rep(xlm[2], length(yy00)),
+                     rep(xlm[2], length(yy00)), yy00, 
                      lty=2, col=gray(0.5, 0.5))    
             abline(h=0)
-            
             
         }
     }
@@ -1624,22 +1642,22 @@ data2plot <- function(d,
         
         if (length(jjp2)>0) {
             
-            if (showPoints) {
-                ylm <- range(unlist(lapply(
-                    d$amob[jjp2], function(m)
-                        range(c(80, m[jj, ], 125),
-                              na.rm=TRUE))), na.rm=TRUE)
-            } else {
-                ylm <- range(unlist(lapply(
-                    d$samob[jjp2], function(m)
-                        range(c(80, m[jj, ], 125),
-                              na.rm=TRUE))), na.rm=TRUE)
-            }
-            
-            if (all(is.finite(ylm))) {                
+          wD3 <- as.Date(colnames(wambl[[1]]), 'X%Y.%m.%d')
+          jj3 <- which((wD3>=d$x[jj[1]]) & (wD3<=d$x[jj[length(jj)]]))
+          
+          ylm3 <- range(c(unlist(lapply(
+                d$samob[jjp2], function(m) m[jj3, ])), 
+                80, 125), na.rm=TRUE)
+          if (showPoints) {
+                ylm3 <- range(c(unlist(lapply(
+                    d$amob[jjp2], function(m) m[jj3,])),
+                    ylm3, 80, 125), na.rm=TRUE)
+            } 
+          
+            if (all(is.finite(ylm3))) {                
                 plot(attr(wambl[[1]], 'Date'), ##d$mob[[1]][,1],
                      type='n', axes=FALSE,
-                     xlim=xlm, ylim=ylm,
+                     xlim=xlm, ylim=ylm3,
                      ylab=paste(ylmob,'(Apple)'))
             } else {
                 plot(attr(wambl[[1]], 'Date'),
@@ -1658,32 +1676,32 @@ data2plot <- function(d,
             jlwd2 <- 2*jlwd2
             
             for (j in jjl2) {
-                if (any(!is.na(i3i[[jjp2[j]]]))) {
-                    for (l in 1:sum(!is.na(i3i[[jjp2[j]]])))  {
-                        print(str(attr(wambl[[jjp2[j]]], 'Date')))
-                        print(str(d$amob[[jjp2[j]]][, l]))
-                        if (showPoints)
-                            points(attr(wambl[[jjp2[j]]], 'Date'),
-                                   d$amob[[jjp2[j]]][, l],
-                                   pch=jjp2[j], col=scol[i3i[[jjp2[j]]][l]])
-                        lines(attr(wambl[[jjp2[j]]], 'Date'),
-                              d$samob[[jjp2[j]]][, l],
+                for (l in i3i[[jjp2[[j]]]]) {
+                    if(!is.na(l)) {
+                        if (showPoints) 
+                            points(attr(wambl[[jjp2[[j]]]], 'Date'),
+                                   d$amob[[jjp2[[j]]]][, l], 
+                                   pch=j, col=scol[l])
+                        lines(attr(wambl[[jjp2[[j]]]], 'Date'),
+                              d$samob[[jjp2[[j]]]][, l],
                               lty=jlty2[j], lwd=jlwd2[j],
-                              col=scol[i3i[[jjp2[j]]][l]])
+                              col=scol[l])
                     }
                 }
             }
             abline(h=100)
             
         }
-        
+
         if (any(plots%in%c(1:10))) {
             if (showPoints) {
                 legend(legpos, allpls[-(1:4)][jjp2+6],
-                       pch=jjp2, lty=jlty2, lwd=jlwd2, bty='n')
+                       pch=jjp2, lty=jlty2, lwd=jlwd2,
+                       bty='n')
             } else {
                 legend(legpos, allpls[-(1:4)][jjp2+6], 
-                       lty=jlty2, lwd=jlwd2, bty='n')
+                       lty=jlty2, lwd=jlwd2,
+                       bty='n')
             }
         } else {
             if (showPoints) {
@@ -1708,11 +1726,12 @@ data2plot <- function(d,
         
         axis(1, xl$x, format(xl$x, '%b,%d'))
         axis(2, las=1)
-        ##        abline(v=xl$x, h=pretty(ylm), 
-        ##             col=gray(0.5, 0.5), lty=2)
-        yy00 <- pretty(ylm) 
+        segments(xl$x, rep(ylm3[1], length(xl$x)), 
+                 xl$x, rep(ylm3[2], length(xl$x)), 
+                 lty=2, col=gray(0.5, 0.5))    
+        yy00 <- pretty(ylm3, 10) 
         segments(rep(xlm[1], length(yy00)), yy00,
-                 rep(xlm[2], length(yy00)),
+                 rep(xlm[2], length(yy00)), yy00,
                  lty=2, col=gray(0.5, 0.5))    
         abline(h=0)
         

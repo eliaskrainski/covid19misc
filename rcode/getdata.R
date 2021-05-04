@@ -14,7 +14,7 @@ cssegis.f <- function(d=TRUE) {
         'time_series_covid19_')
     
 ### The root names of the three derired  data files
-    vnames <- c('confirmed', 'deaths', 'recovered')
+    vnames <- c('confirmed', 'deaths')###, 'recovered')
     
 ### (may or) may not download the files again
     if (d)
@@ -223,13 +223,20 @@ others.f <- function() {
     amob.f()
 }
 
-options(timeout=60*5)
-
-library(parallel)
-(ncores <- as.integer(detectCores()/2))
-
 if(dupdate) {
+
+    options(timeout=60*5)
+
+    if(TRUE) {
+
+        others.f()
+        gmob.f()
+        
+    } else {
     
+    library(parallel)
+    (ncores <- as.integer(detectCores()/2))
+
     if (ncores<39) {
         cat('1\n')
         system.time(mclapply(list(
@@ -273,8 +280,9 @@ if(dupdate) {
                     eval(parse(text=x)),
                 mc.cores = ncores))
         }
-    }
-}
+      }	
+    }	
+}	
 
 ##lapply(list('uss.f()'), function(x) eval(call(x)[[1]]))
 ##lapply(list('uss.f()'), function(x) eval(parse(text=x)))

@@ -109,11 +109,10 @@ save('dMunDateDose',
      compress='xz')
 
 
-b5i <- c(seq(0, 105, 5), Inf)
+b5i <- c(seq(0, 100, 5), Inf)
 dvbr$i5 <- findInterval(dvbr$paciente_idade, b5i-1e-3)
 
 dvbr$UF <- substr(dvbr$paciente_endereco_coIbgeMunicipio,1,2)
-
 
 t1 <- Sys.time()
 i5dsu <- c('i5', ds, 'UF')
