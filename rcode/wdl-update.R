@@ -1,4 +1,4 @@
-if (FALSE) { ## can manually skip
+if (FALSE) { ## manually skip
 
     setwd('..')
 
@@ -7,12 +7,11 @@ if (FALSE) { ## can manually skip
 if (!any(ls() %in% c('ussabb', 'uf')))
     source('rcode/ocommon.R')
 
-library(parallel)
-(ncores <- as.integer(detectCores()/2))
-
 ### load global data and create the 'wdl' object
 if (!any(ls()=='dupdate'))
     dupdate <- TRUE
+if(FALSE)
+    dupdate <- FALSE
 
 system.time(source('rcode/wc0update.R'))
 
@@ -28,11 +27,13 @@ w.us <- lapply(us.d[c('cases', 'deaths')], tapply,
                us.d[c('state', 'fdate')], as.integer)
 lapply(lapply(w.us, colSums), tail)
 
-for(k in 1:2) {
-    i2us.s <- pmatch(rownames(w.us[[k]]), ussabb$State.District)
-    rownames(w.us[[k]]) <- ussabb$Postal.Code[i2us.s]
+if(FALSE) {
+    for(k in 1:2) {
+        i2us.s <- pmatch(rownames(w.us[[k]]), ussabb$State.District)
+        rownames(w.us[[k]]) <- ussabb$Postal.Code[i2us.s]
+    }
 }
-    
+
 for (k in 1:2) {
     wdl[[k]] <- rbind(
         wdl[[k]],
@@ -55,15 +56,17 @@ tapply(uscpop$POPESTIMATE2019,
 summary(uscpop$POPESTIMATE2019[uscpop$SUMLEV==50])
 uscpop[tail(order(uscpop$POPESTIMATE2019)), 1:7]
 
-i2ist <- pmatch(uscpop$STNAME,
-                ussabb$State.District,
-                duplicates.ok=TRUE)
-uscpop$STcode <- ussabb$Postal.Code[i2ist]
+if(FALSE) {
+    i2ist <- pmatch(uscpop$STNAME,
+                    ussabb$State.District,
+                    duplicates.ok=TRUE)
+    uscpop$STcode <- ussabb$Postal.Code[i2ist]
+}
 
 ## uscpop[c("STcode", "POPESTIMATE2019")][uscpop$SUMLEV==40, ]
 
 uss.pop <- tapply(uscpop$POPESTIMATE2019[uscpop$SUMLEV==40],
-                  uscpop$STcode[uscpop$SUMLEV==40], sum)
+                  uscpop$STNAME[uscpop$SUMLEV==40], sum)
 uss.pop
 
 w2i.uss <- pmatch(rownames(w.us[[1]]), names(uss.pop))
@@ -167,8 +170,8 @@ uf$Região <- r.pt[uf$Rcod]
 
 for (j in which(sapply(uf, is.factor)))
     uf[,j] <- as.character(uf[,j])
-    
-head(uf)
+
+head(uf,3)
 
 ### br mun pop
 brmpop <- read.csv2('data/populacao2019municipio.csv', skip=3, nrow=5571)
@@ -371,6 +374,7 @@ if (usems) {
     munam.br <- 'municipio'
     stnam.br <- 'estado'
     rgnam.br <- 'nomeRegiaoSaude'
+    rgcod.br <- 'codRegiaoSaude'
     
     if (FALSE) {
         
@@ -384,24 +388,25 @@ if (usems) {
 
     system.time(wbr.mu <- lapply(
                     dbr[i.mu.l, c('casosAcumulado', 'obitosAcumulado')], tapply,
-                    dbr[i.mu.l, c('mun.uf', 'fdate')], as.integer))
+                    dbr[i.mu.l, c('codmun', 'fdate')], as.integer))
     str(wbr.mu)
+
+    mun.nam.uf <- dbr$mun.uf[pmatch(rownames(wbr.mu[[1]]), dbr$codmun)]
+    mun.mun <- sapply(mun.nam.uf,  function(x) substr(x, 1, nchar(x)-3))
     
-    mun.mun <- sapply(rownames(wbr.mu[[1]]), function(x)
-        substr(x, 1, nchar(x)-3))
-    
-    st.mun <- sapply(rownames(wbr.mu[[1]]), function(x)
+    st.mun <- sapply(mun.nam.uf, function(x)
         substring(x, nchar(x)-1))
     table(is.na(st.mun))
     table(st.mun)
     
     system.time(wbr.rg <- lapply(
                     dbr[i.rg.l, c('casosAcumulado', 'obitosAcumulado')], tapply,
-                    dbr[i.rg.l, c('nomeRegiaoSaude', 'fdate')], sum))
+                    dbr[i.rg.l, c('codRegiaoSaude', 'fdate')], sum))
     str(wbr.rg)
     
-    st.rg <- dbr$estado[pmatch(rownames(
-                     wbr.rg[[1]]), dbr$nomeRegiaoSaude)]
+    st.rg <- uf$UF[pmatch(substr(rownames(
+                    wbr.rg[[1]]), 1, 2),
+                    rownames(uf), duplicates.ok=TRUE)]
     table(st.rg)
     
     system.time(wbr.uf <- lapply(
@@ -411,7 +416,7 @@ if (usems) {
 
     table(dbr$Regiao)
     str(which(is.na(dbr$estado)))
-        i.br <- which(dbr$Regiao=='')
+    i.br <- which(dbr$Regiao=='')
     i.br <- i.br[which(!duplicated(dbr$fdate[i.br]))]
     i.Rg <- which(dbr$municipio=='' & dbr$estado!='')
 
@@ -484,10 +489,10 @@ i2und.mn <- pmatch(
 summary(i2und.mn)
 
 str(brmpop$X2019)
-str(unddbr[i2und.mn[complete.cases(i2und.mn)], rgnam.br])
+str(unddbr[i2und.mn[complete.cases(i2und.mn)], rgcod.br])
 wpop.rg <- tapply(
     brmpop$X2019[-1],
-    unddbr[i2und.mn, rgnam.br],
+    unddbr[i2und.mn, rgcod.br],
            sum, na.rm=TRUE)
 str(wpop.rg)
 
@@ -513,32 +518,39 @@ stopifnot(all(rownames(wbr.R[[1]])==names(wpop.R)))
 
 system.time(source('rcode/dados-curitiba.R'))
 
+wuf2ufnam <- uf$State[pmatch(rownames(wbr.uf[[1]]), uf$UF)]
+wuf2ufnam
+
     for (k in 1:2) {
         wdl[[k]] <- rbind(
             wdl[[k]],
             data.frame(code='', City='',
                        Province.State=rownames(wbr.R[[k]]), 
-                       Country.Region='Brasil', Lat=NA, Long=NA,
+                       Country.Region=rep(c('Brasil', 'BR'), c(1,5)),
+                       Lat=NA, Long=NA,
                        wbr.R[[k]]))
         wdl[[k]] <- rbind(
             wdl[[k]],
             data.frame(code='', City='', 
-                       Province.State=rownames(wbr.uf[[k]]),
-                       Country.Region='Brasil', Lat=NA, Long=NA,
+                       Province.State=wuf2ufnam, ###rownames(wbr.uf[[k]]),
+                       Country.Region='BR', Lat=NA, Long=NA,
                        wbr.uf[[k]]))
-        reg.tmp <- rownames(wbr.rg[[k]])
-        irr <- setdiff(1:length(reg.tmp), grep('Reg', reg.tmp))
-        reg.tmp[irr] <- paste('Reg.', reg.tmp[irr])
+        reg.tmp <- dbr[pmatch(rownames(wbr.rg[[k]]),
+                              dbr[,rgcod.br]), rgnam.br]
+        irr <- unique(union(grep('REGI', reg.tmp),
+                            grep('RS', reg.tmp)))
+        i.norr <- setdiff(1:length(reg.tmp), irr)
+        reg.tmp[i.norr] <- paste('RS', reg.tmp[i.norr])
         wdl[[k]] <- rbind(
             wdl[[k]],
-            data.frame(code='',
+            data.frame(code=rownames(wbr.rg[[k]]),
                        City=reg.tmp, 
                        Province.State=st.rg, 
                        Country.Region='BR', Lat=NA, Long=NA,
                        wbr.rg[[k]]))
         wdl[[k]] <- rbind(
             wdl[[k]],
-            data.frame(code='', 
+            data.frame(code=rownames(wbr.mu[[k]]), 
                        City=mun.mun, 
                        Province.State=st.mun, 
                        Country.Region='BR', Lat=NA, Long=NA,
@@ -565,6 +577,8 @@ system.time(source('rcode/dados-curitiba.R'))
 
 if (FALSE) {
 
+    wdl[[1]][4000+1:5, 1:7]
+    
     iii <- sort(sample(tail(1:nrow(wdl[[1]]), 5570), 10))
     wdl[[1]][iii, 2:3]
     wpop.brm[iii]

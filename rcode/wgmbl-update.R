@@ -13,24 +13,15 @@ alldates <- gsub('-', '', as.character(Date))
 if (!any(ls() %in% c('ussabb', 'uf')))
     source('rcode/ocommon.R')
 
-if (!any(ls()=='gmob'))
-    gmob <- TRUE
+##if (!any(ls()=='gmob'))
+   ## gmob <- TRUE
 
-if (gmob) {
+##if (gmob) {
 ### mobility data from Google
 
-    library(readr)
-    ##system.time(gmbl <- read.csv(
-    ##"data/Global_Mobility_Report.csv"))
-    
-    system.time(gmbl <- as.data.frame(read_csv(
-                    "data/Global_Mobility_Report.csv",
-                    col_types='ccccccccciiiiii')))
-    
-    dim(gmbl)
-    head(gmbl,2)
-    summary(as.Date(unique(gmbl$date)))
-    
+    library(data.table)
+    system.time(gmbl <- as.data.frame(fread('data/Global_Mobility_Report.csv')))
+
     colnames(gmbl) <- gsub(
         '_percent_change_from_baseline', '', colnames(gmbl))
 
@@ -53,10 +44,7 @@ if (gmob) {
     
     system.time(gmbl$fdate <- factor(gsub(
                     '-', '', gmbl$date), alldates))
-    summary(as.integer(table(gmbl$fdate)))
-
-    names(gmbl)
-
+    
     if(FALSE){
 
         with(gmbl[gmbl$country_region=='India', ],
@@ -97,15 +85,17 @@ if (gmob) {
     head(ussabb,2)
     for (j in 1:ncol(ussabb))
         ussabb[,j] <- as.character(ussabb[,j])
-    
+
+    sub2b <- gmbl$sub_region_2!=''
     for (j in 1:nrow(ussabb)) {
-        iij <- which(gmbl$sub_region_1==ussabb$State[j])
+        iij <- which(sub2b & (gmbl$sub_region_1==ussabb$State[j]))
         cat(j, as.character(ussabb$State)[j], length(iij), '\n')
         gmbl$sub_region_1[iij] <- ussabb$Postal[j]
     }
-    
+
+system.time(gmbl$sub_region_1 <- gsub('Federal District', 'Distrito Federal', gmbl$sub_region_1))
     for (j in 1:nrow(uf)) {
-        iij <- which(gmbl$sub_region_1==uf$State[j])
+        iij <- which(sub2b & (gmbl$sub_region_1==uf$State[j]))
         cat(j, as.character(uf$State)[j], length(iij), '\n')
         gmbl$sub_region_1[iij] <- uf$UF[j]
     }
@@ -136,20 +126,14 @@ if (gmob) {
 
     }
 
-    length(grep('Paulo', gmbl$sub_region_1))
-    length(grep('Paulo', gmbl$sub_region_2))
-    table(grep('Paulo', gmbl$sub_region_2, val=T))
     system.time(gmbl$local <- paste(
                     ifelse(is.na(gmbl$sub_region_2), '',
                            gmbl$sub_region_2),
                     ifelse(is.na(gmbl$sub_region_1), '',
                            gmbl$sub_region_1),
                     gmbl$country_region_code, sep='_'))
-                
-    sort(table(gmbl$local[icode <- substr(
-                              gmbl$local, 1, 2)=='__']))
-    table(icode)
-    
+
+    table(icode <- substr(gmbl$local,1,2)=='__')
     gmbl$local[icode] <- paste0('__', gmbl$country_region[icode])
     gmbl$local[gmbl$local=='__United States'] <- '__US'
 
@@ -179,24 +163,23 @@ if (gmob) {
 
     if (FALSE) {
 
-        system.time(
-            wgmbl <- mclapply(
-                gmbl[im.inc, 10:15], tapply,
-                gmbl[im.inc, c('local', 'fdate')], 
-                mean, mc.cores=min(6L, ncores)))
-
-    } else {
-
-        system.time(
+      system.time(
             wgmbl <- lapply(
                 gmbl[im.inc, 10:15], tapply,
                 gmbl[im.inc, c('local', 'fdate')], 
                 mean))
 
+    } else {
+
+        system.time(
+            wgmbl <- mclapply(
+                gmbl[im.inc, 10:15], tapply,
+                gmbl[im.inc, c('local', 'fdate')], 
+                mean, mc.cores=min(6L, ncores)))
+    
     }
 
-    names(wgmbl)
-    str(wgmbl[1])
+    sapply(wgmbl, dim)
 
     grep('Curitiba', rownames(wgmbl[[1]]))
     grep('Curitiba', rownames(wgmbl[[1]]), val=T)
@@ -223,8 +206,8 @@ if (gmob) {
 
     system.time(save(
         'wgmbl',
-        file='data/wgmbl.RData',
-        compress='xz'))
+        file='data/wgmbl.RData'))
+        ##compress='xz'))
 
-}
+##}
 

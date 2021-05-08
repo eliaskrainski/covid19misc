@@ -29,32 +29,19 @@ dat <- read_fwf(fld, ww, colcl)
 
 round(tapply(dat$w, dat$sexo, sum)/1e6, 2)
 
-b.i <- c(0:115,Inf)
-m.i <- 0:115
+source('rcode/define_idade_faixas.R')
 
-n5i <- 21
-(b5i <- 5*c(1:n5i-1,Inf))
-(m5i <- 5*1:n5i-2.5)
-l5i <- paste0('[', b5i[1:n5i],
-              rep(c('-',''), c(n5i-1,1)),
-              c(b5i[2:n5i], '+'),
-              rep(c(')', ''), c(n5i-1,1)))
-l5i
-
-table(cut(dat$idade, b5i, right=FALSE))
-tapply(dat$w, cut(dat$idade, b5i, right=FALSE), sum)
+table(cut(dat$idade, bKi, right=FALSE))
+tapply(dat$w, cut(dat$idade, bKi, right=FALSE), sum)
 
 nFHi.o <- tapply(
     dat$w,
-    list(Idade=factor(m.i[findInterval(dat$idade, b.i)], m.i),
+    list(Idade=factor(lk1i[findInterval(dat$idade, b1i)], lk1i),
          Sexo=factor(dat$sexo, 2:1, c('Fem', 'Masc'))), sum)
 tail(nFHi.o,3)
 
-dimnames(nFHi.o)[[1]][dim(nFHi.o)[1]] <-
-    paste0(tail(dimnames(nFHi.o)[[1]], 1), '+')
-
 source('rcode/functions.R')
-bbb <- bs3f(m.i, seq(m.i[1], tail(m.i,1), 5))
+bbb <- bs3f(m1i, seq(m1i[1], tail(m1i,1), 3*k1i))
 
 nFHi <- apply(nFHi.o, 2, function(y) {
     y[is.na(y)] <- 0
@@ -63,52 +50,56 @@ nFHi <- apply(nFHi.o, 2, function(y) {
     y1 <- exp(bbb %*% ff$coeff)
     round(y1*sum(y)/sum(y1))
 })
+rownames(nFHi) <- rownames(nFHi.o)
 
 c(sum(nFHi.o, na.rm=TRUE), sum(nFHi))/1e3
 tail(nFHi,3)
 
 if(FALSE) {
+
     par(mar=c(3,0,0,0), mgp=c(2,1,0))
     barplot(-nFHi[,1], col=2, xlim=c(-1,1)*max(nFHi), space=0, 
             names.arg='', border='transparent', horiz=TRUE)
     barplot(nFHi[,2], col=4, add=TRUE, space=0, 
             names.arg='', border='transparent', horiz=TRUE)
+
 }    
 
 if(FALSE)
-    write.csv(round(nFHi),
-              file='data/estPNADCpopBR202004IdadeSexo.csv')
+    write.csv(data.frame(Faixa=rownames(nFHi), round(nFHi)),
+              file='data/estPNADCpopBR202004IdadeSexo2.csv',
+              row.names=FALSE)
 
 
 ### faixas etarias por UFs
-table(m5i[i <- findInterval(dat$idade, b5i)])
-t5cl <- tapply(dat$w, list(i=m5i[i], sexo=dat$sexo, uf=dat$uf), sum)
+table(mKi[i <- findInterval(dat$idade, bKi)])
+tKcl <- tapply(dat$w, list(i=mKi[i], sexo=dat$sexo, uf=dat$uf), sum)
 
-dimnames(t5cl)
+dimnames(tKcl)
 
-n12c <- round(apply(t5cl, 3, function(m) colSums(m[1:3, ], na.rm=TRUE)))
+n12c <- round(apply(tKcl, 3, function(m) colSums(m[1:3, ], na.rm=TRUE)))
 n12c
 round(100*n12c[1,]/n12c[2,]) ### indice de masculinidade ate 15 anos, cada UF
-n12o <- round(apply(t5cl, 3, function(m) colSums(m[-2:0+nrow(m), ], na.rm=TRUE)))
+n12o <- round(apply(tKcl, 3, function(m) colSums(m[-2:0+nrow(m), ], na.rm=TRUE)))
 n12o
 round(100*n12o[1,]/n12o[2,]) ### indice de masculinidade apos 90 anos, cada UF
 
-apply(t5cl, 2, sum, na.rm=TRUE)
+apply(tKcl, 2, sum, na.rm=TRUE)
 
 uf[1,]
-ufi <- pmatch(dimnames(t5cl)[[3]], rownames(uf))
+ufi <- pmatch(dimnames(tKcl)[[3]], rownames(uf))
 ufi
 
-bbi <- bs3f(1:dim(t5cl)[1], seq(1, dim(t5cl)[1], 3))
+bbi <- bs3f(1:dim(tKcl)[1], seq(1, dim(tKcl)[1], 3))
 str(bbi)
 
-apply(t5cl,2,sum,na.rm=T)
+apply(tKcl,2,sum,na.rm=T)
 
 spop <- lapply(1:27, function(u) {
-    y1 <- round(t5cl[,1,u])
+    y1 <- round(tKcl[,1,u])
     y1[is.na(y1)] <- 0L 
     f1 <- glm.fit(bbi, y1, family=poisson())
-    y2 <- round(t5cl[,2,u])
+    y2 <- round(tKcl[,2,u])
     y2[is.na(y2)] <- 0L
     f2 <- glm.fit(bbi, y2, family=poisson())
     p1 <- exp(drop(bbi %*% f1$coeff))
@@ -116,41 +107,45 @@ spop <- lapply(1:27, function(u) {
     cbind(M=p1 * sum(y1)/sum(p1),
           F=p2 * sum(y2)/sum(p2))
 })
-names(spop) <- dimnames(t5cl)[[3]][1:length(spop)]
+names(spop) <- dimnames(tKcl)[[3]][1:length(spop)]
 
 n12c.s <- round(sapply(spop, function(x) colSums(x[1:3,])))
 round(100*n12c.s[1,]/n12c.s[2,]) ### indice de masculinidade ate 15 anos, cada UF
 n12o.s <- round(sapply(spop, function(x) colSums(x[-2:0+nrow(x),])))
 round(100*n12o.s[1,]/n12o.s[2,]) ### indice de masculinidade apos 90 anos, cada UF
 
-barplot(100*rbind(n12c[1,]/n12c[2,],
-              n12c.s[1,]/n12c.s[2,],
-              n12o[1,]/n12o[2,],
-              n12o.s[1,]/n12o.s[2,]), beside=TRUE)
-abline(h=50*(1:3), col=2)
-     
+if(FALSE) {
+    
+    barplot(100*rbind(n12c[1,]/n12c[2,],
+                      n12c.s[1,]/n12c.s[2,],
+                      n12o[1,]/n12o[2,],
+                      n12o.s[1,]/n12o.s[2,]), beside=TRUE)
+    abline(h=100, col=2)
+
+}
+    
 sapply(spop,colSums)
 
 c(n0=sum(sapply(spop, sum)),
-  nS=sum(t5cl, na.rm=TRUE))
+  nS=sum(tKcl, na.rm=TRUE))
 
-m5i
-round(sapply(spop, function(x) c(sum(x[1:3,]), sum(x[13:nrow(x),])))/1e3)
+mKi
+round(sapply(spop, function(x) c(sum(x[1:2,]), sum(x[-1:0+nrow(x),])))/1e3)
 
-t5cl[,,1]
+cbind(o=round(tKcl[,,1]), s=round(spop[[1]]))
 
-flPis <- 'data/estimativaPopulacaoUF202004SexoFaixa5a.csv'
+flPis <- paste0('data/estimativaPopulacaoUF202004SexoFaixa', K, 'a.csv')
 
 if(FALSE) {
     
     cat('FaixaEtaria;UF;Fem;Masc\n', file=flPis)
     for(u in 1:27)
         write.table(data.frame(
-            UF=dimnames(t5cl)[[3]][u],
-            round(spop[[u]][,2:1]),
-            row.names=l5i),
+            Faixa=lKi,
+            UF=dimnames(tKcl)[[3]][u],
+            round(spop[[u]][,2:1])),
             sep=';', file=flPis, append=TRUE,
-            row.names=TRUE, col.names=FALSE)
+            row.names=FALSE, col.names=FALSE)
 
 }
 
@@ -159,16 +154,19 @@ head(longd,3)
 tail(longd,3)
 sapply(longd[,3:4], sum)
 
-t5clbr <- data.frame(tapply(dat$w, list(i=m5i[i], sexo=dat$sexo), sum))
-str(t5clbr)
+tKclbr <- data.frame(tapply(dat$w, list(i=mKi[i], sexo=dat$sexo), sum))
+str(tKclbr)
 
-str(spopbr <- sapply(t5clbr, function(y) {
+str(spopbr <- sapply(tKclbr, function(y) {
     y[is.na(y)] <- 0
     y <- round(y)
     ff <- glm.fit(bbi, y, family=poisson())
     y1 <- exp(bbi %*% ff$coeff)
     round(y1*sum(y)/sum(y1))
 }))
+
+cF <- rgb(1.0,c(0.3,0),c(0.1,0),0.5)
+cM <- rgb(c(0.1,0),c(0.5,0.1),1.0,0.5)
 
 if(FALSE) {
 
@@ -187,41 +185,39 @@ if(FALSE) {
 
 }
 
-cF <- rgb(1.0,c(0.3,0),c(0.1,0),0.5)
-cM <- rgb(c(0.1,0),c(0.5,0.1),1.0,0.5)
-
 if(FALSE) {
 
-    png('figures/piramidesUF202004.png', 1000, 700)
+    flK <- paste0('figures/piramidesUF202004', K, 'a.png')
+    png(flK, 1000, 700)
     par(mfrow=c(4,7), mar=c(0,0,0,0), xaxs='i', yaxs='i')
     for(u in 1:27) {
-        xr <- c(-1,1)*max(t5cl[,,u], na.rm=TRUE)
-        barplot(-t5cl[,1,u], names.arg='', xlim=xr,
+        xr <- c(-1,1)*max(tKcl[,,u], na.rm=TRUE)
+        barplot(-tKcl[,1,u], names.arg='', xlim=xr,
                 horiz=TRUE, space=0, axes=FALSE,
                 border='transparent', col=cF[1])
-        barplot(t5cl[,2,u], add=TRUE, names.arg='',
+        barplot(tKcl[,2,u], add=TRUE, names.arg='',
                 horiz=TRUE, space=0, axes=FALSE,
                 border='transparent', col=cM[1])
-        lines(-spop[[u]][,1], 1:n5i-0.5, lwd=2)
-        lines(spop[[u]][,2], 1:n5i-0.5, lwd=2)
-        text(rep(0,8), seq(2, 16, 2), paste(10*(1:8)))
+        lines(-spop[[u]][,1], 1:nKi-0.5, lwd=2, col=gray(0.3,0.5))
+        lines(spop[[u]][,2], 1:nKi-0.5, lwd=2, col=gray(0.3,0.5))
+        text(par()$usr[2]*0.95, seq(4, nKi-3, 4), paste(K*seq(4, nKi-3, 4)))
         legend('topleft', uf$State[ufi[u]], bty='n')
     }
-    xr <- c(-1,1)*max(t5clbr)
-    barplot(-t5clbr[,1], names.arg='', xlim=xr,
+    xr <- c(-1,1)*max(tKclbr)
+    barplot(-tKclbr[,1], names.arg='', xlim=xr,
             horiz=TRUE, space=0, axes=FALSE,
             border='transparent', col=cF[1])
-    barplot(t5clbr[,2], add=TRUE, names.arg='',
+    barplot(tKclbr[,2], add=TRUE, names.arg='',
             horiz=TRUE, space=0, axes=FALSE,
             border='transparent', col=cM[1])
-    lines(-spopbr[,1], 1:n5i-0.5, lwd=2)
-    lines(spopbr[,2], 1:n5i-0.5, lwd=2)
-    text(rep(0,8), seq(2, 16, 2), paste(10*(1:8)))
+    lines(-spopbr[,1], 1:nKi-0.5, lwd=2, col=gray(0.3,0.5))
+    lines(spopbr[,2], 1:nKi-0.5, lwd=2, col=gray(0.3,0.5))
+    text(par()$usr[2]*0.95, seq(2, 8, 1)*2, paste(10*(2:8)))
     legend('topleft', 'Brasil', bty='n')
     dev.off()
     
     if(FALSE)
-        system('eog figures/piramidesUF202004.png &')
+        system(paste('eog', flK, '&'))
 
 }
 

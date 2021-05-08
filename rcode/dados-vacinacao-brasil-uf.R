@@ -25,16 +25,13 @@ brvac.uf <- function(d=FALSE, uf=NULL) {
             if(!file.exists(fl.j))
                 download.file(ufls[j], fl.j)
         }
-    } else {  ### return the local filename
-        return(paste0('data/', lfls))
-    }
+    } 
+    return(paste0('data/', lfls))
 }
 
 options(timeout=60*10) ### to work with bad internet...
-brvac.uf(TRUE) ## download each UF file
-
-### get each UF local file: 'data/UF_....csv"
-fls <- brvac.uf(d=FALSE)
+## download each UF local file and retrieve the local file names: 'data/UF_....csv"
+fls <- brvac.uf(TRUE) 
 
 ### look at the first lines from one of the files
 (tmp <- read.csv2(fls[1], nrow=2))
@@ -77,27 +74,25 @@ n.dg <- setorder(
     paciente_enumSexoBiologico)
 n.dg
 
-dvbr$Idade <- factor(
-    findInterval(dvbr$paciente_idade, c(0:115,Inf)-1e-5),
-    1:116, 0:115)
+source('rcode/define_idade_faixas.R')
+
+lk1i
+dvbr$idade1 <- factor(
+    lk1i[findInterval(dvbr$paciente_idade, b1i-1e-5)], lk1i)
+dvbr$idadeK <- factor(
+    lKi[findInterval(dvbr$paciente_idade, bKi-1e-5)], lKi)
+
+dvbr
 
 ### tabulate by age, dose and gender
-Ids <- c('Idade', ds)
+Ids <- c('idade1', ds)
 n.Ids <- dvbr[
     vacina_descricao_dose %in% dlevels[1:2] &
     paciente_enumSexoBiologico %in% c('F', 'M'),
     .N,by=Ids]
 
-### set it order of age, for later use
-n.Ids <- setorder(
-    n.Ids,
-    Idade, 
-    vacina_descricao_dose,
-    paciente_enumSexoBiologico)
-n.Ids
-
 tMunDate <- dvbr[,.N,by=c('paciente_endereco_coIbgeMunicipio',
-                          'vacina_dataAplicacao',
+                          'vacina_dataAplicacao', 
                           'vacina_descricao_dose')]
 
 str(tMunDate)
@@ -109,30 +104,22 @@ save('dMunDateDose',
      compress='xz')
 
 
-b5i <- c(seq(0, 100, 5), Inf)
-dvbr$i5 <- findInterval(dvbr$paciente_idade, b5i-1e-3)
-
 dvbr$UF <- substr(dvbr$paciente_endereco_coIbgeMunicipio,1,2)
 
 t1 <- Sys.time()
-i5dsu <- c('i5', ds, 'UF')
-n.i5dsu <- dvbr[
+iKdsu <- c('idadeK', ds, 'UF')
+n.iKdsu <- dvbr[
     vacina_descricao_dose %in% dlevels[1:2] &
     paciente_enumSexoBiologico %in% c('F', 'M'),
-    .N,by=i5dsu]
-n.i5dsu <- setorder(
-    n.i5dsu,
-    i5, 
-    vacina_descricao_dose,
-    paciente_enumSexoBiologico)
+    .N,by=iKdsu]
 Sys.time()-t1
 
 t1 <- Sys.time()
-t.i5dsu <- with(dvbr[vacina_descricao_dose %in% dlevels[1:2] &
+t.iKdsu <- with(dvbr[vacina_descricao_dose %in% dlevels[1:2] &
                      paciente_enumSexoBiologico %in% c('F', 'M')],
-                table(i5, paciente_enumSexoBiologico,
+                table(idadeK, paciente_enumSexoBiologico,
                       vacina_descricao_dose, UF))
 Sys.time()-t1
-dim(t.i5dsu)
-dimnames(t.i5dsu)
+dim(t.iKdsu)
+dimnames(t.iKdsu)
 
