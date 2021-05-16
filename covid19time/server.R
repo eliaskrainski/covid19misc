@@ -12,10 +12,10 @@ server <- function(input, output) {
             input <- list(
                 variables='cases',
                 popDivide=TRUE,
-                local=c('Curitiba(SM), PR - BR', 
+                local=c('US', 'Curitiba(SMB), PR - BR', 
                         'Paraná - Brasil', 
                         'Brasil',
-                        'India', 'US'),
+                        'India'),
                 dateRange=c('01/01/20', '10/10/21'),
                 plots=allpls[c(1,3)],
                 ##c("Daily counts",

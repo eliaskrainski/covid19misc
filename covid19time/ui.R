@@ -17,11 +17,11 @@ ui <- fluidPage(
         label = "Local",
         choices = olocals,
         multiple = TRUE, 
-        selected = c('US',##'Curitiba, PR - BR', 
+        selected = c(##'US',##'Curitiba, PR - BR', 
 		     ##'Curitiba(SM), PR - BR',
 		     'Curitiba(SMB), PR - BR', 
          'Paraná - BR', 
-         'Brasil', 'India')), 
+         'Brasil')), 
       dateRangeInput(
         inputId = 'dateRange',
         label = 'Date (interval):',
@@ -32,11 +32,11 @@ ui <- fluidPage(
         inputId = "plots", 
         label = 'To show', 
         choices = allpls, 
-        selected = allpls[c(1, 3, 5, 11)]),
+        selected = allpls[c(1, 3, 5,6, 7)]),
       checkboxInput(
         inputId = 'showPoints',
         label = 'Show points',
-        value = TRUE),
+        value = FALSE),
       radioButtons(
         inputId = "legend",
         label = "Legend position",

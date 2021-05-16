@@ -21,12 +21,12 @@ brvac.uf <- function(d=FALSE, uf=NULL) {
 ### download if asked and do not exists locally
     if(d) {
         for(j in 1:length(lfls)) {
-            fl.j <- paste0('data/', lfls[j])
+            fl.j <- paste0('data/vacinados_', lfls[j])
             if(!file.exists(fl.j))
                 download.file(ufls[j], fl.j)
         }
     } 
-    return(paste0('data/', lfls))
+    return(paste0('data/vacinados_', lfls))
 }
 
 options(timeout=60*10) ### to work with bad internet...
@@ -38,11 +38,11 @@ fls <- brvac.uf(TRUE)
 
 ### desired variables 
 xsel <- c(###'paciente_id',
-          'paciente_idade',
-          'paciente_enumSexoBiologico',
-          'paciente_endereco_coIbgeMunicipio',
-          'vacina_dataAplicacao',
-          'vacina_descricao_dose') ###, 'vacina_nome')
+    'paciente_idade',
+    'paciente_enumSexoBiologico',
+    'paciente_endereco_coIbgeMunicipio',
+    'vacina_dataAplicacao',
+    'vacina_descricao_dose') ###, 'vacina_nome')
 
 jj <- pmatch(xsel, colnames(tmp))
 jj
@@ -50,8 +50,10 @@ jj
 library(data.table)
 
 ### read and rbind each UF data
+t1 <- Sys.time()
 dvbr <- Reduce('rbind',
                lapply(fls, fread, select=jj))
+Sys.time()-t1
 
 ### look at the first lines
 head(dvbr, 3)

@@ -25,6 +25,9 @@ if (file.exists('data/wgmbl.RData'))
 if (file.exists('data/wambl.RData')) 
     load('data/wambl.RData')
 
+if (file.exists('data/wvac.RData')) 
+    load('data/wvac.RData')
+
 ### check if the data is more than 6 hours old
 if (difftime(Sys.time(), 
              attr(wdl, 'Sys.time'), 
@@ -74,13 +77,14 @@ allpls <-
         'Accumulated count',
         'Reproduction number', 
         'Fatality rate (%)',
-        names(wgmbl), names(wambl))
+        names(wvac), names(wgmbl), names(wambl))
 if (pt) {
     allpls <- c(
         'Contagem diária',
         'Contagem acumulada',
         'Número de reprodução', 
         'Taxa de letalidade (%)',
+        names(wvac), 
         'varejo e recreação',
         'supermercados e farmácias',
         'parques', 'estações de transporte',
@@ -513,6 +517,7 @@ dataPrepare <- function(slocal) {
     } else {
 ##        i0 <- ii0[1]:nrow(ww) 
         fSloc <- function(y) {
+            if(all(is.na(y))) return(rep(NA, length(y)))
             i1 <- which(ifelse(is.na(y), 0, y)>0)[1]
             i.ok <- intersect(which(!is.na(y)), (i1+1):length(y))
             r <- y
@@ -535,6 +540,25 @@ dataPrepare <- function(slocal) {
     
     attr(d, 'ii') <- ii 
     
+    iiwv <- pmatch(slocal, attr(wvac, 'local'))
+    icwb <- pmatch(slocal, c('Curitiba(SM), PR - BR',
+                             'Curitiba(SMB), PR - BR'))
+    icwb <- icwb[!is.na(icwb)]
+    if(length(icwb)>0)
+      iiwv[icwb] <- which(attr(wvac, 'local')=='Curitiba, PR - BR')
+
+    d$vac <- lapply(wvac, function(m) {
+        r <- matrix(NA, length(ii0[1]:ncol(y)), length(slocal))
+        ij <- which(!is.na(iiwv))
+        if(length(ij)>0)
+          r[, ij] <- t(m[iiwv[ij], ii0[1]:ncol(y),drop=FALSE])
+        return(r)
+    })
+
+    d$svac <- lapply(d$vac, function(v) {
+      apply(v, 2, fSloc)
+    })
+
     iim <- pmatch(slocal, glocals)
     i2i <- pmatch(glocals[iim], locals[ii])
     
@@ -812,7 +836,7 @@ data2plot <- function(d,
     
     plots <- pmatch(plots, allpls)
     
-    wplot <- integer(5)
+    wplot <- integer(7)
     if (any(plots==1))
         wplot[1] <- 1
     if (any(plots==2))
@@ -821,28 +845,34 @@ data2plot <- function(d,
         wplot[3] <- 3
     if (any(plots==4))
         wplot[4] <- 4
-    if (any((plots>4) & (plots<11)))
+    if (any(plots%in%c(5,6)))
         wplot[5] <- 5
-    if (any(plots>10))
+    if (any((plots>6) & (plots<13)))
         wplot[6] <- 6
+    if (any(plots>12))
+        wplot[7] <- 7
     wplot <- wplot[wplot>0]
     nplot <- length(wplot)
+    print(nplot)
     iplot <- 0
     
     mgpp <- c(3, 0.5, 0)
     if (popDivide)
         mgpp[1] <- 2
-    
-    if (nplot>4) {
+    if(nplot>6) {
+      nrwplot <- ncwplot <- 3
+    } else {
+      if (nplot>4) {
         nrwplot <- 3
         ncwplot <- 2
-    } else {
+      } else {
         if (nplot==4) {
-            ncwplot <- nrwplot <- 2
+          ncwplot <- nrwplot <- 2
         } else {
-            nrwplot <- nplot
-            ncwplot <- 1
+          nrwplot <- nplot
+          ncwplot <- 1
         }
+      }
     }
 
     mmar <- c(0.5, 4.5, 0.5, 0.5)
@@ -885,7 +915,7 @@ data2plot <- function(d,
     
     names(d)[(nd0+1):length(d)] <-
         paste0(names(d)[4:7], '.plot')
-    
+
     jj0 <- which((d$x>=sxlm[1]) & 
                  (d$x<=sxlm[2]))
     if (length(jj0)==0) {
@@ -1528,7 +1558,58 @@ data2plot <- function(d,
         
     }
 
-    if (any((plots>4) & (plots<11))) {
+    if(any(plots%in%c(5,6))) {
+      iplot <- iplot + 1
+      if ((nplot-iplot)<ncwplot) 
+        par(mar=c(2, 4.5, 0, 0.5))
+      jjvac <- which((5:6) %in% plots)
+      Pop <- attr(d, 'population')
+      for(k in 1:2) {
+        for(l in 1:ncol(d$vac[[k]])) {
+          tmp <- d$vac[[k]][,l]
+          tmp[is.na(tmp)] <- 0
+          d$vac[[k]][,l] <- cumsum(tmp)
+          tmp <- d$svac[[k]][,l]
+          tmp[is.na(tmp)] <- 0
+          d$svac[[k]][,l] <- cumsum(tmp) 
+          if(popDivide) {
+            d$vac[[k]][,l] <- 100*d$vac[[k]][,l]/Pop[l]
+            d$svac[[k]][,l] <- 100*d$svac[[k]][,l]/Pop[l]
+          }
+        }
+      }
+      ylm <- range(unlist(d$svac[jjvac]), na.rm=TRUE)
+      if(showPoints)
+        ylm <- range(ylm, unlist(d$vac[jjvac]), na.rm = TRUE)
+      plot(d$x, 
+           rowMeans(d$vac[[1]], na.rm=TRUE), 
+           xlim=xlm, ylim=ylm, type='n', axes=F,
+           xlab='', ylab=ifelse(popDivide, "% doses/Pop", '# doses'))
+      axis(2)
+      if ((nplot-iplot)<ncwplot) 
+        axis(1, xl$x, format(xl$x, '%b,%d'))
+      for(k in jjvac) {  
+        for(j in 1:ncol(d$vac[[k]])) {
+          lines(d$x, d$svac[[k]][,j], col=scol[j], lty=k, lwd=3)
+          if(showPoints)
+            points(d$x, d$vac[[k]][,j], col=scol[j], pch=k)
+        }
+      }
+      if (showPoints) {
+        legend(legpos, names(d$vac)[jjvac], pch=jjvac, lty=jjvac, lwd=3, bty='n')
+      } else {
+        legend(legpos, names(d$vac)[jjvac], lty=jjvac, lwd=3, bty='n') 
+      }
+      segments(xl$x, rep(ylm[1], length(xl$x)),
+               xl$x, rep(ylm[2], length(xl$x)),
+               col=gray(0.5, 0.5), lty=2)
+      yllv <- pretty(par()$usr[3:4], 10)
+      segments(rep(xlm0[1], length(yllv)), yllv, 
+               rep(xlm0[2], length(yllv)), yllv,
+               col=gray(0.5, 0.5), lty=2)
+    }
+
+    if (any((plots>6) & (plots<13))) {
         
         iplot <- iplot + 1
         
@@ -1538,19 +1619,21 @@ data2plot <- function(d,
         i2i <- attr(d, 'i2i')
         
         if (length(i2i)>0) {
-            jjp <- plots[(plots>4) & (plots<11)]-4
+            jjp <- plots[(plots>6) & (plots<13)]-6
             
             if (length(jjp)>0) {
-              
-              print(range(jj))
-                
+
+                jj.g <- which((vecDate>=d$x[jj[1]]) &
+                              (vecDate<=d$x[jj[length(jj)]])) 
                 ylm2 <- range(c(unlist(lapply(
-                    d$sgmob[jjp], function(m) m[jj,])),
-                    -25, 25), na.rm=TRUE)
+                    d$sgmob[jjp], function(m) m[jj.g,])),
+                    -5, 5), na.rm=TRUE)
+             
                 if (showPoints) 
                     ylm2 <- range(c(unlist(lapply(
-                        d$gmob[jjp], function(m) m[jj,])), 
-                        -15, 15, ylm2), na.rm=TRUE)
+                        d$gmob[jjp], function(m) m[jj.g,])), 
+                        -5, 5, ylm2), na.rm=TRUE)
+             
                 if (all(is.finite(ylm2))) {
                     plot(d$x, ##d$mob[[1]][,1],
                          type='n', axes=FALSE,
@@ -1580,9 +1663,9 @@ data2plot <- function(d,
                 for (l in 1:length(i2i)) { ##ncol(d$mob[[1]])) {
                     for (j in jjl) {
                         if (showPoints)
-                            points(vecDate, d$gmob[[jjp[j]]][, l],
+                            points(vecDate[jj.g], d$gmob[[jjp[j]]][jj.g, l],
                                    pch=jjp[j], col=scol[i2i[l]])
-                        lines(vecDate, d$sgmob[[jjp[j]]][, l],
+                        lines(vecDate[jj.g], d$sgmob[[jjp[j]]][jj.g, l],
                               lty=jlty[j], lwd=jlwd[j],
                               col=scol[i2i[l]])
                     }
@@ -1593,22 +1676,22 @@ data2plot <- function(d,
             
             if (any(plots%in%c(1,2,3,4))) {
                 if (showPoints) {
-                    legend(legpos, allpls[-(1:4)][jjp],
+                    legend(legpos, allpls[-(1:6)][jjp],
                            pch=jjp, lty=jlty, lwd=jlwd, bty='n')
                 } else {
-                    legend(legpos, allpls[-(1:4)][jjp], 
+                    legend(legpos, allpls[-(1:6)][jjp], 
                            lty=jlty, lwd=jlwd, bty='n')
                 }
             } else {
                 if (showPoints) {
-                    legend(legpos, c(lll[oloc], allpls[-(1:4)][jjp]),
+                    legend(legpos, c(lll[oloc], allpls[-(1:6)][jjp]),
                            pch=c(rep(1, length(oloc)), jjp), 
                            lty=c(rep(1, length(oloc)), jlty),
                            lwd=c(rep(2, length(oloc)), jlwd),
                            col=c(scol[oloc], rep(1, length(jjp))), 
                            ncol=leg.ncols, bty='n')
                 } else {
-                    legend(legpos, c(lll[oloc], allpls[-(1:4)][jjp]),
+                    legend(legpos, c(lll[oloc], allpls[-(1:6)][jjp]),
                            lty=c(rep(1, length(oloc)), jlty),
                            lwd=c(rep(2, length(oloc)), jlwd),
                            col=c(scol[oloc], rep(1, length(jjp))), 
@@ -1625,19 +1708,19 @@ data2plot <- function(d,
                      xl$x, rep(ylm2[2], length(xl$x)),
                      col=gray(0.5, 0.5), lty=2)
             yy00 <- pretty(ylm2, 10) 
-            segments(rep(xlm[1], length(yy00)), yy00,
-                     rep(xlm[2], length(yy00)), yy00, 
+            segments(rep(xlm0[1], length(yy00)), yy00,
+                     rep(xlm0[2], length(yy00)), yy00, 
                      lty=2, col=gray(0.5, 0.5))    
             abline(h=0)
             
         }
     }
     
-    if (any(plots>10)) {
+    if (any(plots>12)) {
         par(mar=c(2, 4.5, 0, 0.5))
         iplot <- iplot + 1
         i3i <- attr(d, 'i3i')
-        jjp2 <- plots[(plots>10)]-10
+        jjp2 <- plots[(plots>12)]-12
         jjl2 <- 1:length(jjp2)
         
         if (length(jjp2)>0) {

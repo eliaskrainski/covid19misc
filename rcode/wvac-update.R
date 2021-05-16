@@ -2,8 +2,6 @@
 if(FALSE)
     setwd('..')
 
-library(data.table)
-
 load('data/dMunDateDose.RData')
 ls()
 
@@ -39,16 +37,19 @@ names(dlab)[1:2] <- paste0(
     substr(names(dlab)[1:2], 1, 1))
 dlab
 
-wvac.mu <- lapply(dlab[1:2], function(d) {
-    ii <- dMunDateDose[,3] %in% d
+dMunDateDose[,1] <- as.factor(dMunDateDose[,1])
+
+system.time(wvac.mu <- lapply(dlab[1:2], function(d) {
+    ii <- which(dMunDateDose[,3] %in% d)
     tapply(dMunDateDose$N[ii],
-           dMunDateDose[ii, c(1,7)], sum)
-})
+           dMunDateDose[ii, c(1,6)], sum)
+}))
 
 str(wvac.mu)
 
 sapply(wvac.mu, sum, na.rm=TRUE)
 
+library(data.table)
 cmurs <- as.data.frame(
     fread('data/HIST_PAINEL_COVIDBR.csv',
           select=c('codmun', 'codRegiaoSaude',
@@ -103,7 +104,7 @@ sapply(wvac.R, sum, na.rm=TRUE)
 
 source('rcode/ocommon.R')
 
-wvac <- mapply('rbind', wvac.mu, wvac.rs, wvac.uf, wvac.R)
+wvac <- mapply('rbind', wvac.mu, wvac.rs, wvac.uf, wvac.R, SIMPLIFY=FALSE)
 str(wvac)
 
 load('data/wdl.RData')

@@ -79,7 +79,6 @@ if (FALSE) {
     legend('topleft', ctsel, col=clsel, lty=1, lwd=2, bg=gray(0.95))
 
     names(vd)
-    ntots <- sapply(vd[, 
 
     ctsel <- c('Israel', 'United Arab Emirates', 'Chile', 'United Kingdom', 
              'United States', 'European Union', 'Saudi Arabia', 'Brazil')
