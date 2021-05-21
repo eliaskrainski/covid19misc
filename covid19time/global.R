@@ -550,8 +550,13 @@ dataPrepare <- function(slocal) {
     d$vac <- lapply(wvac, function(m) {
         r <- matrix(NA, length(ii0[1]:ncol(y)), length(slocal))
         ij <- which(!is.na(iiwv))
-        if(length(ij)>0)
-          r[, ij] <- t(m[iiwv[ij], ii0[1]:ncol(y),drop=FALSE])
+        if(length(ij)>0) {
+          for (l in ij) {
+            tmp <- m[iiwv[l], ii0[1]:ncol(m)]
+            tmp[which(tmp<1)] <- NA
+            r[, l] <- tmp
+          }
+        }
         return(r)
     })
 
@@ -853,7 +858,7 @@ data2plot <- function(d,
         wplot[7] <- 7
     wplot <- wplot[wplot>0]
     nplot <- length(wplot)
-    print(nplot)
+
     iplot <- 0
     
     mgpp <- c(3, 0.5, 0)

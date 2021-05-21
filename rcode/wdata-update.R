@@ -14,8 +14,8 @@ library(parallel)
 source('rcode/getdata.R')
 source('rcode/ocommon.R')
 
-(fls <- paste0('rcode/', c('wdl', 'wgmbl', 'wambl'), '-update.R'))
+(fls <- paste0('rcode/', c('wdl', 'wgmbl', 'wambl', 'wvac'), '-update.R'))
 
 dupdate <- FALSE
-mclapply(fls, source, mc.cores=min(3L, ncores))
+mclapply(fls, source, mc.cores=min(4,ncores))
 

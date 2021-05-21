@@ -15,7 +15,7 @@ tapply(dMunDateDose$N, dMunDateDose$vacina_descricao_dose, sum)
 source('rcode/ocommon.R')
 head(uf,2)
 
-cUF <- substr(dMunDateDose$paciente_endereco_coIbgeMunicipio,1,2)
+cUF <- substr(dMunDateDose$paciente_endereco_coibgemunicipio,1,2)
 dMunDateDose$UF <- uf$UF[pmatch(cUF, rownames(uf), duplicates.ok=TRUE)]
                               
 tapply(dMunDateDose$N, dMunDateDose$UF, sum)
@@ -24,7 +24,7 @@ Date <- seq(as.Date('20200121', '%Y%m%d'), Sys.Date(), 1)
 alldates <- gsub('-', '', as.character(Date))
 
 dMunDateDose$fdate <- factor(
-    gsub('-', '', substr(dMunDateDose$vacina_dataAplicacao, 1, 10)), 
+    gsub('-', '', substr(dMunDateDose$vacina_dataaplicacao, 1, 10)), 
     alldates)
 
 head(dMunDateDose)

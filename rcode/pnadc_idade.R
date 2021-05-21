@@ -40,6 +40,8 @@ nFHi.o <- tapply(
          Sexo=factor(dat$sexo, 2:1, c('Fem', 'Masc'))), sum)
 tail(nFHi.o,3)
 
+colSums(tail(nFHi.o,21))
+
 source('rcode/functions.R')
 bbb <- bs3f(m1i, seq(m1i[1], tail(m1i,1), 3*k1i))
 

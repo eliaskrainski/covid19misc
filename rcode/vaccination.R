@@ -27,6 +27,10 @@ if(FALSE)
             (vd$location=='World'), ],
          plot(date, total_vaccinations))
 
+if(FALSE)
+    with(vd[(vd$location=='China'), ],
+         plot(date, daily_vaccinations, main='China', pch=19))
+
 library(ggplot2)
 
 if(FALSE)
@@ -35,6 +39,8 @@ if(FALSE)
                        group=location, col=location))
 
 vd[vd$location=='United States' &
+   (Sys.Date()-vd$date)<4, ]
+vd[vd$location=='China' &
    (Sys.Date()-vd$date)<4, ]
 
 vbr <- vd[vd$location=='Brazil', ]
@@ -56,14 +62,15 @@ if (FALSE)
 
 if (FALSE) {
 
-    ctsel <- c('Israel', 'United Kingdom', 'Chile', 
+    png('figures/selected_countries.png', 2100, 1800, res=300)
+    ctsel <- c('Israel', 'United Kingdom', 'China', 
                'United States', 'European Union', 'Brazil')
     clsel <- c('blue4', 'red1', 'orange', 
                'blue1', 'magenta', 'green3')
     xl <- list(x=pretty(vd$date, 10))    
-    par(mfcol=c(2,2), mar=c(2,3,0,0), mgp=c(2,0.5,0))
-    for (v in c('daily_vaccinations', 'daily_vaccinations_per_hundred',
-                'people_vaccinated', 'people_vaccinated_per_hundred')) {
+    par(mfcol=c(2,1), mar=c(2,3,0,0), mgp=c(2,0.5,0))
+    for (v in c('daily_vaccinations', 'daily_vaccinations_per_hundred')) {
+##                'people_vaccinated', 'people_vaccinated_per_hundred')) {
         plot(vd[vd$location==ctsel[1], c('date', v)],
              ylim=c(0, max(vd[vd$location%in%ctsel, v], na.rm=TRUE)),
              type='n', xlab='', axes=FALSE)
@@ -75,15 +82,19 @@ if (FALSE) {
         abline(h=pretty(par()$usr[3:4], 7),
                v=pretty(par()$usr[1:2], 15),
                lty=2, col=gray(0.5,0.5))
+        if(v=='daily_vaccinations')
+            legend('topleft', ctsel, col=clsel, lty=1, lwd=2, bg=gray(0.95))
     }
-    legend('topleft', ctsel, col=clsel, lty=1, lwd=2, bg=gray(0.95))
+    dev.off()
+    if(FALSE)
+        system('eog figures/selected_countries.png &')
 
     names(vd)
 
     ctsel <- c('Israel', 'United Arab Emirates', 'Chile', 'United Kingdom', 
-             'United States', 'European Union', 'Saudi Arabia', 'Brazil')
-    clsel <- c('blue4', 'green4', 'orange', 'red1',  
-               'blue1', 'magenta', 'red4', 'green2')
+             'United States', 'European Union', 'Saudi Arabia', 'Brazil', 'China')
+    clsel <- c('blue4', 'green4', 'orange', 'red1', 
+               'blue1', 'magenta', 'red4', 'green2', 'cyan')
 
     par(mfcol=c(2,2), mar=c(2,3,0,0), mgp=c(2,0.5,0))
     for (v in c('daily_vaccinations', 'daily_vaccinations_per_hundred',
