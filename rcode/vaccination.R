@@ -141,20 +141,26 @@ if (FALSE)
 if (FALSE) {
 
     csel1 <- 'Saudi Arabia' ##'United Arab Emirates'
-    vd[((Sys.Date()-vd$date)<5) &
-       (vd$location==csel1), c(3:8)]
+    iloc <- (vd$location==csel1)
+    vd[((Sys.Date()-vd$date)<5) & iloc, c(3:8)]
+    iiloc <- which(iloc)
+
+    iip <- which.max(vd$daily_vaccinations[iiloc])
+    pop <- 1e4*vd$daily_vaccinations[iiloc[iip]]/
+        vd$daily_vaccinations_per_million[iiloc[iip]]
+    pop
 
     par(mfrow=c(1,2), mar=c(3,3,.5,2), mgp=c(1.5,0.5,0))
     with(vd[vd$location==csel1, ],
          plot(date, daily_vaccinations, 
               xlab='', pch=19, type='o'))
     axis(4, pretty(par()$usr[3:4]),
-         format(pretty(par()$usr[3:4])/343e3, dig=2))
+         format(pretty(par()$usr[3:4])/pop, dig=2))
     with(vd[vd$location==csel1, ],
          plot(date, total_vaccinations, 
               xlab='', pch=19, type='o'))
     axis(4, pretty(par()$usr[3:4]),
-         format(pretty(par()$usr[3:4])/343e3, dig=2))
+         format(pretty(par()$usr[3:4])/pop, dig=2))
 
 }
 

@@ -344,10 +344,17 @@ if (usems) {
     } else {
         
         library(data.table)
+        
         system.time(
-            dbr <- as.data.frame(
-                fread('data/HIST_PAINEL_COVIDBR.csv')))
-
+            dbr <- Reduce(
+                'rbind',
+                list(p1=as.data.frame(
+                         fread('data/HIST_PAINEL_COVIDBR_2020P1.csv')),
+                     p2=as.data.frame(
+                         fread('data/HIST_PAINEL_COVIDBR_2020P2.csv')),
+                     p3=as.data.frame(
+                         fread('data/HIST_PAINEL_COVIDBR_Parte3.csv')))))
+    
     }
     
     dim(dbr)
@@ -376,14 +383,11 @@ if (usems) {
     rgnam.br <- 'nomeRegiaoSaude'
     rgcod.br <- 'codRegiaoSaude'
     
-    if (FALSE) {
-        
-        table(dbr$Regiao)
-        
+    if (FALSE) {        
+        table(dbr$Regiao)        
         table(table(dbr$mun.uf,
                     dbr$fdate))
         table(table(dbr$mun.uf[i.mu.l], dbr$fdate[i.mu.l]))
-
     }
 
     system.time(wbr.mu <- lapply(

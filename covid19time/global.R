@@ -515,10 +515,10 @@ dataPrepare <- function(slocal) {
         d$sdy <- apply(yy[,,1, drop=FALSE], 2, SmoothFit, w=w)
         d$sdo <- apply(yy[,,2, drop=FALSE], 2, SmoothFit, w=w)
     } else {
-##        i0 <- ii0[1]:nrow(ww) 
         fSloc <- function(y) {
             if(all(is.na(y))) return(rep(NA, length(y)))
             i1 <- which(ifelse(is.na(y), 0, y)>0)[1]
+            if(i1>=length(y)) return(rep(0, length(y)))
             i.ok <- intersect(which(!is.na(y)), (i1+1):length(y))
             r <- y
             xxi <- cbind(bb, ww)[i.ok, , drop=FALSE]
