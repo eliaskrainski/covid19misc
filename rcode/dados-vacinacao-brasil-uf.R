@@ -30,9 +30,9 @@ brvac.uf <- function(d=FALSE, uf=NULL) {
 }
 
 if(!any(ls()=='dupdate'))
-    dupdate <- TRUE
+    dupdate <- FALSE 
 if(FALSE)
-    dupdate <- FALSE
+    dupdate <- TRUE
 
 library(data.table)
 
@@ -116,7 +116,7 @@ table(is.na(dd))
 summary(dd)
 hdd <- hist(dd)
 
-n.dg2 <- dvbr[dd>21 &
+n.dg2 <- dvbr[dd>14 &
               vacina_descricao_dose %in% dlevels[2] &
                paciente_enumsexobiologico %in% c('F', 'M'),
               .N, by=ds]
@@ -129,7 +129,7 @@ n.dg2 <- setorder(
     paciente_enumsexobiologico)
 n.dg2
 
-n.Ids2 <- dvbr[dd>21 &
+n.Ids2 <- dvbr[dd>14 &
                vacina_descricao_dose %in% dlevels[2] &
                paciente_enumsexobiologico %in% c('F', 'M'),
                .N,by=Ids]
@@ -149,6 +149,9 @@ dMunDateDose <- as.data.frame(tMunDate)
 save('dMunDateDose',
      file='data/dMunDateDose.RData',
      compress='xz')
+
+rm(tMunDate, dMunDateDose)
+gc(reset=TRUE)
 
 dvbr$UF <- substr(dvbr$paciente_endereco_coibgemunicipio,1,2)
 

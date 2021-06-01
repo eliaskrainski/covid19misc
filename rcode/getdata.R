@@ -57,17 +57,17 @@ brms.f <- function(d=TRUE) {
         if (substring(url, nchar(url)-2)=='zip') {
             download.file(url, 'brms.zip')
             unzip('brms.zip')
-            system('mv HIST_PAINEL_COVIDBR_*.csv data/HIST_PAINEL_COVIDBR.csv')
             system('rm brms.zip')
         } 
         if (substring(url, nchar(url)-2)=='rar') {
             download.file(url, 'brms.rar')
             system('unrar e brms.rar')
-            system('mv HIST_PAINEL_COVIDBR_2020_Parte1*.csv data/HIST_PAINEL_COVIDBR_2020P1.csv')
-            system('mv HIST_PAINEL_COVIDBR_2020_Parte2*.csv data/HIST_PAINEL_COVIDBR_2020P2.csv')
-            system('mv HIST_PAINEL_COVIDBR_Parte3*.csv data/HIST_PAINEL_COVIDBR_Parte3.csv')
             system('rm brms.rar')
         } 
+        system('mv HIST_PAINEL_COVIDBR_*.csv data/HIST_PAINEL_COVIDBR.csv')
+        system('mv HIST_PAINEL_COVIDBR_2020_Parte1*.csv data/HIST_PAINEL_COVIDBR_2020P1.csv')
+        system('mv HIST_PAINEL_COVIDBR_2020_Parte2*.csv data/HIST_PAINEL_COVIDBR_2020P2.csv')
+        system('mv HIST_PAINEL_COVIDBR_Parte3*.csv data/HIST_PAINEL_COVIDBR_Parte3.csv')
         if (substring(url, nchar(url)-2)=='csv') {
             download.file(url, 'data/HIST_PAINEL_COVIDBR.csv')
         } 

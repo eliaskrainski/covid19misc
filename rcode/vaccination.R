@@ -60,35 +60,94 @@ if (FALSE)
          plot(date, daily_vaccinations_per_hundred, pch=19,
               xlab='', type='o')) 
 
-if (FALSE) {
+gctr <- c('World', 'Asia', 'Upper middle income', 'High income',
+          'North America', 'Europe', 'Lower middle income',
+          'European Union', 'South America', 'Africa', 'Low income')
+subctr <- c('England', 'Scotland', 'Wales') 
 
-    png('figures/selected_countries.png', 2100, 1800, res=300)
-    ctsel <- c('Israel', 'United Kingdom', 'China', 
-               'United States', 'European Union', 'Brazil')
-    clsel <- c('blue4', 'red1', 'orange', 
-               'blue1', 'magenta', 'green3')
-    xl <- list(x=pretty(vd$date, 10))    
-    par(mfcol=c(2,1), mar=c(2,3,0,0), mgp=c(2,0.5,0))
-    for (v in c('daily_vaccinations', 'daily_vaccinations_per_hundred')) {
-##                'people_vaccinated', 'people_vaccinated_per_hundred')) {
-        plot(vd[vd$location==ctsel[1], c('date', v)],
-             ylim=c(0, max(vd[vd$location%in%ctsel, v], na.rm=TRUE)),
+ntot <- tapply(vd$total_vaccinations, vd$location, max, na.rm=TRUE)
+ontot <- sort(ntot, decreasing=TRUE)
+head(ontot, 10)
+
+ptvacc <- tapply(vd$total_vaccinations_per_hundred,
+                 vd$location, max, na.rm=TRUE)
+optvacc <- sort(ptvacc, decreasing=TRUE)
+head(optvacc, 10)
+
+summary(vd$date[vd$date>(Sys.Date()-7)])
+
+dvacc <- tapply(vd$daily_vaccinations[vd$date>(Sys.Date()-7)],
+                vd$location[vd$date>(Sys.Date()-7)], max, na.rm=TRUE)
+odvacc <- sort(dvacc, decreasing=TRUE)
+head(odvacc, 20)
+
+pdvacc <- tapply(vd$total_vaccinations_per_hundred[vd$date>(Sys.Date()-7)],
+                 vd$location[vd$date>(Sys.Date()-7)], max, na.rm=TRUE)
+opdvacc <- sort(pdvacc, decreasing=TRUE)
+head(opdvacc, 10)
+
+lcsel <- list(n=head(setdiff(names(ontot), c(gctr, subctr)), 8),
+              nd=head(setdiff(names(odvacc), c(gctr, subctr)), 8),
+              p=head(setdiff(names(optvacc), c(gctr, subctr)), 8),
+              pd=head(setdiff(names(opdvacc), c(gctr, subctr)), 8))
+lcsel
+
+###clsel <- c('blue4', 'red1', 'orange', 'blue1', 'magenta', 'green3')
+ns <- 10
+csel <- rainbow(ns); csel <- rev(c(tail(csel,2), head(csel, length(csel)-2)))
+
+plot(1:ns, pch=19, cex=2, col=csel)
+
+xl <- list(x=pretty(vd$date, 10))
+
+vplots <- c('total_vaccinations', 'daily_vaccinations',
+            'total_vaccinations_per_hundred',
+            'daily_vaccinations_per_hundred')
+
+for(k in 1:4) {
+    png(paste0('figures/selected_countries_',
+               names(lcsel)[k], '.png'), 2100, 1800, res=300)
+    ctsel <- lcsel[[k]]
+    par(mfrow=c(2,2), mar=c(2,3,0,0), mgp=c(2,0.5,0))
+    for (v in 1:4) {
+        ds <- vd[vd$location %in% ctsel, c('location', 'date', vplots[v])]
+        if(v<3) {
+            ds$y <- sqrt(ds[,3])
+            par(mar=c(0,3,0,0))
+        } else {
+            ds$y <- ds[,3]
+            par(mar=c(2,3,0,0))
+        }
+        plot(ds[c('date', vplots[v])],
+             ylim=range(ds$y, na.rm=TRUE), 
              type='n', xlab='', axes=FALSE)
-        axis(1, xl$x, format(xl$x, '%b,%d'))
-        axis(2)
+        if(v>2) {
+            axis(1, xl$x, format(xl$x, '%b,%d'))
+            axis(2)
+        } else {
+            axis(2, pretty(par()$usr[3:4], 10),
+                 pretty(par()$usr[3:4], 10)^2)
+        }
         for(j in 1:length(ctsel))
-            lines(vd[vd$location==ctsel[j], c('date', v)],
-                  pch=19, col=clsel[j], lwd=2)
+            lines(ds$date[ds$location==ctsel[j]], 
+                  ds$y[ds$location==ctsel[j]], 
+                  pch=19, col=csel[j], lwd=2)
         abline(h=pretty(par()$usr[3:4], 7),
                v=pretty(par()$usr[1:2], 15),
                lty=2, col=gray(0.5,0.5))
-        if(v=='daily_vaccinations')
-            legend('topleft', ctsel, col=clsel, lty=1, lwd=2, bg=gray(0.95))
+        if(vplots[v]==vplots[k])
+            legend('topleft', ctsel, col=csel,
+                   lty=1, lwd=2, bg=gray(0.95),
+                   title=vplots[v], cex=0.7)
     }
-    dev.off()
-    if(FALSE)
-        system('eog figures/selected_countries.png &')
+    dev.off()    
+}
 
+if(FALSE)
+    system('eog figures/selected_countries_n.png &')
+
+if(FALSE) {
+    
     names(vd)
 
     ctsel <- c('Israel', 'United Arab Emirates', 'Chile', 'United Kingdom', 

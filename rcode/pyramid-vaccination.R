@@ -2,20 +2,12 @@ if(FALSE)
     setwd('..')
 
 if(!any(ls()=='dupdate'))
-    dupdate <- TRUE
-if(FALSE)
     dupdate <- FALSE
 
+if(FALSE)
+    dupdate <- TRUE
+
 system.time(source('rcode/dados-vacinacao-brasil-uf.R'))
-
-n.t <- tapply(tMunDate$N, substr(tMunDate$vacina_dataaplicacao,1,10),sum)
-
-tail(n.t,21)/1e6
-
-plot(as.Date(names(n.t)), n.t, xlab='', ylab='',
-     xlim=Sys.Date()-c(30,0), type='o')
-axis(1, pretty(Sys.Date()-c(30,0)),
-     format(pretty(Sys.Date()-c(30,0)), '%d/%b'))
 
 ### consider the population data
 p21i <- read.csv('data/estPNADCpopBR202004IdadeSexo2.csv')
@@ -120,9 +112,11 @@ if(FALSE) {
 
 ### define axis labels 
 xl <- list(x=seq(-3e6, 3e6, 5e5))
-xl$l <- paste0(abs(xl$x/ifelse(abs(xl$x)>=1e6,1e6,1e3)), 
-               rep(c('M', 'K', '', 'K', 'M'),
-                   table(findInterval(xl$x,c(-Inf,-1e6+1,-1e3+1,0-1e-5,1e3-1,1e6-1,Inf)))))
+xl$l <- paste0(
+    abs(xl$x/ifelse(abs(xl$x)>=1e6,1e6,1e3)), 
+    rep(c('M', 'K', '', 'K', 'M'),
+        table(findInterval(
+            xl$x,c(-Inf,-1e6+1,-1e3+1,0-1e-5,1e3-1,1e6-1,Inf)))))
 xl
 
 ### make the plot
@@ -144,7 +138,7 @@ for(k in 2:4) {
 }
 abline(v=xl$x, h=5*(0:10), lty=2, col=gray(0.7,0.5))
 legend('topleft',
-       paste0(c('Pop. 2020', 'Dose 1', 'Dose 2', 'D2+21dias'), ": ", 
+       paste0(c('Pop. 2020', 'Dose 1', 'Dose 2', 'D2+14dias'), ": ", 
               sprintf("%2.1f", 
                       c(sum(p21i$Fem), n.dg[paciente_enumsexobiologico=='F']$N,
                         n.dg2[paciente_enumsexobiologico=='F']$N)/1e6),
@@ -152,7 +146,7 @@ legend('topleft',
        border=rep(c('transparent', 'black'), c(3,1)),
        fill=cF, cex=1.00, title='Mulheres')
 legend('topright',
-       paste0(c('Pop. 2020', 'Dose 1', 'Dose 2', 'D2+21dias'), ": ", 
+       paste0(c('Pop. 2020', 'Dose 1', 'Dose 2', 'D2+14dias'), ": ", 
               sprintf("%2.1f",
                       c(sum(p21i$Masc), n.dg[paciente_enumsexobiologico=='M']$N,
                         n.dg2[paciente_enumsexobiologico=='M']$N)/1e6),
@@ -192,15 +186,19 @@ barplot(-p2v[,1,2], horiz=TRUE, space=0, add=TRUE,
         border='transparent', col=cF[2], axes=FALSE)
 barplot(p2v[,2,2],  horiz=TRUE, space=0, add=TRUE,
         border='transparent', col=cM[2], axes=FALSE)
+barplot(-p2v[,1,3], horiz=TRUE, space=0, add=TRUE,
+        col=cF[3], axes=FALSE)
+barplot(p2v[,2,3],  horiz=TRUE, space=0, add=TRUE,
+        col=cM[3], axes=FALSE)
 axis(1, seq(-.8, .8, 0.2), paste0(abs(seq(-80, 80, 20)), '%'))
 abline(h=5*(2:10), v=seq(-0.8,0.8,0.2), col=gray(0.5,0.5), lty=2)
 legend(-0.7, 25, ##'bottomleft', 
-       paste0(c('Dose 1', 'Dose 2'), ": ", 
+       paste0(c('Dose 1', 'Dose 2', 'D2+14dias'), ": ", 
               sprintf("%2.1f", 100*n2g[1,-1]/n2g[1,1]), '%'), 
        bg='white', box.col='transparent',
        fill=cF, border='transparent', cex=1.00, title='Mulheres')
 legend(0.3, 25, ##'bottomright',
-       paste0(c('Dose 1', 'Dose 2'), ": ", 
+       paste0(c('Dose 1', 'Dose 2', 'D2+14dias'), ": ", 
               sprintf("%2.1f", 100*n2g[2,-1]/n2g[2,1]),'%'), 
        bg='white', box.col='transparent',
        fill=cM, border='transparent', cex=1.00, title='Homens')
