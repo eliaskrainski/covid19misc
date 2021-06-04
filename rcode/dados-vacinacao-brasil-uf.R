@@ -41,7 +41,7 @@ library(data.table)
 
 if(dupdate) {
     
-    options(timeout=60*10) ### to work with bad internet...
+    options(timeout=60*30) ### to work with bad internet...
     ## download each UF local file and retrieve the local file names: 'data/UF_....csv"
     fls <- brvac.uf(TRUE) 
     
