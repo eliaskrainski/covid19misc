@@ -5,10 +5,10 @@ source('rcode/ocommon.R')
 
 library(readr)
 
-ww <- fwf_positions(c(6, 8, 10, 50, 83, 92),
-                    c(7, 9, 11, 65, 83, 94),
-                    c('uf', 'cap', 'rg', 'w', 'sexo', 'idade'))
-colcl <- do.call('cols', list('i', 'i', 'i', 'd', 'i', 'i'))
+ww <- fwf_positions(c(6, 8, 10, 35, 50, 83, 92),
+                    c(7, 9, 11, 49, 65, 83, 94),
+                    c('uf', 'cap', 'rg', 'w1', 'w2', 'sexo', 'idade'))
+colcl <- do.call('cols', list('i', 'i', 'i', 'd', 'd', 'i', 'i'))
 
 if(FALSE) {
 
@@ -19,23 +19,24 @@ if(FALSE) {
                  read_fwf, ww, colcl)
 
     round(t(sapply(ld, function(x)
-        c(sum(x$w),
-          tapply(x$w, cut(x$idade, c(0,14,18,25,40, 60,Inf), right=FALSE), sum))/1e3)))
+        c(sum(x$w2),
+          tapply(x$w2, cut(x$idade, c(0,14,18,25,40, 60,Inf), right=FALSE), sum))/1e3)))
     
 }
 
-fld <- '~/dados/pnadc/PNADC_042020.txt'
+fld <- '~/dados/pnadc/PNADC_012021.txt'
 dat <- read_fwf(fld, ww, colcl)
 
-round(tapply(dat$w, dat$sexo, sum)/1e6, 2)
+round(tapply(dat$w1, dat$sexo, sum)/1e6, 2)
+round(tapply(dat$w2, dat$sexo, sum)/1e6, 2)
 
 source('rcode/define_idade_faixas.R')
 
 table(cut(dat$idade, bKi, right=FALSE))
-tapply(dat$w, cut(dat$idade, bKi, right=FALSE), sum)
+tapply(dat$w2, cut(dat$idade, bKi, right=FALSE), sum)
 
 nFHi.o <- tapply(
-    dat$w,
+    dat$w2,
     list(Idade=factor(lk1i[findInterval(dat$idade, b1i)], lk1i),
          Sexo=factor(dat$sexo, 2:1, c('Fem', 'Masc'))), sum)
 tail(nFHi.o,3)
@@ -69,13 +70,13 @@ if(FALSE) {
 
 if(FALSE)
     write.csv(data.frame(Faixa=rownames(nFHi), round(nFHi)),
-              file='data/estPNADCpopBR202004IdadeSexo2.csv',
+              file='data/estPNADCpopBR202101IdadeSexo2.csv',
               row.names=FALSE)
 
 
 ### faixas etarias por UFs
 table(mKi[i <- findInterval(dat$idade, bKi)])
-tKcl <- tapply(dat$w, list(i=mKi[i], sexo=dat$sexo, uf=dat$uf), sum)
+tKcl <- tapply(dat$w2, list(i=mKi[i], sexo=dat$sexo, uf=dat$uf), sum)
 
 dimnames(tKcl)
 
@@ -136,7 +137,7 @@ round(sapply(spop, function(x) c(sum(x[1:2,]), sum(x[-1:0+nrow(x),])))/1e3)
 
 cbind(o=round(tKcl[,,1]), s=round(spop[[1]]))
 
-flPis <- paste0('data/estimativaPopulacaoUF202004SexoFaixa', K, 'a.csv')
+flPis <- paste0('data/estimativaPopulacaoUF202101SexoFaixa', K, 'a.csv')
 
 if(FALSE) {
     
@@ -156,7 +157,7 @@ head(longd,3)
 tail(longd,3)
 sapply(longd[,3:4], sum)
 
-tKclbr <- data.frame(tapply(dat$w, list(i=mKi[i], sexo=dat$sexo), sum))
+tKclbr <- data.frame(tapply(dat$w2, list(i=mKi[i], sexo=dat$sexo), sum))
 str(tKclbr)
 
 str(spopbr <- sapply(tKclbr, function(y) {
@@ -189,7 +190,7 @@ if(FALSE) {
 
 if(FALSE) {
 
-    flK <- paste0('figures/piramidesUF202004', K, 'a.png')
+    flK <- paste0('figures/piramidesUF202101', K, 'a.png')
     png(flK, 1000, 700)
     par(mfrow=c(4,7), mar=c(0,0,0,0), xaxs='i', yaxs='i')
     for(u in 1:27) {

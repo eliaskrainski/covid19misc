@@ -256,14 +256,12 @@ for(i in 1:27) {
                    ifelse(xl$x==0, '',
                    ifelse(xl$x<1e6, 'K', 'M')))
     axis(1, c(-rev(xl$x), xl$x), c(rev(xl$l), xl$l))
-    barplot(-as.integer(t.iKdsu[,1,1,i]), horiz=TRUE, space=0, add=TRUE,
-            border='transparent', col=cF[2], axes=FALSE)
-    barplot(-as.integer(t.iKdsu[,1,2,i]), horiz=TRUE, space=0, add=TRUE,
-            border='transparent', col=cF[3], axes=FALSE)
-    barplot(as.integer(t.iKdsu[,2,1,i]), horiz=TRUE, space=0, add=TRUE,
-            border='transparent', col=cM[2], axes=FALSE)
-    barplot(as.integer(t.iKdsu[,2,2,i]), horiz=TRUE, space=0, add=TRUE,
-            border='transparent', col=cM[3], axes=FALSE)
+    for(k in 1:2) {
+        barplot(-as.integer(t.iKdsu[,1,k,i]), horiz=TRUE, space=0, add=TRUE,
+                border='transparent', col=cF[k+1], axes=FALSE)
+        barplot(as.integer(t.iKdsu[,2,k,i]), horiz=TRUE, space=0, add=TRUE,
+                border='transparent', col=cM[k+1], axes=FALSE)
+    }
     text(par()$usr[2]*0.95, seq(4, nKi-2, 4), K*seq(4, nKi-2, 4), cex=0.7)
     N1n <- sum(p.sel$Fem)
     if(N1n>=1e6) {
