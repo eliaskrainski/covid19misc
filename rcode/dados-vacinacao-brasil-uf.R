@@ -34,6 +34,9 @@ if(!any(ls()=='dupdate'))
 if(FALSE)
     dupdate <- TRUE
 
+if(!dupdate & !file.exists('data/dvbr.RData'))
+   dupdate <- TRUE
+
 library(data.table)
 
 if(dupdate) {
