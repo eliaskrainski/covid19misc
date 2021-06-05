@@ -10,7 +10,7 @@ if(FALSE)
 system.time(source('rcode/dados-vacinacao-brasil-uf.R'))
 
 ### consider the population data
-p21i <- read.csv('data/estPNADCpopBR202004IdadeSexo2.csv')
+p21i <- read.csv('data/estPNADCpopBR202101IdadeSexo2.csv')
 tail(p21i)
 
 ### create array with
@@ -138,7 +138,7 @@ for(k in 2:4) {
 }
 abline(v=xl$x, h=5*(0:10), lty=2, col=gray(0.7,0.5))
 legend('topleft',
-       paste0(c('Pop. 2020', 'Dose 1', 'Dose 2', 'D2+14dias'), ": ", 
+       paste0(c('Pop. 2021', 'Dose 1', 'Dose 2', 'D2+14dias'), ": ", 
               sprintf("%2.1f", 
                       c(sum(p21i$Fem), n.dg[paciente_enumsexobiologico=='F']$N,
                         n.dg2[paciente_enumsexobiologico=='F']$N)/1e6),
@@ -146,7 +146,7 @@ legend('topleft',
        border=rep(c('transparent', 'black'), c(3,1)),
        fill=cF, cex=1.00, title='Mulheres')
 legend('topright',
-       paste0(c('Pop. 2020', 'Dose 1', 'Dose 2', 'D2+14dias'), ": ", 
+       paste0(c('Pop. 2021', 'Dose 1', 'Dose 2', 'D2+14dias'), ": ", 
               sprintf("%2.1f",
                       c(sum(p21i$Masc), n.dg[paciente_enumsexobiologico=='M']$N,
                         n.dg2[paciente_enumsexobiologico=='M']$N)/1e6),
@@ -174,6 +174,7 @@ dim(p2v)
 
 n2g <- apply(nv24, 3, colSums)
 n2g
+sum(n2g[,2:3])
 
 png('figures/vacinados_pyramid_idade_sexo_Pop_prop.png', 2500, 2000, res=300)
 par(mar=c(5, 0, 0, 0), mgp=c(1.5,0.5,0), xaxs='i', yaxs='i')
@@ -235,7 +236,7 @@ n.uds$nleg <- ifelse(n.uds$N<1e6, paste0(format(n.uds$N/1e3, digits=1), 'K'),
 n.uds
 
 K
-ius.p <- read.csv2(paste0('data/estimativaPopulacaoUF202004SexoFaixa', K, 'a.csv'))
+ius.p <- read.csv2(paste0('data/estimativaPopulacaoUF202101SexoFaixa', K, 'a.csv'))
 head(ius.p)
 tail(ius.p)
 
