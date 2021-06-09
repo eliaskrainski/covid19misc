@@ -30,9 +30,9 @@ brvac.uf <- function(d=FALSE, uf=NULL) {
 }
 
 if(!any(ls()=='dupdate'))
-    dupdate <- FALSE 
+    dupdate <- TRUE 
 if(FALSE)
-    dupdate <- TRUE
+    dupdate <- FALSE
 
 if(!dupdate & !file.exists('data/dvbr.RData'))
    dupdate <- TRUE
