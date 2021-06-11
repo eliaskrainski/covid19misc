@@ -67,7 +67,7 @@ if(dupdate) {
 
 } else {
 
-    load('data/dvbr.RData')
+    system.time(load('data/dvbr.RData'))
     xsel <- colnames(dvbr)
     
 }
@@ -94,7 +94,10 @@ n.dg
 
 source('rcode/define_idade_faixas.R')
 
-lk1i
+iineg.i <- which(dvbr$paciente_idade<0)
+print(c('nIdade<0'=length(iineg.i)))
+dvbr$paciente_idade[iineg.i] <- NA
+
 dvbr$idade1 <- factor(
     lk1i[findInterval(dvbr$paciente_idade, b1i-1e-5)], lk1i)
 dvbr$idadeK <- factor(
@@ -114,7 +117,15 @@ dd <- as.integer(difftime(
     dvbr$vacina_dataaplicacao, units='days'))
 summary(dd)
 
-dd[dd>365] <- NA
+summary(dvbr$vacina_dataaplicacao)
+sum(dvbr$vacina_dataaplicacao<as.Date('2020-01-01'))
+sum(dvbr$vacina_dataaplicacao<as.Date('2020-05-01'))
+dd0 <- as.integer(difftime(
+    Sys.Date(), as.Date('2020-01-01'), units='days'))
+dd0
+sum(dd>dd0, na.rm=TRUE)
+
+dd[dd>dd0] <- NA
 table(is.na(dd))
 summary(dd)
 hdd <- hist(dd)
@@ -149,9 +160,10 @@ str(tMunDate)
 
 dMunDateDose <- as.data.frame(tMunDate)
 
-save('dMunDateDose',
-     file='data/dMunDateDose.RData',
-     compress='xz')
+system.time(save(
+    'dMunDateDose',
+    file='data/dMunDateDose.RData',
+    compress='xz'))
 
 rm(tMunDate, dMunDateDose)
 gc(reset=TRUE)
