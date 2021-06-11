@@ -4,6 +4,8 @@ if (FALSE) { ## manually skip
 
 }
 
+t0 <- Sys.time()
+
 if (!any(ls() %in% c('ussabb', 'uf')))
     source('rcode/ocommon.R')
 
@@ -657,3 +659,4 @@ attr(wdl, 'Sys.time') <- Sys.time()
 
 system.time(save('wdl', file='data/wdl.RData'))
 
+Sys.time()-t0

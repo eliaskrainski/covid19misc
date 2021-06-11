@@ -2,6 +2,8 @@
 if(FALSE)
     setwd('..')
 
+t0 <- Sys.time()
+
 load('data/dMunDateDose.RData')
 ls()
 
@@ -135,3 +137,4 @@ attr(wvac, 'local') <- c(
 save(wvac,
      file='data/wvac.RData')
 
+Sys.time()-t0

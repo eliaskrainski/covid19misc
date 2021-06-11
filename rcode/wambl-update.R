@@ -4,6 +4,8 @@ if (FALSE) { ## can manually skip
 
 }
 
+t0 <- Sys.time()
+
 ##library(parallel)
 ##(ncores <- as.integer(detectCores()/2))
 
@@ -208,3 +210,5 @@ if(FALSE) {
 ##        compress='xz'))
 
 ##}
+
+Sys.time()-t0

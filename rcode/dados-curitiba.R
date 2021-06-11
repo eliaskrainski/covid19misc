@@ -2,6 +2,8 @@
 if (FALSE)
     setwd('..')
 
+options(timeout=60*10)
+
 u0 <- 'http://dadosabertos.c3sl.ufpr.br/curitiba/CasosCovid19/'
 
 k <- 0

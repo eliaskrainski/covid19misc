@@ -4,6 +4,8 @@ if (FALSE) { ## can manually skip
 
 }
 
+t0 <- Sys.time()
+
 library(parallel)
 (ncores <- as.integer(detectCores()/2))
 
@@ -211,3 +213,4 @@ system.time(gmbl$sub_region_1 <- gsub('Federal District', 'Distrito Federal', gm
 
 ##}
 
+Sys.time()-t0
