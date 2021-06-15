@@ -28,10 +28,13 @@ nv24[,,1] <- as.matrix(p21i[,2:3])
 n.Ids$iClass <- pmatch(
     n.Ids$idade1, p21i[,1],
     duplicates.ok=TRUE)
+n.Ids <- n.Ids[!is.na(n.Ids$iClass)]
 
 n.Ids2$iClass <- pmatch(
     n.Ids2$idade1, p21i[,1],
     duplicates.ok=TRUE)
+n.Ids2 <- n.Ids2[!is.na(n.Ids2$iClass)]
+
 
 nv24[n.Ids[vacina_descricao_dose==dlevels[1] &
            paciente_enumsexobiologico=='F']$iClass,1,2] <-
