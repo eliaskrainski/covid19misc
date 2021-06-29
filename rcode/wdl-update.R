@@ -372,6 +372,11 @@ if (usems) {
     dim(dbr)
     head(dbr,2)
     summary(as.Date(unique(dbr$data)))
+
+    dbr[2293028+0:3, 11:14]
+    dbr[2293028+1, 11:14] <- c(16044, 14, 370, 0)
+    dbr[2293028+2, c(12,14)] <- c(31, 3)
+    dbr[2293028+0:3, 11:14]
     
     i.mu.l <- which(dbr$municipio!='')
     i.rg.l <- which(dbr$nomeRegiaoSaude!='')
@@ -414,7 +419,7 @@ if (usems) {
         substring(x, nchar(x)-1))
     table(is.na(st.mun))
     table(st.mun)
-    
+
     system.time(wbr.rg <- lapply(
                     dbr[i.rg.l, c('casosAcumulado', 'obitosAcumulado')], tapply,
                     dbr[i.rg.l, c('codRegiaoSaude', 'fdate')], sum))
@@ -424,10 +429,14 @@ if (usems) {
                     wbr.rg[[1]]), 1, 2),
                     rownames(uf), duplicates.ok=TRUE)]
     table(st.rg)
-    
+
+    i.uf.l <- which((nchar(dbr$coduf)==2) & is.na(dbr$codmun) &
+                    (dbr$estado!=''))
+    str(i.uf.l)
+   
     system.time(wbr.uf <- lapply(
-                    dbr[i.mu.l, c('casosAcumulado', 'obitosAcumulado')], tapply,
-                    dbr[i.mu.l, c('estado', 'fdate')], sum))
+                    dbr[i.uf.l, c('casosAcumulado', 'obitosAcumulado')], tapply,
+                    dbr[i.uf.l, c('estado', 'fdate')], sum))
     str(wbr.uf)
 
     table(dbr$Regiao)

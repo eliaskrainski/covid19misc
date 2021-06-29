@@ -511,6 +511,9 @@ dataPrepare <- function(slocal) {
     bb[,ncol(bb)-1] <- bb[, ncol(bb)] + bb[, ncol(bb)-1]
     bb <- bb[, 2:(ncol(bb)-1)]
 
+    print(summary(yy[,,1]))
+    print(summary(yy[,,2]))
+    
     if (mgcv.ok) {
         d$sdy <- apply(yy[,,1, drop=FALSE], 2, SmoothFit, w=w)
         d$sdo <- apply(yy[,,2, drop=FALSE], 2, SmoothFit, w=w)
@@ -521,12 +524,18 @@ dataPrepare <- function(slocal) {
             if(i1>=length(y)) return(rep(0, length(y)))
             i.ok <- intersect(which(!is.na(y)), (i1+1):length(y))
             r <- y
-            xxi <- cbind(bb, ww)[i.ok, , drop=FALSE]
+            bbi <- bb[i.ok, colSums(bb[i.ok, , drop=FALSE])>1]
+            xxi <- cbind(bbi, ww[i.ok, , drop=FALSE])
+            # print(table(is.na(xxi)))
+            # print(table(is.finite(xxi)))
+            # print(dim(xxi))
+            # print(c(n0=length(y), ns=length(i.ok), r=range(i.ok)))
+            # print(colSums(xxi))
             ff <- glm.fit(xxi, y[i.ok], family=poisson())
-            ib <- which(!is.na(ff$coeff[1:ncol(bb)]))
-            ix <- which(!is.na(ff$coeff[ncol(bb)+1:ncol(ww)]))
-            mx <- ww[i.ok, ix, drop=FALSE] %*% ff$coeff[ix+ncol(bb)]
-            r[i.ok] <- exp(drop(bb[i.ok, ib, drop=FALSE] %*% ff$coeff[ib] + mean(mx)))
+            ib <- which(!is.na(ff$coeff[1:ncol(bbi)]))
+            ix <- which(!is.na(ff$coeff[ncol(bbi)+1:ncol(ww)]))
+            mx <- ww[i.ok, ix, drop=FALSE] %*% ff$coeff[ix+ncol(bbi)]
+            r[i.ok] <- exp(drop(bbi[, ib, drop=FALSE] %*% ff$coeff[ib] + mean(mx)))
             return(r * sum(y, na.rm=TRUE)/sum(r, na.rm=TRUE)) 
         }
         d$sdy <- apply(yy[,,1, drop=FALSE], 2, fSloc)
@@ -541,11 +550,12 @@ dataPrepare <- function(slocal) {
     attr(d, 'ii') <- ii 
     
     iiwv <- pmatch(slocal, attr(wvac, 'local'))
-    icwb <- pmatch(slocal, c('Curitiba(SM), PR - BR',
-                             'Curitiba(SMB), PR - BR'))
+    icwb <- pmatch(c('Curitiba(SM), PR - BR',
+                     'Curitiba(SMB), PR - BR'), slocal)
     icwb <- icwb[!is.na(icwb)]
-    if(length(icwb)>0)
+    if(length(icwb)>0) {
       iiwv[icwb] <- which(attr(wvac, 'local')=='Curitiba, PR - BR')
+    }
 
     d$vac <- lapply(wvac, function(m) {
         r <- matrix(NA, length(ii0[1]:ncol(y)), length(slocal))
