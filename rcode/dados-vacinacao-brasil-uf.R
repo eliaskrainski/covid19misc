@@ -80,8 +80,12 @@ ds <- xsel[c(5,2)]
 n.dg <- dvbr[, .N, by=ds]
 n.dg
 
+n.doses <- tapply(n.dg$N, n.dg$vacina_descricao_dose, sum)
+n.doses <- sort(n.doses, decreasing=TRUE)
+n.doses
+
 ### dose levels, for later use
-dlevels <- sort(unique(n.dg$vacina_descricao_dose))
+dlevels <- names(n.doses)
 dlevels
 
 ### select desired levels and order it for later use
