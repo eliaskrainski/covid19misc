@@ -12,7 +12,9 @@ head(dMunDateDose)
 
 sum(dMunDateDose$N)
 
-tapply(dMunDateDose$N, dMunDateDose$vacina_descricao_dose, sum)
+n.doses <- tapply(dMunDateDose$N, dMunDateDose$vacina_descricao_dose, sum)
+n.doses <- sort(n.doses, decreasing=TRUE)
+n.doses
 
 source('rcode/ocommon.R')
 head(uf,2)
@@ -32,8 +34,10 @@ dMunDateDose$fdate <- factor(
 head(dMunDateDose)
 tail(dMunDateDose)
 
-dlab <- sort(unique(dMunDateDose$vacina_descricao_dose))
+dlab <- names(n.doses)
+dlab
 names(dlab) <- gsub(' ', '', gsub('ª', '', dlab))
+dlab
 names(dlab)[1:2] <- paste0(
     substring(names(dlab)[1:2], 2),
     substr(names(dlab)[1:2], 1, 1))

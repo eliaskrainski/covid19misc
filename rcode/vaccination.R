@@ -93,8 +93,9 @@ lcsel <- list(n=head(setdiff(names(ontot), c(gctr, subctr)), 8),
 lcsel
 
 ###clsel <- c('blue4', 'red1', 'orange', 'blue1', 'magenta', 'green3')
-ns <- 10
-csel <- rainbow(ns); csel <- rev(c(tail(csel,2), head(csel, length(csel)-2)))
+ns <- 7
+csel <- palette.colors(ns)
+###csel <- c(blues9[-1]##rainbow(ns); csel <- rev(c(tail(csel,2), head(csel, length(csel)-2)))
 
 plot(1:ns, pch=19, cex=2, col=csel)
 
