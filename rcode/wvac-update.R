@@ -57,7 +57,7 @@ sapply(wvac.mu, sum, na.rm=TRUE)
 
 library(data.table)
 cmurs <- as.data.frame(
-    fread('data/HIST_PAINEL_COVIDBR.csv',
+    fread('data/HIST_PAINEL_COVIDBR_2021P1.csv',
           select=c('codmun', 'codRegiaoSaude',
                    'nomeRegiaoSaude')))
 head(cmurs,2)

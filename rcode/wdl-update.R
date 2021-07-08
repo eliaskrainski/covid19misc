@@ -350,8 +350,9 @@ if (usems) {
         fls <- system('ls data/HIST_PAINEL_COVID*.csv -lh', TRUE)
         fls
         tfls <- strptime(substr(fls, 33, 44), '%b %d %H:%M')
+        tfls
         
-        if(order(tfls)[1]==3) {
+##        if(order(tfls)[1]==3) {
             system.time(
                 dbr <- Reduce(
                     'rbind',
@@ -360,12 +361,14 @@ if (usems) {
                          p2=as.data.frame(
                              fread('data/HIST_PAINEL_COVIDBR_2020P2.csv')),
                          p3=as.data.frame(
-                             fread('data/HIST_PAINEL_COVIDBR_Parte3.csv')))))
-        } else {
-            system.time(
-                dbr <- as.data.frame(
-                    fread('data/HIST_PAINEL_COVIDBR_2020P1.csv')))    
-        }
+                             fread('data/HIST_PAINEL_COVIDBR_2021P1.csv')),
+                         p4=as.data.frame(
+                             fread('data/HIST_PAINEL_COVIDBR_2021P2.csv')))))
+##        } else {
+  ##          system.time(
+    ##            dbr <- as.data.frame(
+      ##              fread('data/HIST_PAINEL_COVIDBR_2020P1.csv')))    
+        ##}
         
     }
     

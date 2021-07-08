@@ -1,17 +1,51 @@
 if(FALSE)
     setwd('..')
 
-if(!any(ls()=='dupdate'))
-    dupdate <- FALSE
+load('data/tiKdsu.RData')
+ls()
 
-if(FALSE)
-    dupdate <- TRUE
+dim(t.iKdsu)
+dimnames(t.iKdsu)
 
-system.time(source('rcode/dados-vacinacao-brasil-uf.R'))
+apply(t.iKdsu, 4, sum)
 
 ### consider the population data
 p21i <- read.csv('data/estPNADCpopBR202101IdadeSexo2.csv')
 tail(p21i)
+
+source('rcode/define_idade_faixas.R')
+ls()
+
+dlevels <- c('    1ª Dose', '    2ª Dose')
+slevels <- c('F', 'M')
+
+ftab1 <- function(dv) {
+        table(factor(findInterval(dv[,1], b1i),
+                     0:51, m1i), 
+              dv[,2], dv[,5])
+    }
+    ftab2 <- function(dv) 
+        table(dv[, 3], dv[, 4], dv[,5])
+        return(r)
+
+rfls <- dir('RData/')
+rfls
+
+robjs <- substr(rfls, 1, 5)
+head(robjs)
+
+ufs <- substr(robjs, 4, 5)
+ufs
+
+for (k in 1:27) {
+    obj <- robjs[k]
+    load(paste0('RData/', obj, '.RData'))
+    tmp <- get(obj)
+    tmp <- tmp[(tmp[,2] %in% slevels) &
+                   (tmp[,5] %in% dlevels), ]
+        dim(tmp)
+
+    }
 
 ### create array with
 ### age (1st dim),

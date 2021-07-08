@@ -64,10 +64,10 @@ brms.f <- function(d=TRUE) {
             system('unrar e brms.rar')
             system('rm brms.rar')
         } 
-        system('mv HIST_PAINEL_COVIDBR_*.csv data/HIST_PAINEL_COVIDBR.csv')
         system('mv HIST_PAINEL_COVIDBR_2020_Parte1*.csv data/HIST_PAINEL_COVIDBR_2020P1.csv')
         system('mv HIST_PAINEL_COVIDBR_2020_Parte2*.csv data/HIST_PAINEL_COVIDBR_2020P2.csv')
-        system('mv HIST_PAINEL_COVIDBR_Parte3*.csv data/HIST_PAINEL_COVIDBR_Parte3.csv')
+        system('mv HIST_PAINEL_COVIDBR_2021_Parte1*.csv data/HIST_PAINEL_COVIDBR_2021P1.csv')
+        system('mv HIST_PAINEL_COVIDBR_2021_Parte2*.csv data/HIST_PAINEL_COVIDBR_2021P2.csv')
         if (substring(url, nchar(url)-2)=='csv') {
             download.file(url, 'data/HIST_PAINEL_COVIDBR.csv')
         } 
