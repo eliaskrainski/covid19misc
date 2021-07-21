@@ -19,15 +19,6 @@ ls()
 dlevels <- c('    1ª Dose', '    2ª Dose')
 slevels <- c('F', 'M')
 
-ftab1 <- function(dv) {
-        table(factor(findInterval(dv[,1], b1i),
-                     0:51, m1i), 
-              dv[,2], dv[,5])
-    }
-    ftab2 <- function(dv) 
-        table(dv[, 3], dv[, 4], dv[,5])
-        return(r)
-
 rfls <- dir('RData/')
 rfls
 
@@ -37,15 +28,20 @@ head(robjs)
 ufs <- substr(robjs, 4, 5)
 ufs
 
-for (k in 1:27) {
-    obj <- robjs[k]
-    load(paste0('RData/', obj, '.RData'))
-    tmp <- get(obj)
-    tmp <- tmp[(tmp[,2] %in% slevels) &
+if(FALSE) {
+
+    for (k in 1:27) {
+        
+        obj <- robjs[k]
+        load(paste0('RData/', obj, '.RData'))
+        tmp <- get(obj)
+        tmp <- tmp[(tmp[,2] %in% slevels) &
                    (tmp[,5] %in% dlevels), ]
         dim(tmp)
-
+        
     }
+
+}
 
 ### create array with
 ### age (1st dim),
@@ -258,6 +254,18 @@ if(FALSE)
 
 source('rcode/ocommon.R')
 head(uf,3)
+
+library(data.table)
+
+load('data/dvbr.RData')
+
+system.time(UF <- substr(dvbr$paciente_endereco_coibgemunicipio,1,2))
+
+system.time(n.UF <- table(dvbr$UF))
+
+n.UF
+
+dvbr[.N,UF]
 
 n.u <- dvbr[UF %in% rownames(uf), .N, UF]
 n.u

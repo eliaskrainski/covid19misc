@@ -16,7 +16,7 @@ tmp <- fread(fl1, nrows=0)
 colnames(tmp)
 
 ### desired variables 
-xsel <- colnames(tmp)[c(3, 5, 8, 28, 29)] 
+xsel <- colnames(tmp)[c(3, 5, 8, 28, 29, 31)] 
 jj <- pmatch(xsel, colnames(tmp))
 jj
 
@@ -83,11 +83,17 @@ if(dupdate) {
     
     system.time(dvbr <- Reduce('rbind', lapply(robjs, function(x) {
         obj <- substr(x, 1, 5)
-        cat('obj = ', obj, '... ')
+        cat('loading', obj, '... ')
         load(paste0('RData/', x))
-        cat('\n')
+        cat('OK!\n')
         return(get(obj))
     })))
+
+    cat("saving 'dvbr' ... ")
+    ts1 <- Sys.time()
+    save(list='dvbr',
+         file='data/dvbr.RData')
+    cat('done in', Sys.time()-ts1, '\n')
 
     source('rcode/define_idade_faixas.R')
     ls()

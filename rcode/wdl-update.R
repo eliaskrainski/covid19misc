@@ -347,23 +347,16 @@ if (usems) {
         
         library(data.table)
 
-        fls <- system('ls data/HIST_PAINEL_COVID*.csv -lh', TRUE)
-        fls
-        tfls <- strptime(substr(fls, 33, 44), '%b %d %H:%M')
-        tfls
+        hpfls <- system('ls data/HIST_PAINEL*.csv', TRUE)
+        hpfls
         
 ##        if(order(tfls)[1]==3) {
             system.time(
                 dbr <- Reduce(
-                    'rbind',
-                    list(p1=as.data.frame(
-                             fread('data/HIST_PAINEL_COVIDBR_2020P1.csv')),
-                         p2=as.data.frame(
-                             fread('data/HIST_PAINEL_COVIDBR_2020P2.csv')),
-                         p3=as.data.frame(
-                             fread('data/HIST_PAINEL_COVIDBR_2021P1.csv')),
-                         p4=as.data.frame(
-                             fread('data/HIST_PAINEL_COVIDBR_2021P2.csv')))))
+                    'rbind', lapply(hpfls, function(fl)
+                        as.data.frame(fread(fl)))))
+##                         p4=as.data.frame(
+  ##                           fread('data/HIST_PAINEL_COVIDBR_2021P2.csv')))))
 ##        } else {
   ##          system.time(
     ##            dbr <- as.data.frame(
@@ -376,11 +369,16 @@ if (usems) {
     head(dbr,2)
     summary(as.Date(unique(dbr$data)))
 
-    dbr[2293028+0:3, 11:14]
-    dbr[2293028+1, 11:14] <- c(16044, 14, 370, 0)
-    dbr[2293028+2, c(12,14)] <- c(31, 3)
-    dbr[2293028+0:3, 11:14]
+    ii <- which(dbr$municipio=='Campo Largo')
+
+    source('rcode/functions.R')
+
+###    plot(diff(c(0, dbr$casosNovos[ii])))
+   ### points(diff(c(0, accMax(dbr$casosAcumulado[ii]))), col=2, pch=8)
     
+    dbr$casosAcumulado[ii] <- accMax(dbr$casosAcumulado[ii])
+    dbr$casosAcumulado[ii] <- accMax(dbr$obitosAcumulado[ii])
+            
     i.mu.l <- which(dbr$municipio!='')
     i.rg.l <- which(dbr$nomeRegiaoSaude!='')
     
