@@ -43,6 +43,10 @@ vd[vd$location=='United States' &
 vd[vd$location=='China' &
    (Sys.Date()-vd$date)<4, ]
 
+pfully.c <- tapply(vd$people_fully_vaccinated_per_hundred,
+                   vd$location, max, na.rm=TRUE)
+tail(sort(pfully.c), 10)
+
 vbr <- vd[vd$location=='Brazil', ]
 vbr[(Sys.Date()-vbr$date)<9, c(3:8)]
 100*220000/213e6
@@ -228,7 +232,7 @@ if(FALSE){
 
     nmax.o <- max(vbr$total_vaccinations, na.rm=TRUE)
     vmax.o <- max(vbr$daily_vaccinations, na.rm=TRUE)
-    dtarg <- as.Date('2021-05-01')
+    dtarg <- as.Date('2021-10-01')
     (np <- as.integer(dtarg-Sys.Date())+1)
     nvtarg <- 1.2e6
     dv.pl <- vmax.o*1.05 + (nvtarg-vmax.o*1.05)*
@@ -242,6 +246,7 @@ if(FALSE){
     v.p <- cumsum(dv.pl) + nmax.o
 
     xmin <- min(vbr$date, na.rm=TRUE)
+    xmin
     xl <- list(x=pretty(c(xmin, dtarg)))
     xl$l <- format(pretty(c(xmin, dtarg)), '%b,%d')
     

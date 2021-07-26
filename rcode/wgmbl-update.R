@@ -181,7 +181,22 @@ system.time(gmbl$sub_region_1 <- gsub('Federal District', 'Distrito Federal', gm
     
     }
 
-    sapply(wgmbl, dim)
+sapply(wgmbl, dim)
+
+i.ufs.R <- split(sapply(1:nrow(uf), function(i) {
+    nch <- nchar(uf$State[i])
+    which(substr(rownames(wgmbl[[1]]), 2, nch+4)==
+          paste0(uf$State[i], '_BR'))
+}), substr(rownames(uf), 1, 1))
+i.ufs.R
+
+Rnams <- c('Norte', 'Nordeste', 'Sudeste', 'Sul', 'Centro-Oeste')
+for (k in 1:length(wgmbl)) {
+    tmp <- t(sapply(i.ufs.R, function(ii)
+        colMeans(wgmbl[[k]][ii, ])))
+    rownames(tmp) <- paste0('_', Rnams, '_BR')
+    wgmbl[[k]] <- rbind(wgmbl[[k]], tmp)
+}
 
     grep('Curitiba', rownames(wgmbl[[1]]))
     grep('Curitiba', rownames(wgmbl[[1]]), val=T)

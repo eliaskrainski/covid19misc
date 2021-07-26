@@ -557,6 +557,7 @@ dataPrepare <- function(slocal) {
       iiwv[icwb] <- which(attr(wvac, 'local')=='Curitiba, PR - BR')
     }
 
+    print(c(ny=ncol(y), nv=ncol(wvac[[1]])))
     d$vac <- lapply(wvac, function(m) {
         r <- matrix(NA, length(ii0[1]:ncol(y)), length(slocal))
         ij <- which(!is.na(iiwv))
@@ -871,7 +872,7 @@ data2plot <- function(d,
 
     iplot <- 0
     
-    mgpp <- c(3, 0.5, 0)
+    mgpp <- c(2.5, 0.5, 0)
     if (popDivide)
         mgpp[1] <- 2
     if(nplot>6) {

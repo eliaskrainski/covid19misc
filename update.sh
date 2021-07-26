@@ -2,7 +2,15 @@
 ##time xlsx2csv data/HIST_PAINEL_COVIDBR.xlsx data/HIST_PAINEL_COVIDBR.csv
 ##unzip ~/Downloads/HIST_PAINEL_COVIDBR*.zip 
 ##mv HIST_PAINEL_COVIDBR*.csv data/HIST_PAINEL_COVIDBR.csv
-time R CMD BATCH --vanilla rcode/wdata-update.R 
+#time R CMD BATCH --vanilla rcode/wdata-update.R 
+R CMD BATCH --vanilla rcode/wdl-update.R 
+
+R CMD BATCH --vanilla rcode/wgmbl-update.R 
+
+R CMD BATCH --vanilla rcode/wambl-update.R 
+
+R CMD BATCH --vanilla rcode/wvac-update.R 
+
 cp data/w*.RData covid19time/data/
 cp data/boletinsSMCuritiba.csv covid19time/data/
 cp rcode/dados-curitiba.R covid19time/rcode/

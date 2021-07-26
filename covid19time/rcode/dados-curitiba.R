@@ -18,8 +18,10 @@ repeat {
     }
 }
 
-dcwb <- read.csv2('data/casosCuritibaSM.csv', encoding='latin1')
-head(dcwb)
+library(data.table)
+
+dcwb <- as.data.frame(fread(
+    'data/casosCuritibaSM.csv', encoding='Latin-1', dec=','))
 
 dcwb$date <- as.Date(dcwb[,1], '%d/%m/%Y')
 summary(dcwb$date)
@@ -34,30 +36,60 @@ dcwb$fdate <- factor(gsub('-', '',
 tail(dcwb)
 
 if(FALSE) {
-    
-    table(cut(dcwb$IDADE, c(0, 20, 40, 60, Inf), right=F))
-    table(dcwb$g3idade <- cut(dcwb$IDADE, c(0, 30, 50, Inf), right=F))
+
+    summary(dcwb$IDADE)
+
+    table(cut(dcwb$IDADE, c(0, 30, 60, Inf), right=F))
+    table(cut(dcwb$IDADE, c(0, 40, 60, 80, Inf), right=F))
+    table(dcwb$g3idade <- cut(dcwb$IDADE, c(0, 30, 50, 70, Inf), right=F))
 
     ti3n <- table(substr(dcwb$fdate, 1, 6),
                   dcwb$g3idade, dcwb$ENC)
     dim(ti3n)
-    tx <- as.Date(paste0(dimnames(ti3n)[[1]], '15'), '%Y%m%d')
-    it <- 4:(length(tx)-1)
+    dimnames(ti3n)
+    (ng <- dim(ti3n)[2])
 
-    par(mfrow=c(2,2), mar=c(3,3,0.5,0.5), mgp=c(2,0.5,0))
-    for (k in 2:3) {
-        plot(tx, ti3n[,1,k], type='l',
-             ylim=range(ti3n[it,,k]), xlim=range(tx[it]))
-        for (i in 2:3) lines(tx, ti3n[,i,k], col=i)
-    }
-    plot(tx, ti3n[,1,2]/rowSums(ti3n[,1,2:3]), type='l',
-         ylim=c(0,0.15), xlim=range(tx[it]))
-    for (i in 2:3) lines(tx, ti3n[,i,2]/rowSums(ti3n[,i,2:3]), col=i)
-    plot(tx[it], tapply(dcwb$IDADE, substr(dcwb$fdate, 1, 6), mean, na.rm=TRUE)[it],
-         type='o', lwd=2, ylim=c(35, 75))
+    ti3n[,,2]
+
+    tx <- as.Date(paste0(dimnames(ti3n)[[1]], '15'), '%Y%m%d')
+    it <- 4:(length(tx)-2)
+
+    n.age <- apply(ti3n, 2, rowSums)
+
+    png('figures/curitiba_age.png', 2000, 1000, res=150)
+    par(mfrow=c(2,2), mar=c(1.5,3.5,0.0,0.5), mgp=c(2.5,0.5,0), las=1)
+    plot(tx, n.age[,1], type='l', xlab='',
+         ylab=c('', '#', '#')[k],
+         ylim=range(n.age), xlim=range(tx[it]))
+    for (i in 2:ng) lines(tx, n.age[,i], col=i)
+    legend('topleft', dimnames(ti3n)[[2]], col=1:ng, lty=1,
+           bty='n', title='Casos conf.')
+    k <- 2
+    plot(tx, ti3n[,1,k], type='l', xlab='',
+         ylab=c('', '#', '#')[k],
+         ylim=range(ti3n[it,,k]), xlim=range(tx[it]))
+    for (i in 2:ng) lines(tx, ti3n[,i,k], col=i)
+    legend('topleft', dimnames(ti3n)[[2]], col=1:ng, lty=1,
+           bty='n', title=dimnames(ti3n)[[3]][k])
+    plot(tx, ti3n[,1,k]/n.age[,k], type='l', xlab='', ylab='óbitos/casos conf.',
+         ylim=range(ti3n[it,,k]/n.age[it,]), xlim=range(tx[it]))
+    for (i in 2:ng) lines(tx, ti3n[,i,k]/n.age[,i], col=i)
+    legend('top', dimnames(ti3n)[[2]], col=1:ng, lty=1,
+           bty='n', title=dimnames(ti3n)[[3]][k])
+    plot(tx[it],
+         tapply(dcwb$IDADE, substr(dcwb$fdate, 1, 6),
+                mean, na.rm=TRUE)[it],
+         xlab='', ylab='Idade',
+         type='l', lwd=2, ylim=c(35, 75))
     lines(tx[it],
           tapply(dcwb$IDADE[dcwb$ENC=='ÓBITO CONF'],
                  substr(dcwb$fdate, 1, 6)[dcwb$ENC=='ÓBITO CONF'],mean)[it], col=2)
+    legend('center', c('Casos conf.', 'Óbitos conf.'),
+           col=c(1,2), lwd=2, title='Idade média')
+    dev.off()
+
+    if(FALSE)
+        system('eog figures/curitiba_age.png &')
 
 }
 
