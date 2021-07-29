@@ -23,7 +23,7 @@ attdvtime <- difftime(
     attr(v2tab, 'updated'), units='days')
 attdvtime
 
-if(floor(atdvtime)>7) {
+if(floor(attdvtime)>3) {
     
     dv2tab <- function(uf='PR', verbose=FALSE) {
         
@@ -192,5 +192,5 @@ if(floor(atdvtime)>7) {
     
     save(list='v2tab',
          file='data/v2tab.RData')
-
+    
 }
