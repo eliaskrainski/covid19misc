@@ -23,7 +23,7 @@ attdvtime <- difftime(
     attr(v2tab, 'updated'), units='days')
 attdvtime
 
-if(floor(attdvtime)>3) {
+if(floor(attdvtime)>=3) {
     
     dv2tab <- function(uf='PR', verbose=FALSE) {
         
