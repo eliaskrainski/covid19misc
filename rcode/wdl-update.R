@@ -367,7 +367,20 @@ if (usems) {
     
     dim(dbr)
     head(dbr,2)
-    summary(as.Date(unique(dbr$data)))
+    summary(as.Date(ud0 <- unique(dbr$data)))
+
+    ud0n <- as.integer(ud0)
+    if(any(!is.na(ud0n))) {
+        iid0n <- which(ud0n>0)
+        udd <- as.Date(ud0, '%d/%m/%Y')
+        udd[iid0n] <- udd[1]+iid0n-1
+        dbr$fdate <- factor(gsub('-', '', udd)[pmatch(dbr$data, ud0, duplicates.ok=TRUE)], alldates)
+    } else {
+        dbr$fdate <- factor(gsub('-', '', as.Date(dbr$data, '%d/%m/%Y'),
+                                 fixed=TRUE), alldates)
+    }
+    head(dbr,3)
+    tail(dbr,3)
 
     ii <- which(dbr$municipio=='Campo Largo')
 
@@ -382,9 +395,6 @@ if (usems) {
     i.mu.l <- which(dbr$municipio!='')
     i.rg.l <- which(dbr$nomeRegiaoSaude!='')
     
-    dbr$fdate <- factor(gsub('-', '', as.Date(dbr$data, '%d/%m/%Y'),
-                             fixed=TRUE), alldates)
-    head(dbr, 3)
 
     dbr$Regiao <- dbr$regiao
     dbr$Regiao[dbr$regiao=='Brasil'] <- ''

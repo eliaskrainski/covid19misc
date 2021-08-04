@@ -18,8 +18,8 @@ y2distribute <- function(x, M=1e9, jn=-20:0) {
 }
 
 accMax <- function(x) {
-### fix an accumulated serie to
-### evitate negative differences
+### fix an accumulated series to
+### prevent negative differences
     x.ori <- x
     i.ok <- which(!is.na(x))
     x <- x.ori[i.ok] 
@@ -102,7 +102,15 @@ maked <- function(y) {
     list(i=ii[nna], y=y.s[nna]) 
 }
 
-tSmooth <- function(y, X, B, off = rep(0, length(y))) {
+tSmooth <- function(y, Date, off = rep(0, length(y))) {
+    d <- maked(y)
+    X0 <- model.matrix(~0+w, data.frame(w=weekdays(Date)))
+    j0 <- which.max(colSums(X0))
+    jjx <- setdiff(1:7, j0)
+    X <- X0[d$i, jjx, drop=FALSE]
+    n <- length(y)
+    nb <- round(n/14)
+    B <- bs3f(1:length(Date), seq(1, n, length=nb))
     if (is.null(colnames(X)))
         colnames(X) <- paste0('x', 1:ncol(X))
     if (is.null(colnames(B)))
@@ -110,7 +118,6 @@ tSmooth <- function(y, X, B, off = rep(0, length(y))) {
     d <- maked(y)
     ni <- length(d$i)
     if (ni>9) {
-        X <- X[d$i, , drop=FALSE]
         sxx <- diag(crossprod(X))
         jx <- which(sxx>0)
         if (length(jx)>0) {
@@ -128,21 +135,6 @@ tSmooth <- function(y, X, B, off = rep(0, length(y))) {
         B <- B[d$i,, drop=FALSE]
         sbb <- diag(crossprod(B))
         jb <- which(sbb>0.0)
-        B <- B[, jb, drop=FALSE]
-        sbb <- sbb[jb]
-        if (sbb[1]<mean(sbb)) {
-            B[, 2] <- B[, 1] + B[, 2]
-            B <- B[, 2:ncol(B), drop=FALSE]
-            sbb[2] <- sbb[1] + sbb[2]
-            sbb <- sbb[-1]
-        }
-        nbb <- ncol(B)
-        if (sbb[nbb]<mean(sbb)) {
-            B[, nbb-1] <- B[, nbb-1] + B[, nbb]
-            B <- B[, 1:(nbb-1)]
-            sbb[nbb-1] <- sbb[nbb-1] + sbb[nbb]
-            sbb <- sbb[1:(nbb-1)]
-        }
         nbb <- ncol(B)
         j <- 1:nbb
     } else {
@@ -167,7 +159,8 @@ tSmooth <- function(y, X, B, off = rep(0, length(y))) {
     b.m <- B[, iicb, drop=FALSE] %*% bg[icb[iicb]]    
 
     return(list(fit=gfit, i=d$i, y=d$y,
-                ys=d$y*exp(mean(x.m)-x.m),
+                ##ys=d$y*exp(mean(x.m)-x.m),
+                ys=exp(b.m+mean(x.m)),
                 s=exp(drop(off[d$i] + mean(x.m) + b.m))))
 }
 

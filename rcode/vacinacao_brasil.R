@@ -2,6 +2,8 @@
 if(FALSE)
     setwd('..')
 
+t0 <- Sys.time()
+
 load('data/w2pop.RData')
 
 loc.full.names <- dimnames(w2pop)[[1]]
@@ -194,3 +196,5 @@ if(floor(attdvtime)>=3) {
          file='data/v2tab.RData')
     
 }
+
+print(Sys.time() -t0)
