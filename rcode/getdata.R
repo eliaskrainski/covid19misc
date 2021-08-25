@@ -4,6 +4,14 @@ if (FALSE)
 if(!any(ls()=='dupdate'))
     dupdate <- TRUE
 
+owid.f <- function(d=TRUE) {
+    download.file(
+        paste0('https://raw.githubusercontent.com/',
+               'owid/covid-19-data/master/public/',
+               'data/vaccinations/vaccinations.csv'),
+        'data/vaccinations.csv')
+}
+
 cssegis.f <- function(d=TRUE) {
 ### download the cssegis data (the famous one) 
 ### The base url for the data source 
@@ -237,6 +245,8 @@ others.f <- function() {
 if(dupdate) {
 
     options(timeout=60*5)
+
+owid.f(TRUE)
 
     if(TRUE) {
 
