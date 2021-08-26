@@ -19,8 +19,10 @@ n.doses
 system.time(Dose <- factor(dMunDateDose$Dose,
                            c("1ª Dose", "Dose Inicial ",
                              "2ª Dose", "Dose ", "Única "),
-                           c('D1', 'D1', 'D2u', 'D2u', 'D2u')))
-levels(Dose)
+                           rep(c('Dose 1', 'Dose 2/u'), c(2,3))))
+ldose <- levels(Dose)[1:2]
+names(ldose) <- ldose
+ldose
 
 source('rcode/ocommon.R')
 head(uf,2)
@@ -42,7 +44,7 @@ dMunDateDose[,1] <- as.factor(dMunDateDose[,1])
 
 str(dMunDateDose)
 
-system.time(wvac.mu <- lapply(levels(Dose), function(d) {
+system.time(wvac.mu <- lapply(ldose, function(d) {
     ii <- which(Dose %in% d)
     print(length(ii))
     tapply(dMunDateDose$N[ii],
