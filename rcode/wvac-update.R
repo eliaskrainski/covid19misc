@@ -4,51 +4,49 @@ if(FALSE)
 
 t0 <- Sys.time()
 
-load('data/dMunDateDose.RData')
-ls()
+system.time(dMunDateDose <- read.csv2('data/tMunDateN.csv'))
 
 dim(dMunDateDose)
+
 head(dMunDateDose)
 
 sum(dMunDateDose$N)
 
-n.doses <- tapply(dMunDateDose$N, dMunDateDose$vacina_descricao_dose, sum)
+n.doses <- tapply(dMunDateDose$N, dMunDateDose$Dose, sum)
 n.doses <- sort(n.doses, decreasing=TRUE)
 n.doses
+
+system.time(Dose <- factor(dMunDateDose$Dose,
+                           c("1ª Dose", "Dose Inicial ",
+                             "2ª Dose", "Dose ", "Única "),
+                           c('D1', 'D1', 'D2u', 'D2u', 'D2u')))
+levels(Dose)
 
 source('rcode/ocommon.R')
 head(uf,2)
 
-cUF <- substr(dMunDateDose$paciente_endereco_coibgemunicipio,1,2)
+cUF <- substr(dMunDateDose$cod6,1,2)
 dMunDateDose$UF <- uf$UF[pmatch(cUF, rownames(uf), duplicates.ok=TRUE)]
-                              
-tapply(dMunDateDose$N, dMunDateDose$UF, sum)
 
 Date <- seq(as.Date('20200121', '%Y%m%d'), Sys.Date(), 1)
 alldates <- gsub('-', '', as.character(Date))
 
-dMunDateDose$fdate <- factor(
-    gsub('-', '', substr(dMunDateDose$vacina_dataaplicacao, 1, 10)), 
-    alldates)
+system.time(dMunDateDose$fdate <- factor(
+                gsub('-', '', substr(dMunDateDose$Date, 1, 10)), 
+                alldates))
 
 head(dMunDateDose)
 tail(dMunDateDose)
 
-dlab <- names(n.doses)
-dlab
-names(dlab) <- gsub(' ', '', gsub('ª', '', dlab))
-dlab
-names(dlab)[1:2] <- paste0(
-    substring(names(dlab)[1:2], 2),
-    substr(names(dlab)[1:2], 1, 1))
-dlab
-
 dMunDateDose[,1] <- as.factor(dMunDateDose[,1])
 
-system.time(wvac.mu <- lapply(dlab[1:2], function(d) {
-    ii <- which(dMunDateDose[,3] %in% d)
+str(dMunDateDose)
+
+system.time(wvac.mu <- lapply(levels(Dose), function(d) {
+    ii <- which(Dose %in% d)
+    print(length(ii))
     tapply(dMunDateDose$N[ii],
-           dMunDateDose[ii, c(1,6)], sum)
+           dMunDateDose[ii, c('cod6', 'fdate')], sum)
 }))
 
 str(wvac.mu)

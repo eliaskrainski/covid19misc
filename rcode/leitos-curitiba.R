@@ -65,11 +65,17 @@ nuti.t <- sapply(ldl, function(d) {
 tail(ddates)
 tail(ddates[i0])
 
-png('figures/leitosCuritiba.png', 500, 500)
-par(mfrow=c(1,1), mar=c(2, 3, 0.5, 0.5), mgp=c(2,0.5,0))
+xl <- list(x=pretty(ddates[i0], 15))
+xl$l <- format(xl$x, '%d %b')
+xl$l <- gsub('01', '1', xl$l)
+
+png('figures/leitosCuritiba.png', 1000, 1000, res=150)
+par(mfrow=c(1,1), mar=c(3, 3, 0.5, 0.5), mgp=c(2,0.5,0))
 plot(ddates[i0], nl.t[1, ], las=1, pch=19, 
-     ylim=range(nl.t, na.rm=TRUE), ##axes=FALSE,
+     ylim=range(nl.t, na.rm=TRUE), axes=FALSE,
      ylab='Numero de leitos', xlab='')
+axis(1,xl$x, xl$l, las=3)
+axis(2, las=1)
 for (j in 2:3)
     points(ddates[i0], nl.t[j,], col=j, pch=19)
 points(ddates[i0], nuti.t[2,], col=6, pch=8, cex=1.5)
@@ -82,5 +88,6 @@ legend('topleft', c('Total', 'Ocupados', 'Livres', 'UTI'),
 abline(v=pretty(ddates,10),
        h=100*(0:15), lty=2, col=gray(.5,.5))
 dev.off()
+
 if (FALSE)
     system("eog figures/leitosCuritiba.png &")

@@ -80,7 +80,78 @@ if(dupdate) {
 
     robjs <- dir('RData/')
     robjs
+
+    library(data.table)
+
+    mdd <- c('paciente_endereco_coibgemunicipio',
+             'vacina_dataaplicacao', 
+             'vacina_descricao_dose')
+
+    cat('cod6;Date;Dose;N\n',
+        file='data/tMunDateN.csv')
+
+    rr <- lapply(robjs, function(rfl, verbose=TRUE) {
+        cat('loading', rfl, '... ')
+        attach(paste0('RData/', rfl)) ## safer and will warn about masked objects w/ same name in .GlobalEnv
+        ufdv <- get(substr(rfl, 1, 5))
+        detach()
+        if(verbose) cat('loaded ', dim(ufdv), '')  
+        tMunDate <- ufdv[,.N,by=mdd]
+        if(verbose) cat('write ... ')
+        write.table(tMunDate,
+                    file='data/tMunDateN.csv',
+                    append=TRUE,
+                    sep=';',
+                    row.names=FALSE,
+                    col.names=FALSE,
+                    quote=FALSE)
+        if(verbose) cat('ok\n')
+        return(NULL)
+    })
     
+    system.time(tmd <- read.csv2('data/tMunDateN.csv'))
+    dim(tmd)
+
+    head(tmd)
+    tail(tmd)
+    
+    class(dv_SP)
+    system.time(dv_SP <- as.data.frame(dv_SP))
+
+    system.time(loc <- factor(dv_SP$paciente_endereco_coibgemunicipio, cmu))
+    table(is.na(loc))
+
+    system.time(ndose0 <- table(dv_SP$vacina_descricao_dose))
+    ndose0
+    
+    system.time(dose <- rep('D2/u', length(loc)))
+    system.time(dose[substr(dv_SP$vacina_descricao_dose,1,1)=='1'] <- 'D1')
+    system.time(ndose <- table(dose))
+
+    ndose0
+    ndose
+
+    table(is.na(dose))
+
+    Date01 <- c(as.Date('20200121', '%Y%m%d'), Sys.Date())
+    Date <- as.Date(dv_SP$vacina_dataaplicacao)
+    Date[Date<Date01[1]] <- NA
+    Date[Date>Date01[2]] <- NA
+    table(is.na(Date))
+
+    Date0 <- seq(as.Date('20200121', '%Y%m%d'), Sys.Date(), 1)
+    fdate <- factor(as.character(Date), as.character(Date0))
+    
+    table(dv_SP$paciente_endereco_coibgemunicipio[is.na(loc)])
+    iout <- is.na(loc) |  
+    
+    udose <- unique(dv_SP$vacina_descricao_dose)
+    dose[which(dv_SP$vacina_descricao_dose%in%
+                   c("1ª Dose", "Dose Inicial "), 'D1', 'D2/U')
+    table(dose, dv_SP$vacina_descricao_dose)
+    
+    ls()
+
     system.time(dvbr <- Reduce('rbind', lapply(robjs, function(x) {
         obj <- substr(x, 1, 5)
         cat('loading', obj, '... ')
