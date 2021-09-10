@@ -52,17 +52,20 @@ if(FALSE)
 ##if((!dupdate) & (length(system('ls RData'))<27))
   ## dupdate <- TRUE
 
-if(dupdate) {
+###if(dupdate) {
     
     options(timeout=60*300) ### to work with bad internet...
 ### download each UF local file and retrieve the local file names: 'data/UF_....csv"
-    fls <- brvac.uf(TRUE)
+    fls <- brvac.uf(dupdate)
+
+print(Sys.time()-t00)
+cat("#####   P A R T 1   -   D O N E!   #####")
 
     ufs <- substr(fls, 20, 21)
     ufs
     
-    t1a <- Sys.time()
     for (k in 1:length(fls)) {
+        cat(ufs[k], ' ... ')
         t1 <- Sys.time()
         robj <- paste0('dv_', ufs[k])
         assign(robj,
@@ -71,9 +74,11 @@ if(dupdate) {
              file=paste0('RData/', robj, '.RData'))
         print(Sys.time()-t1)
     }
-    print(Sys.time()-t1a)
 
-} else {
+print(Sys.time()-t00)
+cat("#####   P A R T 2   -   D O N E!   #####")
+
+##} else {
 
 ##    system.time(load('data/dvbr.RData'))
     ##  xsel <- colnames(dvbr)
@@ -109,7 +114,9 @@ if(dupdate) {
         return(NULL)
     })
     
-}
+##}
 
-print(Sys.time() - t00)
+print(Sys.time()-t00)
+cat("#####   P A R T 1   -   D O N E!   #####")
+
     
