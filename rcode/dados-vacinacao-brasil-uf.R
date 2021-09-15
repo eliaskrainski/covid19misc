@@ -61,46 +61,63 @@ print(Sys.time()-t00)
 
 cat("#####   P A R T 1   -   D O N E!   #####\n")
 
-ufs <- substr(fls, 20, 21)
-ufs
+idat <- system('ls -lh data/tMunDateN.csv', TRUE)
+idat
 
-mdd <- c('paciente_endereco_coibgemunicipio',
-         'vacina_dataaplicacao', 
-         'vacina_descricao_dose')
+pdat <- gregexpr('data/', idat)[[1]]
+pdat
 
-verbose <- TRUE
+ddat <- substr(idat, pdat-13, pdat-2)
+ddat
 
-cat('cod6;Date;Dose;N\n',
-    file='data/tMunDateN.csv')
+dtime <- as.numeric(difftime(
+    as.POSIXlt(Sys.time()),
+    as.POSIXlt.character(ddat, format='%b %d %H:%M'),
+    units='hours'))
 
-for (k in 1:length(fls)) {
-    t1 <- Sys.time()
 
-    if(verbose) cat(ufs[k], ' read ... ')
-    ufdv <- fread(fls[k], select=jj)
-
-    if(verbose) cat(' RData ... ')
-    save(list='ufdv',
-         file=paste0('RData/dv_', ufs[k], '.RData'))
-
-    if(verbose) cat('tabulate ... ')
-    tMunDate <- ufdv[,.N,by=mdd]
+if(dtime>=24) {
     
-    if(verbose) cat('write ... ')
-    write.table(tMunDate,
-                file='data/tMunDateN.csv',
-                append=TRUE,
-                sep=';',
+    ufs <- substr(fls, 20, 21)
+    ufs
+    
+    mdd <- c('paciente_endereco_coibgemunicipio',
+             'vacina_dataaplicacao', 
+             'vacina_descricao_dose')
+    
+    verbose <- TRUE
+    
+    cat('cod6;Date;Dose;N\n',
+        file='data/tMunDateN.csv')
+    
+    for (k in 1:length(fls)) {
+        t1 <- Sys.time()
+        
+        if(verbose) cat(ufs[k], ' read ... ')
+        ufdv <- fread(fls[k], select=jj)
+        
+        if(verbose) cat(' RData ... ')
+        save(list='ufdv',
+             file=paste0('RData/dv_', ufs[k], '.RData'))
+        
+        if(verbose) cat('tabulate ... ')
+        tMunDate <- ufdv[,.N,by=mdd]
+    
+        if(verbose) cat('write ... ')
+        write.table(tMunDate,
+                    file='data/tMunDateN.csv',
+                    append=TRUE,
+                    sep=';',
                 row.names=FALSE,
                 col.names=FALSE,
                 quote=FALSE)
-    if(verbose) cat(Sys.time()-t1, ' ok\n')
-    
+        if(verbose) cat(Sys.time()-t1, ' ok\n')
+        
+    }
 }
     
 cat("#####   P A R T 2   -   D O N E!   #####\n")
 
 print(Sys.time()-t00)
 cat("#####  D O N E!   #####\n")
-
 
