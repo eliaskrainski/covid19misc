@@ -31,8 +31,7 @@ if(floor(attdvtime)>=1) {
         
         rfl <- paste0('RData/dv_', uf, '.RData')
         attach(rfl) # safer and will warn about masked objects w/ same name in .GlobalEnv
-        ufdv <- get(paste0('dv_',uf))
-        detach()
+###        ufdv <- get(paste0('dv_',uf))
         if(verbose) cat('data loaded: dim =', dim(ufdv), '\n')
         
         vacina <- rep(NA, nrow(ufdv))
@@ -117,7 +116,9 @@ if(floor(attdvtime)>=1) {
         if(verbose>999)
             print(str(table(ufdv$paciente_endereco_coibgemunicipio)))
         
-        return(table(ufdv[c(3,4,1,2,6,5)]))
+        tab <- table(ufdv[c(3,4,1,2,6,5)])
+        detach()
+        return(tab)
         
     }
 
