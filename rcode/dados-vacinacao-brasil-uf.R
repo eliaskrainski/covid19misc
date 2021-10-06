@@ -76,7 +76,7 @@ dtime <- as.numeric(difftime(
     units='hours'))
 
 
-if(dtime>=24) {
+if(dtime>19) {
     
     ufs <- substr(fls, 20, 21)
     ufs
@@ -99,6 +99,9 @@ if(dtime>=24) {
         if(verbose) cat(' RData ... ')
         save(list='ufdv',
              file=paste0('RData/dv_', ufs[k], '.RData'))
+
+	if(verbose) cat(' rm csv ...')
+	system(paste('rm', fls[k]))
         
         if(verbose) cat('tabulate ... ')
         tMunDate <- ufdv[,.N,by=mdd]

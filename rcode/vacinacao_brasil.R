@@ -22,10 +22,10 @@ load(file='data/v2tab.RData')
 
 attdvtime <- difftime(
     Sys.time(),
-    attr(v2tab, 'updated'), units='days')
+    attr(v2tab, 'updated'), units='hours')
 attdvtime
 
-if(floor(attdvtime)>=1) {
+if(floor(attdvtime)>19) {
     
     dv2tab <- function(uf='PR', verbose=FALSE) {
         
