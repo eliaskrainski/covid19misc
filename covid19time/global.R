@@ -12,28 +12,28 @@ if (FALSE)
     mgcv.ok <- require(mgcv)
 
 ### load dataset 
-brio <- TRUE ### if is to use brazil.io data
+wupdate <- FALSE 
 if (file.exists('data/wdl.RData')) {
-    load('data/wdl.RData')
-} else {
-    source('rcode/wcmdata-update.R')
+  load('data/wdl.RData')
+  if (difftime(Sys.time(),
+               attr(wdl, 'Sys.time'),
+               units='hours')>71) {
+    wupdate <- TRUE
+  }
 }
 
-if (file.exists('data/wgmbl.RData')) 
-    load('data/wgmbl.RData')
-
-if (file.exists('data/wambl.RData')) 
-    load('data/wambl.RData')
-
-if (file.exists('data/wvac.RData')) 
-    load('data/wvac.RData')
-
-### check if the data is more than 6 hours old
-if (difftime(Sys.time(), 
-             attr(wdl, 'Sys.time'), 
-             units='hours')>71) {
-    source('rcode/wcmdata-update.R')
+if(wupdate) {
+  system('R CMD BATCH --vanilla rcode/wdl-update.R')
+  load('data/wdl.RData')
+  system('R CMD BATCH --vanilla rcode/wgmbl-update.R')
+  system('R CMD BATCH --vanilla rcode/wambl-update.R')
+  system('R CMD BATCH --vanilla rcode/wvac-update.R')
 }
+
+load('data/wgmbl.RData')
+load('data/wambl.RData')
+load('data/wvac.RData')
+
 cn <- colnames(wdl[[1]])
 vecDate <- as.Date(cn[7:length(cn)], 'X%Y%m%d')
 lastday <- tail(vecDate, 1)
@@ -526,11 +526,11 @@ dataPrepare <- function(slocal) {
             r <- y
             bbi <- bb[i.ok, colSums(bb[i.ok, , drop=FALSE])>1]
             xxi <- cbind(bbi, ww[i.ok, , drop=FALSE])
-            # print(table(is.na(xxi)))
-            # print(table(is.finite(xxi)))
-            # print(dim(xxi))
-            # print(c(n0=length(y), ns=length(i.ok), r=range(i.ok)))
-            # print(colSums(xxi))
+             print(table(is.na(xxi)))
+             print(table(is.finite(xxi)))
+             print(dim(xxi))
+             print(c(n0=length(y), ns=length(i.ok), r=range(i.ok)))
+             print(colSums(xxi))
             ff <- glm.fit(xxi, y[i.ok], family=poisson())
             ib <- which(!is.na(ff$coeff[1:ncol(bbi)]))
             ix <- which(!is.na(ff$coeff[ncol(bbi)+1:ncol(ww)]))
