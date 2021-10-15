@@ -23,7 +23,14 @@ library(data.table)
 dcwb <- as.data.frame(fread(
     'data/casosCuritibaSM.csv', encoding='Latin-1', dec=','))
 
+<<<<<<< HEAD
 dcwb$date <- as.Date(dcwb[,2], '%d/%m/%Y')
+=======
+dcwb$date <- as.Date(dcwb[,1], '%d/%m/%Y')
+if(sum(is.na(dcwb$date))>(0.5*nrow(dcwb)))
+ dcwb$date <- as.Date(dcwb[,2], '%d/%m/%Y')
+
+>>>>>>> e31da2dbd86ec34f2443e5a33a84910ade4d2465
 summary(dcwb$date)
 
 if (!any(ls()=='alldates'))
@@ -40,8 +47,38 @@ if(FALSE) {
     summary(dcwb$IDADE)
 
     table(cut(dcwb$IDADE, c(0, 30, 60, Inf), right=F))
-    table(cut(dcwb$IDADE, c(0, 40, 60, 80, Inf), right=F))
+    table(Idade20 <- cut(dcwb$IDADE, c(0, 20, 40, 60, 80, Inf), right=F))
     table(dcwb$g3idade <- cut(dcwb$IDADE, c(0, 30, 50, 70, Inf), right=F))
+
+    sexo <- toupper(dcwb$SEXO)
+    desfecho <- ifelse(dcwb$ENC=='', 'Investigação',
+                ifelse(dcwb$ENC=='RECUPERADO', 'Recuperado', 'Óbito'))
+
+    load('data/w2pop.RData')
+
+    icwbp <- which(dimnames(w2pop)[[1]]=='4106902 Curitiba - PR')
+    icwbp
+
+    pcwb <- w2pop[icwbp,, ]
+    pcwb
+
+    pop5 <- aggregate(pcwb, by=list(Idade20=rep(1:5, c(4,4,4,4,3))), sum)[,-1]
+    rownames(pop5) <- levels(Idade20)
+
+    table(Idade20, desfecho)
+    rowSums(pop5)
+    round(100*table(Idade20, desfecho)/rowSums(pop5), 2)
+    round(100*prop.table(table(Idade20, desfecho), 1), 2)
+
+    table(Idade20, sexo)
+
+    round(100*table(Idade20, sexo)/pop5, 2)
+
+    round(100*prop.table(table(Idade20, sexo), 1), 2)
+
+    round(100*prop.table(table(Idade20, desfecho), 1), 2)
+
+    round(100*prop.table(table(Idade20, desfecho, sexo), 1), 2)
 
     ti3n <- table(substr(dcwb$fdate, 1, 6),
                   dcwb$g3idade, dcwb$ENC)
