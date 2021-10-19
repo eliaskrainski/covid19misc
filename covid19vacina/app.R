@@ -29,6 +29,7 @@ if(pt) {
               'População: Projeções feitas pelo departamento de demografia da UFRN', 
               'Vacinação: https://opendatasus.saude.gov.br/dataset/covid-19-vacinacao')
   Ttitle <- 'Doses de cada vacina:'
+  T2title <- 'População (Lepp/PPGDem/UFRN, "https://doi.org/10.31406/relap2020.v14.i1.n26.6">) e doses (MS) por faixa etária e sexo:'
 } else {
   mainlabel <- 'Vaccine against COVID19 in Brazil, regions, states and municipalities.'
   Vlabel <- 'Vaccine'
@@ -42,6 +43,7 @@ if(pt) {
               'Population data: Projections made by the department of demography of the UFRN', 
               'Vaccine data: https://opendatasus.saude.gov.br/dataset/covid-19-vacinacao')
   Ttitle <- 'Doses by each vaccine:'
+  T2title <- 'Population (Lepp/PPGDem/UFRN, "https://doi.org/10.31406/relap2020.v14.i1.n26.6") and doses (MS) by age group and gender:'
 }
 
 prettyDateLabel <- function(x, format=NULL) {
@@ -266,6 +268,33 @@ makeTable <- function(slocal, svac, ppop) {
   return(tab)
 }
 
+makeTable2 <- function(slocal, svac, ppop) {
+  il <- which(locl==slocal)
+  iv <- pmatch(svac, vaclab)
+  tab <- as.data.frame(cbind(
+    w2pop[il,,],
+    apply(v2tab[il,,,,iv,1, drop=FALSE], c(3,4), sum),
+    apply(v2tab[il,,,,iv,2, drop=FALSE], c(3,4), sum)))
+  rownames(tab) <- gsub('X', '', 
+                        gsub('.a.', ' a ', 
+                             gsub('90.', '90+', rownames(tab), 
+                                  fixed=TRUE), fixed=TRUE), fixed=TRUE)
+  colnames(tab) <- paste(
+    rep(c('F', 'M'), 3), 
+    rep(c('Pop', '1', '2/u'), each=2))
+  if(ppop) {
+    tab <- as.data.frame(cbind(tab, tab[,3:6]))
+    for(j in 1:2) {
+      tab[, 6+j] <- 100*tab[,2+j]/tab[,j]
+      tab[, 8+j] <- 100*tab[,4+j]/tab[,j]
+    }
+    colnames(tab)[7:10] <- paste(colnames(tab)[7:10], '(% Pop`.)')
+  }
+  for(j in 1:6)
+    storage.mode(tab[,j]) <- 'integer'
+  return(tab)
+}
+
 ui <- fluidPage(
   includeHTML("../GLOBAL/header.html"), 
   withMathJax(), 
@@ -297,7 +326,9 @@ ui <- fluidPage(
       plotOutput("pyramid"),
       plotOutput("time"),
       h4(Ttitle),
-      tableOutput("vdose")
+      tableOutput("vdose"),
+      h4(T2title),
+      tableOutput("adose")
     ) ## end mainPanel
   ) ## end sidebarLayout
 ) ## fluidPage
@@ -340,6 +371,11 @@ server <- function(input, output) {
   output$vdose <- renderTable({
     runInside()
     makeTable(input$local, input$vaccine, input$ppop)
+  }, rownames=TRUE)
+  
+  output$adose <- renderTable({
+    runInside()
+    makeTable2(input$local, input$vaccine, input$ppop)
   }, rownames=TRUE)
   
 }
