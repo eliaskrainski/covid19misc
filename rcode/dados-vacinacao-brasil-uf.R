@@ -61,22 +61,32 @@ print(Sys.time()-t00)
 
 cat("#####   P A R T 1   -   D O N E!   #####\n")
 
-idat <- system('ls -lh data/tMunDateN.csv', TRUE)
-idat
+rdata <- TRUE 
 
-pdat <- gregexpr('data/', idat)[[1]]
-pdat
+if(file.exists('data/tMunDateN.csv')) {
 
-ddat <- substr(idat, pdat-13, pdat-2)
-ddat
+  idat <- system('ls -lh data/tMunDateN.csv', TRUE)
+  idat
 
-dtime <- as.numeric(difftime(
-    as.POSIXlt(Sys.time()),
-    as.POSIXlt.character(ddat, format='%b %d %H:%M'),
-    units='hours'))
+  pdat <- gregexpr('data/', idat)[[1]]
+  pdat
 
+  ddat <- substr(idat, pdat-13, pdat-2)
+  ddat
 
-if(dtime>19) {
+  dtime <- as.numeric(difftime(
+      as.POSIXlt(Sys.time()),
+     as.POSIXlt.character(ddat, format='%b %d %H:%M'),
+      units='hours'))
+  if(dtime>19) {
+    rdata <- TRUE
+  } else {
+    rdata <- FALSE
+  }
+
+}
+
+if(rdata) {
     
     ufs <- substr(fls, 20, 21)
     ufs
