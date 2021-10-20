@@ -184,7 +184,7 @@ system.time(gmbl$sub_region_1 <- gsub('Federal District', 'Distrito Federal', gm
 sapply(wgmbl, dim)
 
 i.ufs.R <- split(sapply(1:nrow(uf), function(i) {
-    nch <- nchar(uf$State[i])
+    nch <- nchar(as.character(uf$State)[i])
     which(substr(rownames(wgmbl[[1]]), 2, nch+4)==
           paste0(uf$State[i], '_BR'))
 }), substr(rownames(uf), 1, 1))
