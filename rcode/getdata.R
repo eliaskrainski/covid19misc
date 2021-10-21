@@ -63,6 +63,11 @@ brms.f <- function(d=TRUE) {
     url <- httr::content(res.url)$results[[1]]$arquivo$url 
     if (d) {
         system('rm HIST_*.csv')
+        if (substring(url, nchar(url)-2)=='.7z') {
+            download.file(url, 'brms.7z')
+            system('7z e brms.7z')
+            system('rm brms.7z')
+        }
         if (substring(url, nchar(url)-2)=='zip') {
             download.file(url, 'brms.zip')
             unzip('brms.zip')

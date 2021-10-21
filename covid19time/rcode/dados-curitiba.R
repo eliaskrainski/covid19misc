@@ -23,14 +23,10 @@ library(data.table)
 dcwb <- as.data.frame(fread(
     'data/casosCuritibaSM.csv', encoding='Latin-1', dec=','))
 
-<<<<<<< HEAD
-dcwb$date <- as.Date(dcwb[,2], '%d/%m/%Y')
-=======
-dcwb$date <- as.Date(dcwb[,1], '%d/%m/%Y')
+dcwb$date <- as.Date(as.character(dcwb[,1]), '%d/%m/%Y')
 if(sum(is.na(dcwb$date))>(0.5*nrow(dcwb)))
  dcwb$date <- as.Date(dcwb[,2], '%d/%m/%Y')
 
->>>>>>> e31da2dbd86ec34f2443e5a33a84910ade4d2465
 summary(dcwb$date)
 
 if (!any(ls()=='alldates'))
