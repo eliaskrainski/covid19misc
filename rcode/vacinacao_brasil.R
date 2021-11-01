@@ -34,13 +34,21 @@ if(floor(attdvtime)>19) {
 ###        ufdv <- get(paste0('dv_',uf))
         if(verbose) cat('data loaded: dim =', dim(ufdv), '\n')
         
-        vacina <- rep(NA, nrow(ufdv))
-        vacina[grep('Coronavac', ufdv$vacina_nome)] <- 'Coronavac'
-        vacina[grep('Pfizer', ufdv$vacina_nome)] <- 'Pfizer'
-        vacina[grep('Janssen', ufdv$vacina_nome)] <- 'Janssen'
-        vacina[grep('Astra', ufdv$vacina_nome)] <- 'AZ'
-        vacina[grep('shield', ufdv$vacina_nome)] <- 'AZ'
-        
+	vl <- unique(ufdv$vacina_nome)
+	ll <- rep(NA, length(vl))
+	ll[grep('Coronav', vl)] <- 'Coronavac'
+        ll[grep('CORONAV', vl)] <- 'Coronavac'
+	ll[grep('stra', vl)] <- 'AZ'
+	ll[grep('STRA', vl)] <- 'AZ'
+	ll[grep('hield', vl)] <- 'AZ'
+	ll[grep('HIELD', vl)] <- 'AZ'
+	ll[grep('fizer', vl)] <- 'Pfizer'
+	ll[grep('FIZER', vl)] <- 'Pfizer' 
+	ll[grep('anssen', vl)] <- 'Janssen'
+	ll[grep('ANSSEN', vl)] <- 'Janssen'
+
+	vacina <- factor(ufdv$vacina_nome, vl, ll)
+
         if(verbose) cat("'vacina' created\n")
         
         if(verbose>999) {
@@ -123,7 +131,7 @@ if(floor(attdvtime)>19) {
     }
 
     t1 <- Sys.time()
-    v2tab <- dv2tab('SP', TRUE)
+    v2tab <- dv2tab('SP', 10000)
     cat('SP : ', Sys.time()-t1, '\n')
 
     cat("'dim(v2tab)' =", dim(v2tab), '\n')
