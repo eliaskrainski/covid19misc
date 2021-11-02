@@ -16,11 +16,21 @@ n.doses <- tapply(dMunDateDose$N, dMunDateDose$Dose, sum)
 n.doses <- sort(n.doses, decreasing=TRUE)
 n.doses
 
-system.time(Dose <- factor(dMunDateDose$Dose,
-                           c("1ª Dose", "Dose Inicial ",
-                             "2ª Dose", "Dose ", "Única "),
-                           rep(c('Dose 1', 'Dose 2/u'), c(2,3))))
-ldose <- levels(Dose)[1:2]
+dl0 <- levels(dMunDateDose$Dose)
+        dl <- rep('R', length(dl0))
+        dl[intersect(grep('1', dl0), grep('ose', dl0))] <- '1'
+        dl[intersect(grep('1', dl0), grep('OSE', dl0))] <- '1'
+        dl[intersect(grep('2', dl0), grep('ose', dl0))] <- '2/u'
+        dl[intersect(grep('2', dl0), grep('OSE', dl0))] <- '2/u'
+        dl[grep('icial', dl0)] <- '1'
+        dl[grep('ICIAL', dl0)] <- '1'
+        dl[grep('nica', dl0)] <- '2/u'
+        dl[grep('NICA', dl0)] <- '2/u'
+        dl[dl0%in%c('Dose', 'Dose ', 'DOSE', 'DOSE ')] <- '2/u'
+        dl[union(grep('Re', dl0), grep('RE', dl0))] <- 'R'
+
+system.time(Dose <- factor(factor(dMunDateDose$Dose, dl0, dl), c('1','2/u','R')))
+ldose <- levels(Dose)#[1:2]
 names(ldose) <- ldose
 ldose
 
