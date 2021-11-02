@@ -66,6 +66,7 @@ if(floor(attdvtime)>19) {
 	dl[grep('nica', dl0)] <- '2/u'
 	dl[grep('NICA', dl0)] <- '2/u'
 	dl[dl0%in%c('Dose', 'Dose ', 'DOSE', 'DOSE ')] <- '2/u'
+	dl[union(grep('Re', dl0), grep('RE', dl0))] <- 'R'
 
         dose <- factor(ufdv$vacina_descricao_dose, dl0, dl)
         if(verbose) cat("'dose' created\n")
