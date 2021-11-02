@@ -31,17 +31,12 @@ if(floor(attdvtime)>19) {
         
         rfl <- paste0('RData/dv_', uf, '.RData')
         attach(rfl) # safer and will warn about masked objects w/ same name in .GlobalEnv
-###        ufdv <- get(paste0('dv_',uf))
         if(verbose) cat('data loaded: dim =', dim(ufdv), '\n')
         
 	vl <- unique(ufdv$vacina_nome)
-	ll <- rep(NA, length(vl))
+	ll <- rep('AZ', length(vl))
 	ll[grep('Coronav', vl)] <- 'Coronavac'
         ll[grep('CORONAV', vl)] <- 'Coronavac'
-	ll[grep('stra', vl)] <- 'AZ'
-	ll[grep('STRA', vl)] <- 'AZ'
-	ll[grep('hield', vl)] <- 'AZ'
-	ll[grep('HIELD', vl)] <- 'AZ'
 	ll[grep('fizer', vl)] <- 'Pfizer'
 	ll[grep('FIZER', vl)] <- 'Pfizer' 
 	ll[grep('anssen', vl)] <- 'Janssen'
@@ -59,23 +54,24 @@ if(floor(attdvtime)>19) {
         ufdv$vacina_nome <- vacina
         rm(vacina)
         gc(reset=TRUE)
-        
-        dose <- substr(ufdv$vacina_descricao_dose, 1, 1)
-        if(verbose>999)
-            print(table(dose))
-        dose[dose=='D'] <- 'Ú'
-        
-        if(verbose>999) 
-            print(table(ufdv$vacina_nome, dose))
-        
-        dose[ufdv$vacina_nome=='Janssen'] <- 'Ú'
-        
-        if(verbose>999)
-            print(table(ufdv$vacina_nome, dose))
-        
-        dose[dose!=1] <- '2/u'
-        
+       
+        dl0 <- unique(ufdv$vacina_descricao_dose)
+        dl <- rep('R', length(dl0))
+	dl[intersect(grep('1', dl0), grep('ose', dl0))] <- '1'
+	dl[intersect(grep('1', dl0), grep('OSE', dl0))] <- '1'
+	dl[intersect(grep('2', dl0), grep('ose', dl0))] <- '2/u'
+	dl[intersect(grep('2', dl0), grep('OSE', dl0))] <- '2/u'
+	dl[grep('nica', dl0)] <- '2/u'
+	dl[dl0=='Dose'] <- '2/u'
+	dl[dl0=='Dose '] <- '2/u'
+
+        dose <- factor(ufdv$vacina_descricao_dose, dl0, dl)
         if(verbose) cat("'dose' created\n")
+
+        if(verbose>999) {
+            print(table(ufdv$vacina_descricao_dose, dose))
+            print(table(ufdv$vacina_nome, dose))
+	}
 
         ufdv$vacina_descricao_dose <- dose
         rm(dose)
