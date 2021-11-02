@@ -61,9 +61,11 @@ if(floor(attdvtime)>19) {
 	dl[intersect(grep('1', dl0), grep('OSE', dl0))] <- '1'
 	dl[intersect(grep('2', dl0), grep('ose', dl0))] <- '2/u'
 	dl[intersect(grep('2', dl0), grep('OSE', dl0))] <- '2/u'
+	dl[grep(dl0, 'icial')] <- '1'
+	dl[grep(dl0, 'ICIAL')] <- '1'
 	dl[grep('nica', dl0)] <- '2/u'
-	dl[dl0=='Dose'] <- '2/u'
-	dl[dl0=='Dose '] <- '2/u'
+	dl[grep('NICA', dl0)] <- '2/u'
+	dl[dl0%in%c('Dose', 'Dose ', 'DOSE', 'DOSE ')] <- '2/u'
 
         dose <- factor(ufdv$vacina_descricao_dose, dl0, dl)
         if(verbose) cat("'dose' created\n")
