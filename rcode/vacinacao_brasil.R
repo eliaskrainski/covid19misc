@@ -42,7 +42,8 @@ if(floor(attdvtime)>19) {
 	ll[grep('anssen', vl)] <- 'Janssen'
 	ll[grep('ANSSEN', vl)] <- 'Janssen'
 
-	vacina <- factor(ufdv$vacina_nome, vl, ll)
+	vaclab <- c('AZ', 'Coronavac', 'Janssen', 'Pfizer')
+        vacina <- factor(factor(ufdv$vacina_nome, vl, ll), vaclab)
 
         if(verbose) cat("'vacina' created\n")
         
