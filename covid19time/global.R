@@ -34,8 +34,10 @@ load('data/wgmbl.RData')
 load('data/wambl.RData')
 load('data/wvac.RData')
 
-wvac <- wvac[1:2]
 names(wvac) <- paste('Dose', names(wvac))
+att2 <- attributes(wvac)[-1]
+wvac <- wvac[1:2]
+attributes(wvac) <- c(attributes(wvac)[1], att2)
 
 cn <- colnames(wdl[[1]])
 vecDate <- as.Date(cn[7:length(cn)], 'X%Y%m%d')
