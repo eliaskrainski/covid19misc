@@ -34,6 +34,9 @@ load('data/wgmbl.RData')
 load('data/wambl.RData')
 load('data/wvac.RData')
 
+wvac <- wvac[1:2]
+names(wvac) <- paste('Dose', names(wvac))
+
 cn <- colnames(wdl[[1]])
 vecDate <- as.Date(cn[7:length(cn)], 'X%Y%m%d')
 lastday <- tail(vecDate, 1)
