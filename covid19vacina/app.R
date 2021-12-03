@@ -293,7 +293,7 @@ makeTable2 <- function(slocal, svac, ppop) {
       tab[, 12+j] <- 100*tab[,6+j]/tab[,j]
     }
     colnames(tab)[9:14] <- paste0(substr(colnames(tab)[3:8], 1, 2), '%',
-                                  substring(colnames(tab)[3:8], 4))
+                                  substring(colnames(tab)[3:8], 3))
   }
   for(j in 1:8)
     storage.mode(tab[,j]) <- 'integer'
