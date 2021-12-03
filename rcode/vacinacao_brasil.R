@@ -136,6 +136,7 @@ if(floor(attdvtime)>19) {
     cat('SP : ', Sys.time()-t1, '\n')
 
     cat("'dim(v2tab)' =", dim(v2tab), '\n')
+    print(tail(dimnames(v2tab),4))
     
     uftb <- structure(list(
         STATE = c("RONDÔNIA", "ACRE", "AMAZONAS", "RORAIMA", "PARÁ", "AMAPÁ",
