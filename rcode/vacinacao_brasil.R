@@ -69,7 +69,8 @@ if(floor(attdvtime)>19) {
 	dl[dl0%in%c('Dose', 'Dose ', 'DOSE', 'DOSE ')] <- '1'
 	dl[union(grep('Re', dl0), grep('RE', dl0))] <- '3'
 
-        dose <- factor(ufdv$vacina_descricao_dose, dl0, paste0('D', dl))
+        dose <- factor(factor(ufdv$vacina_descricao_dose, dl0, paste0('D', dl)),
+                       paste0('D', 1:3))
         if(verbose) cat("'dose' created\n")
 
         if(verbose>999) {
