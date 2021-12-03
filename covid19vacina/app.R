@@ -120,7 +120,7 @@ pyramid2plot <- function(slocal,
   n3l <- xKMlabel(n3s) 
   for(k in 1:2)
     legend(xMax*c(-0.99, 0.9)[k], par()$usr[4], 
-           paste(c('Pop.', 'Dose 1', 'Dose 2/u'), n3l[k,]), 
+           paste(c('Pop.', 'Dose 1', 'Dose 2'), n3l[k,]), 
            bg='white', box.col='transparent',
            border='transparent', xjust=k-1,
            fill=rbind(cF, cM)[k,], 
@@ -243,7 +243,7 @@ timeplot <- function(slocal, svac, ppop, doplot) {
     axis(2, yl$x, yl$l)
     legend('topleft', vaclab[iv], fill=col4d[[d]][iv], 
            bty='n', border='transparent', 
-           title=paste('Dose', c(1, '2/u')[d]))
+           title=paste('Dose', c(1, '2')[d]))
   }
   
 }
@@ -281,7 +281,7 @@ makeTable2 <- function(slocal, svac, ppop) {
                                   fixed=TRUE), fixed=TRUE), fixed=TRUE)
   colnames(tab) <- paste(
     rep(c('F', 'M'), 3), 
-    rep(c('Pop', '1', '2/u'), each=2))
+    rep(c('Pop', '1', '2'), each=2))
   if(ppop) {
     tab <- as.data.frame(cbind(tab, tab[,3:6]))
     for(j in 1:2) {
