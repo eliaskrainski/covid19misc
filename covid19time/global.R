@@ -1797,20 +1797,20 @@ data2plot <- function(d,
             
         }
 
-        if (any(plots%in%c(1:10))) {
+        if (any(plots%in%c(1:12))) {
             if (showPoints) {
-                legend(legpos, allpls[-(1:4)][jjp2+6],
+                legend(legpos, allpls[12+jjp2],
                        pch=jjp2, lty=jlty2, lwd=jlwd2,
                        bty='n')
             } else {
-                legend(legpos, allpls[-(1:4)][jjp2+6], 
+                legend(legpos, allpls[12+jjp2], 
                        lty=jlty2, lwd=jlwd2,
                        bty='n')
             }
         } else {
             if (showPoints) {
                 legend(legpos,
-                       c(lll[oloc], allpls[-(1:4)][jjp2+6]),
+                       c(lll[oloc], allpls[12+jjp2]), 
                        pch=c(rep(1, length(oplot)), jjp2), 
                        lty=c(rep(1, length(oloc)),
                              rep(NA, length(jltyg2))),
@@ -1819,7 +1819,7 @@ data2plot <- function(d,
                        ncol=leg.ncols, bty='n')
             } else {
                 legend(legpos,
-                       c(lll[oloc], allpls[-(1:4)][jjp2+6]),
+                       c(lll[oloc], allpls[12+jjp2]), 
                        lty=c(rep(1, length(oloc)),
                              rep(1, length(jlty2))),
                        lwd=c(rep(2, length(oloc)), jlwd2),
