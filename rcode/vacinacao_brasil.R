@@ -57,24 +57,24 @@ if(floor(attdvtime)>19) {
         gc(reset=TRUE)
        
         dl0 <- unique(ufdv$vacina_descricao_dose)
-        dl <- rep('R', length(dl0))
+        dl <- rep('3', length(dl0))
 	dl[intersect(grep('1', dl0), grep('ose', dl0))] <- '1'
 	dl[intersect(grep('1', dl0), grep('OSE', dl0))] <- '1'
-	dl[intersect(grep('2', dl0), grep('ose', dl0))] <- '2/u'
-	dl[intersect(grep('2', dl0), grep('OSE', dl0))] <- '2/u'
+	dl[intersect(grep('2', dl0), grep('ose', dl0))] <- '2'
+	dl[intersect(grep('2', dl0), grep('OSE', dl0))] <- '2'
 	dl[grep('icial', dl0)] <- '1'
 	dl[grep('ICIAL', dl0)] <- '1'
-	dl[grep('nica', dl0)] <- '2/u'
-	dl[grep('NICA', dl0)] <- '2/u'
-	dl[dl0%in%c('Dose', 'Dose ', 'DOSE', 'DOSE ')] <- '2/u'
-	dl[union(grep('Re', dl0), grep('RE', dl0))] <- 'R'
+	dl[grep('nica', dl0)] <- '1'
+	dl[grep('NICA', dl0)] <- '1'
+	dl[dl0%in%c('Dose', 'Dose ', 'DOSE', 'DOSE ')] <- '1'
+	dl[union(grep('Re', dl0), grep('RE', dl0))] <- '3'
 
-        dose <- factor(ufdv$vacina_descricao_dose, dl0, dl)
+        dose <- factor(ufdv$vacina_descricao_dose, dl0, paste0('D', dl))
         if(verbose) cat("'dose' created\n")
 
         if(verbose>999) {
-            print(table(ufdv$vacina_descricao_dose, dose))
-            print(table(ufdv$vacina_nome, dose))
+            print(addmargins(table(ufdv$vacina_descricao_dose, dose)))
+            print(addmargins(table(ufdv$vacina_nome, dose)))
 	}
 
         ufdv$vacina_descricao_dose <- dose
