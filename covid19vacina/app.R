@@ -11,8 +11,8 @@ locl[c(1+5+27+1):length(locll)] <-
   substring(locll[(1+5+27+1):length(locll)], 9)
 
 vaclab <- c('AZ', 'Coronavac', 'Janssen', 'Pfizer')
-cF <- rgb(1.0, 3:0/5, 3:0/8)
-cM <- rgb(3:0/10, 3:0/4, 1.0)
+cF <- rgb(1.0, 4:0/5, 4:0/8)
+cM <- rgb(4:0/10, 4:0/4, 1.0)
 
 pt <- length(grep('MESSAGES=pt', Sys.getlocale())>0)
 
@@ -120,13 +120,13 @@ pyramid2plot <- function(slocal,
   n3l <- xKMlabel(n3s) 
   for(k in 1:2)
     legend(xMax*c(-0.99, 0.9)[k], par()$usr[4], 
-           paste(c('Pop.', 'Dose 1', 'Dose 2'), n3l[k,]), 
+           paste(c('Pop', dimnames(vac)[[3]]), n3l[k,]), 
            bg='white', box.col='transparent',
            border='transparent', xjust=k-1,
            fill=rbind(cF, cM)[k,], 
            cex=1.00, title=genderlabs[k])
   
-  for(k in 1:2) {
+  for(k in 1:3) {
     barplot(-vac[,1,k], horiz=TRUE, space=0, add=TRUE,
             border='transparent', ##'black')[(k>1)+1],
             col=cF[1+k], axes=FALSE)
@@ -138,10 +138,10 @@ pyramid2plot <- function(slocal,
     mtext(Fnotes[k], 1, 1+k, adj=0, cex=0.9)
   
   if(ppop){
-    for(k in 1:2) {
+    for(k in 1:3) {
       vplot <- new('numeric', -vac[,1,k]/pop[,1])
       barplot(vplot, 
-              horiz=TRUE, space=0, add=(k==2), ylab='',
+              horiz=TRUE, space=0, add=(k>1), ylab='',
               border='transparent', ##'black')[(k>1)+1],
               col=cF[1+k], axes=FALSE, xlim=c(-1,1))
       vplot <- new('numeric', vac[,2,k]/pop[,2])
@@ -188,17 +188,20 @@ timeplot <- function(slocal, svac, ppop, doplot) {
            c(1.0,0.2,0.0,0.8)), 
     d2=rgb(c(0.1,1.0,0.3,0.5), 
            c(0.3,0.1,1.0,0.8), 
-           c(1.0,0.0,0.3,0.7)))
+           c(1.0,0.0,0.3,0.7)),
+    d3=rgb(c(0.1,1.0,0.2,0.3), 
+           c(0.3,0.1,1.0,0.6), 
+           c(1.0,0.0,0.2,0.5)))
   
   nv <- length(iv)
 
-  par(mfrow=c(1,2), mar=c(2, 4, 0, 0), 
+  par(mfrow=c(1,3), mar=c(2, 4, 0, 0), 
       mgp=c(3,0.5,0), las=1)
   
   dpop <- c(1,1)
   if(ppop) dpop <- npop
 
-  for(d in 1:2) {
+  for(d in 1:3) {
     avacf <- apply(vac[,1,,d][,iv,drop=FALSE],1,cumsum)/dpop[1]
     avacm <- apply(vac[,2,,d][,iv,drop=FALSE],1,cumsum)/dpop[2]
     if(nv==1) {
@@ -252,7 +255,6 @@ makeTable <- function(slocal, svac, ppop) {
   il <- which(locl==slocal)
   iv <- pmatch(svac, vaclab)
   tab <- apply(v2tab[il,,,,iv,, drop=FALSE], 5:6, sum)
-  colnames(tab) <- paste('Dose', colnames(tab))
   tab <- addmargins(tab)
   storage.mode(tab) <- 'integer'
   if(pt) {
@@ -261,8 +263,8 @@ makeTable <- function(slocal, svac, ppop) {
   }
   if(ppop) {
     tab <- as.data.frame(cbind(tab, 100*tab/sum(w2pop[il,, ])))
-    colnames(tab)[4:6] <- paste(colnames(tab)[4:6], '(% Pop.)')
-    for(j in 1:3)
+    colnames(tab)[5:8] <- paste0(colnames(tab)[5:8], '(%Pop)')
+    for(j in 1:4)
       storage.mode(tab[,j]) <- 'integer'
   }
   return(tab)
@@ -274,23 +276,26 @@ makeTable2 <- function(slocal, svac, ppop) {
   tab <- as.data.frame(cbind(
     w2pop[il,,],
     apply(v2tab[il,,,,iv,1, drop=FALSE], c(3,4), sum),
-    apply(v2tab[il,,,,iv,2, drop=FALSE], c(3,4), sum)))
+    apply(v2tab[il,,,,iv,2, drop=FALSE], c(3,4), sum),
+    apply(v2tab[il,,,,iv,3, drop=FALSE], c(3,4), sum)))
   rownames(tab) <- gsub('X', '', 
                         gsub('.a.', ' a ', 
                              gsub('90.', '90+', rownames(tab), 
                                   fixed=TRUE), fixed=TRUE), fixed=TRUE)
-  colnames(tab) <- paste(
-    rep(c('F', 'M'), 3), 
-    rep(c('Pop', '1', '2'), each=2))
+  colnames(tab) <- paste0(
+      rep(c('Pop', paste0('D',1:3)), each=2),
+      rep(c('F', 'M'), 3))
   if(ppop) {
-    tab <- as.data.frame(cbind(tab, tab[,3:6]))
+    tab <- as.data.frame(cbind(tab, tab[,3:8]))
     for(j in 1:2) {
-      tab[, 6+j] <- 100*tab[,2+j]/tab[,j]
-      tab[, 8+j] <- 100*tab[,4+j]/tab[,j]
+      tab[, 8+j] <- 100*tab[,2+j]/tab[,j]
+      tab[, 10+j] <- 100*tab[,4+j]/tab[,j]
+      tab[, 12+j] <- 100*tab[,6+j]/tab[,j]
     }
-    colnames(tab)[7:10] <- paste(colnames(tab)[7:10], '(% Pop`.)')
+    colnames(tab)[9:14] <- paste0(substr(colnames(tab)[3:8], 1, 2), '%',
+                                  substring(colnames(tab)[3:8], 4))
   }
-  for(j in 1:6)
+  for(j in 1:8)
     storage.mode(tab[,j]) <- 'integer'
   return(tab)
 }

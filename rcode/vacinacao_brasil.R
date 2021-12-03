@@ -171,7 +171,7 @@ if(floor(attdvtime)>19) {
     
     round(addmargins(apply(v2tab, 5:6, sum)/1e6), 1)
     
-    round(addmargins(apply(v2tab, 5:6, sum)/212e4), 1)
+    round(addmargins(apply(v2tab, 5:6, sum)/213e4), 1)
 
     ii.mun <- (1+5+27+1):dim(v2tab)[1]
     length(ii.mun)
@@ -200,6 +200,18 @@ if(floor(attdvtime)>19) {
             muns=sum(v2tab[ii.mun,,,,,]))/1e6)
     
     dimnames(v2tab)[[1]] <- locl
+
+    if(FALSE) {
+
+        vtr <- apply(v2tab[1:(1+5+27),,,,,], c(1,6),sum)
+        names(dimnames(vtr)) <- c('local', 'dose')
+        print(round(vtr/1e6,2))
+
+        options(dec=',')
+        print(round(100*vtr/
+                    apply(w2pop[1:(1+5+27),,], 1, sum), 2))
+                
+    }
     
     attr(v2tab, 'updated') <- Sys.time()
     
