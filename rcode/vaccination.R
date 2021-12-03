@@ -31,12 +31,17 @@ if(FALSE)
     with(vd[(vd$location=='China'), ],
          plot(date, daily_vaccinations, main='China', pch=19))
 
+if(FALSE)
+    with(vd[(vd$location=='China'), ],
+         plot(date, total_vaccinations, main='China', pch=19))
+
 library(ggplot2)
 
 if(FALSE)
     ggplot(vd[vd$date<as.Date('2021-01-01'), ]) +
         geom_point(aes(x=date, y=total_vaccinations,
-                       group=location, col=location))
+                       group=location, col=location)) +
+        scale_y_sqrt()
 
 vd[vd$location=='United States' &
    (Sys.Date()-vd$date)<4, ]
@@ -63,6 +68,60 @@ if (FALSE)
     with(vd[vd$location=='United States',],
          plot(date, daily_vaccinations_per_hundred, pch=19,
               xlab='', type='o')) 
+
+if (FALSE)
+    with(vd[vd$location=='Brazil',],
+         plot(date, daily_vaccinations_per_hundred, pch=19,
+              xlab='', type='o')) 
+
+if (FALSE)
+    with(vd[vd$location=='Brazil',],
+         plot(date, people_fully_vaccinated_per_hundred, pch=19,
+              xlab='', type='o'))
+
+tabpp1 <- addmargins(outer(
+    c(NVac=.4, Vac=.6),
+    c(NInf=.4, Infe=.6)))*100
+dimnames(tabpp1)[[1]][3] <- dimnames(tabpp1)[[2]][3] <- 'Tot'
+tabpp1
+
+n <- 1e6
+prop.table(table(rbinom(n, 1, 0.6),
+                 rbinom(n, 1, 0.6)))
+
+xx <- cbind(rnorm(n, 0, 1), rnorm(n, 0, 1))
+pp <- plogis(qlogis(0.6)+xx)
+
+par(mfrow=c(1,1), mar=c(3,3,0,0), mgp=c(1.5,0.5,0), las=1)
+plot(pp, xlab='P fully vax', ylab='P infected', pch=19, bty='n')
+
+bb <- apply(ppc, 2, function(p) rbinom(n, 1, p))
+prop.table(table(bb[,1], bb[,2]))
+
+mcor <- matrix(c(1, -0.9, -0.9, 1), 2)
+mcor
+
+xxc <- xx%*%chol(mcor)
+cor(xxc)
+
+plot(xxc)
+
+ppc <- plogis(qlogis(0.6)+xxc)
+
+par(mfrow=c(1,1), mar=c(3,3,0,0), mgp=c(1.5,0.5,0), las=1)
+plot(ppc, xlab='P fully vax', ylab='P infected', pch=19, bty='n')
+
+bbc <- apply(ppc, 2, function(p) rbinom(n, 1, p))
+ppc2tab <- addmargins(100*prop.table(table(bbc[,1], bbc[,2])))
+dimnames(ppc2tab) <- dimnames(tabpp1)
+
+round(ppc2tab, 2)
+
+tcond <- tabpp1
+tcond[1:2, 1] <- c(10, 30)
+tcond[1:2, 2] <- c(30, 30)
+tcond
+tcond[2,1:2]/tcond[3,1:2]
 
 gctr <- c('World', 'Asia', 'Upper middle income', 'High income',
           'North America', 'Europe', 'Lower middle income',
