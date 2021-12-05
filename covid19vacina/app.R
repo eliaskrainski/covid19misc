@@ -278,10 +278,11 @@ makeTable2 <- function(slocal, svac, ppop) {
     apply(v2tab[il,,,,iv,1, drop=FALSE], c(3,4), sum),
     apply(v2tab[il,,,,iv,2, drop=FALSE], c(3,4), sum),
     apply(v2tab[il,,,,iv,3, drop=FALSE], c(3,4), sum)))
-  rownames(tab) <- gsub('X', '', 
-                        gsub('.a.', ' a ', 
-                             gsub('90.', '90+', rownames(tab), 
-                                  fixed=TRUE), fixed=TRUE), fixed=TRUE)
+  rownames(tab) <- gsub(
+      'X', '', 
+      gsub('.a.', ' a ', 
+           gsub('90.', '90+', rownames(tab), 
+                fixed=TRUE), fixed=TRUE), fixed=TRUE)
   colnames(tab) <- paste0(
       rep(c('Pop', paste0('D',1:3)), each=2),
       rep(c('F', 'M'), 3))
@@ -292,8 +293,9 @@ makeTable2 <- function(slocal, svac, ppop) {
       tab[, 10+j] <- 100*tab[,4+j]/tab[,j]
       tab[, 12+j] <- 100*tab[,6+j]/tab[,j]
     }
-    colnames(tab)[9:14] <- paste0(substr(colnames(tab)[3:8], 1, 2), '%',
-                                  substring(colnames(tab)[3:8], 3))
+    colnames(tab)[9:14] <- paste0(
+        substr(colnames(tab)[3:8], 1, 2), '%',
+        substring(colnames(tab)[3:8], 3))
   }
   for(j in 1:8)
     storage.mode(tab[,j]) <- 'integer'

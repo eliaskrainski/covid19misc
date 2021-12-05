@@ -205,9 +205,8 @@ if(floor(attdvtime)>19) {
 
         vtr <- apply(v2tab[1:(1+5+27),,,,,], c(1,6),sum)
         names(dimnames(vtr)) <- c('local', 'dose')
-        print(round(vtr/1e6,2))
-
-        options(dec=',')
+        print(vtr)
+        
         print(round(100*vtr/
                     apply(w2pop[1:(1+5+27),,], 1, sum), 2))
                 
