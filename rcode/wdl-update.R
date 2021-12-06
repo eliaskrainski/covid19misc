@@ -479,32 +479,6 @@ if (usems) {
     
 }
 
-if (usefnd) {
-    
-    library(covid19br)
-
-    system.time(dbrms <- as.data.frame(
-                    covid19br:::downloadBR('en', 'cities')))
-    
-    dim(dbrms)
-    head(dbrms,2)
-    summary(dbrms$date)
-
-    for (j in which(sapply(dbrms, is.factor)))
-        dbrms[, j] <- as.character(dbrms[, j])
-
-    system.time(dbrms$fcode <- ifelse(
-                    dbrms$city=='', 'Indefinido', dbrms$city))
-
-    table(paste0(dbrms$fcode, ' (', dbrms$state, ')') %in% brmpop[,2])
-    table(dbrms$city[!paste0(dbrms$fcode, ' (', dbrms$state, ')') %in% brmpop[,2]])
-
-    dbrms$fdate <- factor(gsub('-', '', dbrms$data, 
-                               fixed=TRUE), alldates)
-    table(dbrms$region)
-
-}
-
 dim(unddbr)
 
 summary(w2i.brm <- pmatch(
