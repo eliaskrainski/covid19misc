@@ -154,7 +154,7 @@ sesa.f <- function(d=FALSE) {
             dd <- format(ldate, '%d')
             
             fldt <- paste0(yyyy, '-', mm, '/informe_epidemiologico_',
-                           dd, '_', mm, '_g')
+                           dd, '_', mm, '_', yyyy, '_g')
             if (CAP>0)
                 fldt <- toupper(fldt)
             
