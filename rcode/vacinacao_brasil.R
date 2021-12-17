@@ -85,12 +85,15 @@ if(floor(attdvtime)>19) {
         wMax <- (as.integer(difftime(
             Sys.Date(),
             as.Date('2021-01-03'), units='days')) %/% 7)+1
-        
+
+        ddate <- as.Date(ufdv$vacina_dataaplicacao)
         ufdv$vacina_dataaplicacao <-
             factor((as.integer(difftime(
-                       as.Date(ufdv$vacina_dataaplicacao),
+                       ddate,
                        as.Date('2021-01-03'), units='days')) %/% 7)+1,
                    3:wMax)
+        maxdate <- max(ddate)
+        rm(ddate)
         
         if(verbose) cat("epidemiological week created\n")
         
@@ -126,6 +129,9 @@ if(floor(attdvtime)>19) {
             print(str(table(ufdv$paciente_endereco_coibgemunicipio)))
         
         tab <- table(ufdv[c(3,4,1,2,6,5)])
+    
+        attr(tab, 'dataupdate') <- maxdate
+        
         detach()
         return(tab)
         
@@ -159,13 +165,19 @@ if(floor(attdvtime)>19) {
                   "33", "35", "41", "42", "43", "50", "51", "52", "53"),
     class = "data.frame")
     
+    dataup <- attr(v2tab, 'dataupdate')
     for(u in setdiff(uftb$UF, 'SP')) {
         tt <- Sys.time()
-        cat('uf = ', u, ' ... ')
-        v2tab <- v2tab + dv2tab(u, FALSE)
+        cat('uf =', u, '... ')
+        b <- dv2tab(u, FALSE)
+        d2 <- attr(b, 'dataupdate')
+        v2tab <- v2tab + b
+        dataup <- max(dataup, d2)
+        cat(' data update on', dataup, 'cpu time:')
         cat(Sys.time()-tt)
         cat(' done!\n')
     }
+    attr(v2tab, 'dataupdate') <- dataup
     
     sum(v2tab)
     

@@ -4,6 +4,7 @@ library(shinydashboard)
 load('RData/w2pop.RData')
 load('RData/v2tab.RData')
 
+dataupdate <- attr(v2tab, 'dataupdate')
 attdate <- attr(v2tab, 'update')
 
 locl <- locll <- dimnames(w2pop)[[1]]
@@ -24,8 +25,8 @@ if(pt) {
   genderlabs <- c('Mulheres', 'Homens')
   agelabel <- 'Idade'
   yVlabel <- '# doses' 
-  Fnotes <- c(paste('Atualizado em',
-              format(attdate, '%d de %B de %Y')), 
+  Fnotes <- c(paste('Dados atualizados pelo MS em',
+              format(dataupdate, '%d de %B de %Y')), 
               'População: Projeções feitas pelo departamento de demografia da UFRN', 
               'Vacinação: https://opendatasus.saude.gov.br/dataset/covid-19-vacinacao')
   Ttitle <- 'Doses de cada vacina:'
@@ -156,7 +157,7 @@ pyramid2plot <- function(slocal,
     p3l <- matrix(paste0(round(100*p3s, 1), '%'), 2) 
     for(k in 1:2)
       legend(c(-0.95, 0.99)[k], 3, 
-             paste(c('Dose1', 'Dose2'), p3l[k,]), 
+             paste(c('D1', 'D2', 'D3'), p3l[k,]), 
              bg='white', box.col='transparent',
              border='transparent', xjust=k-1,
              fill=rbind(cF, cM)[k,], 
