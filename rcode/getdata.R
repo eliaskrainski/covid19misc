@@ -158,7 +158,7 @@ sesa.f <- function(d=FALSE) {
             if (CAP>0)
                 fldt <- toupper(fldt)
             
-            sesa.fl <- paste0('https://www.saude.pr.gov.br/sites/default/',
+            sesa.fl <- paste0('http://www.saude.pr.gov.br/sites/default/',
                               'arquivos_restritos/files/documento/',
                               fldt, 'eral.csv')
             sesa.fl
@@ -243,7 +243,7 @@ gus.f <- function(d=TRUE) {
 
 others.f <- function() {
     gus.f()
-    brms.f()
+    wcota.f(TRUE)
     amob.f()
 }
 

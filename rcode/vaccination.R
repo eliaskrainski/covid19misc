@@ -77,7 +77,8 @@ if (FALSE)
 if (FALSE)
     with(vd[vd$location=='Brazil',],
          plot(date, people_fully_vaccinated_per_hundred, pch=19,
-              xlab='', type='o'))
+              xlab='', type='o', bty='n'))
+abline(h=pretty(par()$usr[3:4]), lty=2, col=gray(0.5,0.5))
 
 tabpp1 <- addmargins(outer(
     c(NVac=.4, Vac=.6),
