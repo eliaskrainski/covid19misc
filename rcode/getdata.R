@@ -242,9 +242,9 @@ gus.f <- function(d=TRUE) {
 }
 
 others.f <- function() {
-    gus.f()
-    wcota.f(TRUE)
-    amob.f()
+    gus.f(TRUE)
+    brms.f(TRUE)
+    amob.f(TRUE)
 }
 
 if(dupdate) {
