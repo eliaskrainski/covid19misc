@@ -1423,7 +1423,7 @@ data2plot <- function(d,
         }
         
         ylr <- axTransfTicks(transf, xTransf(ylm, transf))
-        ddylrl <- dupplicated(ylr$l)
+        ddylrl <- duplicated(ylr$l)
         ylr$x <- ylr$x[!ddylrl]
         ylr$l <- ylr$l[!ddylrl]
         axis(2, ylr$x, ylr$l, las=1) 
