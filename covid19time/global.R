@@ -1423,6 +1423,7 @@ data2plot <- function(d,
         }
         
         ylr <- axTransfTicks(transf, xTransf(ylm, transf))
+        ylr$l <- format(ylr$l, digits=2)
         ddylrl <- duplicated(ylr$l)
         ylr$x <- ylr$x[!ddylrl]
         ylr$l <- ylr$l[!ddylrl]
