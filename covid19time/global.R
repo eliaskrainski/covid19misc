@@ -516,8 +516,8 @@ dataPrepare <- function(slocal) {
     bb[,ncol(bb)-1] <- bb[, ncol(bb)] + bb[, ncol(bb)-1]
     bb <- bb[, 2:(ncol(bb)-1)]
 
-    print(summary(yy[,,1]))
-    print(summary(yy[,,2]))
+##    print(summary(yy[,,1]))
+  ##  print(summary(yy[,,2]))
     
     if (mgcv.ok) {
         d$sdy <- apply(yy[,,1, drop=FALSE], 2, SmoothFit, w=w)
@@ -531,11 +531,11 @@ dataPrepare <- function(slocal) {
             r <- y
             bbi <- bb[i.ok, colSums(bb[i.ok, , drop=FALSE])>1]
             xxi <- cbind(bbi, ww[i.ok, , drop=FALSE])
-             print(table(is.na(xxi)))
-             print(table(is.finite(xxi)))
-             print(dim(xxi))
-             print(c(n0=length(y), ns=length(i.ok), r=range(i.ok)))
-             print(colSums(xxi))
+##             print(table(is.na(xxi)))
+  ##           print(table(is.finite(xxi)))
+    ##         print(dim(xxi))
+      ##       print(c(n0=length(y), ns=length(i.ok), r=range(i.ok)))
+        ##     print(colSums(xxi))
             ff <- glm.fit(xxi, y[i.ok], family=poisson())
             ib <- which(!is.na(ff$coeff[1:ncol(bbi)]))
             ix <- which(!is.na(ff$coeff[ncol(bbi)+1:ncol(ww)]))
@@ -562,7 +562,7 @@ dataPrepare <- function(slocal) {
       iiwv[icwb] <- which(attr(wvac, 'local')=='Curitiba, PR - BR')
     }
 
-    print(c(ny=ncol(y), nv=ncol(wvac[[1]])))
+##    print(c(ny=ncol(y), nv=ncol(wvac[[1]])))
     d$vac <- lapply(wvac, function(m) {
         r <- matrix(NA, length(ii0[1]:ncol(y)), length(slocal))
         ij <- which(!is.na(iiwv))
@@ -1423,6 +1423,9 @@ data2plot <- function(d,
         }
         
         ylr <- axTransfTicks(transf, xTransf(ylm, transf))
+        ddylrl <- dupplicated(ylr$l)
+        ylr$x <- ylr$x[!ddylrl]
+        ylr$l <- ylr$l[!ddylrl]
         axis(2, ylr$x, ylr$l, las=1) 
         segments(rep(xlm0[1], length(ylr)),
                  ylr$x, 
