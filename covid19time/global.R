@@ -777,8 +777,8 @@ Rtfit <- function(d, a=0.5, b=1) {
     x0t <- rev(seq(nrow(d$yy), -7, -14))
     
     si.ms <- list(alpha=c(5.8, 4.0))
-    si.ms$delta <- c(4.0, 3.5)
-    si.ms$omicron <- c(2.5, 3.0)
+    si.ms$delta <- si.ms$alpha ##c(4.5, 3.5)
+    si.ms$omicron <- si.ms$delta ##c(3.5, 3.0)
     n0 <- 20
     pwv <- lapply(si.ms, function(ms) {
       m <- ms[1] + 3
