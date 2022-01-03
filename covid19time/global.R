@@ -774,14 +774,32 @@ SmoothFitG <- function(y, w) {
 ### do the R_t computations 
 Rtfit <- function(d, a=0.5, b=1) {
     
-    x0t <- rev(seq(nrow(d$yy), -7, -7))
+    x0t <- rev(seq(nrow(d$yy), -7, -14))
     
-    pw <- pgamma(0:21, shape=(5.8/4)^2, scale=4^2/5.8)[1:15]
-    w <- diff(pw)/sum(diff(pw))
-    n0 <- length(w)
+    si.ms <- list(alpha=c(5.8, 4.0))
+    si.ms$delta <- c(4.0, 3.5)
+    si.ms$omicron <- c(2.5, 3.0)
+    n0 <- 20
+    pwv <- lapply(si.ms, function(ms) {
+      m <- ms[1] + 3
+      s2 <- ms[2]^2
+      pgamma(0:n0, shape=m^2/s2, scale=s2/m)
+    })
+    wv <- sapply(pwv, function(x) diff(x)/sum(diff(x))) 
+
+    
     n1 <- nrow(d$sdy)
     nl <- ncol(d$sdo)
     
+    wdv <- 20
+    datesv <- as.Date(c('2019-10-15', '2021-06-01', '2021-12-01'))
+    wwv <- matrix(0, n1, 3) 
+    wwv[,1] <- 1/(1+exp(-as.numeric(difftime(d$x, datesv[1], units='days'))/wdv))
+    for(v in 2:3) {
+      wwv[, v] <- 1/(1+exp(-as.numeric(difftime(d$x, datesv[v], units='days'))/wdv))
+      wwv[, v-1] <- wwv[,v-1]-wwv[,v]
+    }
+
     yy <- ys <- d$yy
     yy[,,1] <- d$yy[,,1]
     yy[,,2] <- d$yy[,,2]
@@ -799,9 +817,14 @@ Rtfit <- function(d, a=0.5, b=1) {
             ii <- ii[ii>=i1]
             ii0 <- 1:max(n0, i1+14)
             d$ee[ii0, l, k] <- max(1, mean(y0[ii0], na.rm=TRUE))
-            for (i in ii) 
-                d$ee[i+1:n0, l, k] <- 
-                    d$ee[i+1:n0, l, k] + y0[i] * w 
+            for (i in ii) {
+              w <- wv[, 1] * wwv[i, 1] + 
+                wv[, 2] * wwv[i, 2] + 
+                wv[, 3] * wwv[i, 3] 
+              iie <- i + 1:n0 -3
+              iie0 <- iie>0
+              d$ee[iie[iie0], l, k] <- d$ee[iie[iie0], l, k] + y0[i] * w[iie0] 
+            }
             d$ee[d$ee<0.01] <- 0.01
             if ((length(ii)>19) & (mgcv.ok)) {
                 fRt <- gam(y ~ 0 + w + s(x, m=1), poisson(),

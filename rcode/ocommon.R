@@ -34,3 +34,8 @@ uf <- data.frame(
 for(j in 1:ncol(uf))
   uf[,j] <- as.character(uf[,j])
 
+if(FALSE) {
+
+    rlmurg <- read.csv2('data/rl_municip_regsaud.csv')
+
+}
