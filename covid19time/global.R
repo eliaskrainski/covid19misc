@@ -511,10 +511,10 @@ dataPrepare <- function(slocal) {
     nt <- nrow(ww)
     tk0 <- seq(1, nt, length=round(nt/14))
     bb <- bs(1:nt, knots=tk0)
-    bb <- bb[, which(colSums(bb)>0)]
-    bb[,2] <- bb[,1] + bb[,2]
-    bb[,ncol(bb)-1] <- bb[, ncol(bb)] + bb[, ncol(bb)-1]
-    bb <- bb[, 2:(ncol(bb)-1)]
+#    bb <- bb[, which(colSums(bb)>0)]
+ #   bb[,2] <- bb[,1] + bb[,2]
+  #  bb[,ncol(bb)-1] <- bb[, ncol(bb)] + bb[, ncol(bb)-1]
+   # bb <- bb[, 2:(ncol(bb)-1)]
 
 ##    print(summary(yy[,,1]))
   ##  print(summary(yy[,,2]))
