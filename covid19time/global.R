@@ -471,6 +471,8 @@ accMax <- function(x) {
 dataPrepare <- function(slocal) {
     
     ii <- pmatch(slocal, locals)
+    print(c(ii=ii))
+    print(tail(diff(c(0, unlist(wdl[[1]][ii, -(1:6)])))))
     
     nl <- length(ii)
     jj <- 7:ncol(wdl[[1]])
@@ -533,11 +535,13 @@ dataPrepare <- function(slocal) {
             r <- y
             bbi <- bb[i.ok, colSums(bb[i.ok, , drop=FALSE])>1]
             xxi <- cbind(bbi, ww[i.ok, , drop=FALSE])
-##             print(table(is.na(xxi)))
-  ##           print(table(is.finite(xxi)))
-    ##         print(dim(xxi))
-      ##       print(c(n0=length(y), ns=length(i.ok), r=range(i.ok)))
-        ##     print(colSums(xxi))
+             print(table(is.na(xxi)))
+             print(table(is.finite(xxi)))
+             print(dim(xxi))
+             print(c(n0=length(y), ns=length(i.ok), r=range(i.ok)))
+             print(colSums(xxi))
+             print(tail(y,30))
+             print(tail(i.ok))
             ff <- glm.fit(xxi, y[i.ok], family=poisson())
             ib <- which(!is.na(ff$coeff[1:ncol(bbi)]))
             ix <- which(!is.na(ff$coeff[ncol(bbi)+1:ncol(ww)]))
@@ -571,7 +575,7 @@ dataPrepare <- function(slocal) {
         if(length(ij)>0) {
           for (l in ij) {
             tmp <- m[iiwv[l], ii0[1]:ncol(m)]
-            tmp[which(tmp<1)] <- NA
+            tmp[which(tmp<0)] <- NA
             r[, l] <- tmp
           }
         }
