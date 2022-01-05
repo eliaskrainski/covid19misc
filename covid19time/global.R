@@ -64,12 +64,14 @@ nn.show <- format(sapply(wdl, function(m) {
 
 lb.n <- list('cases', 'deaths')
 if (pt) {
+    labLastRt <- 'Mostrar Rt nos últimos "n" dias'
     nn.show <- gsub(',', '.', nn.show, fixed=TRUE)
     names(lb.n) <- 
         c(paste0('Casos (', nn.show[1], ')'), 
           paste0('Óbitos (', nn.show[2], ')'))
     ylmob <- 'Mobilidade'
 } else {
+  labLastRt <- 'Show Rt for last "n" days'
     names(lb.n) <- 
         c(paste0('Cases (', nn.show[1], ')'), 
           paste0('Deaths (', nn.show[2], ')'))
@@ -509,12 +511,12 @@ dataPrepare <- function(slocal) {
     w <- weekdays(d$x)
     ww <- model.matrix(~0+w, data.frame(w=w))
     nt <- nrow(ww)
-    tk0 <- seq(1, nt, length=round(nt/14))
-    bb <- bs(1:nt, knots=tk0)
-#    bb <- bb[, which(colSums(bb)>0)]
- #   bb[,2] <- bb[,1] + bb[,2]
-  #  bb[,ncol(bb)-1] <- bb[, ncol(bb)] + bb[, ncol(bb)-1]
-   # bb <- bb[, 2:(ncol(bb)-1)]
+    tk0 <- seq(-1, nt+2, length=round(nt/14))
+    bb <- bs(1:nt, knots=tk0, Boundary.knots=range(tk0))
+    bb <- bb[, which(colSums(bb)>0)]
+    bb[,2] <- bb[,1] + bb[,2]
+    bb[,ncol(bb)-1] <- bb[, ncol(bb)] + bb[, ncol(bb)-1]
+    bb <- bb[, 2:(ncol(bb)-1)]
 
 ##    print(summary(yy[,,1]))
   ##  print(summary(yy[,,2]))
@@ -777,8 +779,8 @@ Rtfit <- function(d, a=0.5, b=1) {
     x0t <- rev(seq(nrow(d$yy), -7, -14))
     
     si.ms <- list(alpha=c(5.8, 4.0))
-    si.ms$delta <- si.ms$alpha ##c(4.5, 3.5)
-    si.ms$omicron <- si.ms$delta ##c(3.5, 3.0)
+    si.ms$delta <- c(4.5, 3.5) ##si.ms$alpha 
+    si.ms$omicron <- c(3.5, 3.0) ##si.ms$delta 
     n0 <- 20
     pwv <- lapply(si.ms, function(ms) {
       m <- ms[1] + 3
@@ -900,9 +902,9 @@ data2plot <- function(d,
 
     iplot <- 0
     
-    mgpp <- c(2.5, 0.5, 0)
+    mgpp <- c(3.0, 0.5, 0)
     if (popDivide)
-        mgpp[1] <- 2
+        mgpp[1] <- 3.0
     if(nplot>6) {
       nrwplot <- ncwplot <- 3
     } else {
@@ -919,7 +921,7 @@ data2plot <- function(d,
       }
     }
 
-    mmar <- c(0.5, 4.5, 0.5, 0.5)
+    mmar <- c(0.5, 5.0, 0.5, 0.5)
     par(mfrow=c(nrwplot, ncwplot), 
         mar=mmar, mgp=mgpp)
     
@@ -1022,16 +1024,16 @@ data2plot <- function(d,
         }
     } else {
         ylabs <- list(
-            c('Daily counts',
-              'Daily number of cases',
-              'Daily number of deaths'),
+            c('Daily counts\n',
+              'Daily number of cases\n',
+              'Daily number of deaths\n'),
             paste('Accumulated',
-                  c('count', 'of cases', 'of deaths')), 
+                  c('count', 'cases', 'deaths'), '\n'), 
             'Reproduction number\n(infecteds per infectee)', 
             'Fatality rate (%)')
         if (popDivide) {
-            ylabs[[1]][1:3] <- paste0(ylabs[[1]][1:3], '\nper 1M inhabitants')
-            ylabs[[2]][1:3] <- paste0(ylabs[[2]][1:3], '\nper 1M inhabitants')
+            ylabs[[1]][1:3] <- paste0(ylabs[[1]][1:3], 'per 1M inhabitants')
+            ylabs[[2]][1:3] <- paste0(ylabs[[2]][1:3], 'per 1M inhabitants')
         }
     }
     
@@ -1069,7 +1071,7 @@ data2plot <- function(d,
     if (any(plots==1)) {
         iplot <- iplot + 1 
         if (nrwplot==1) 
-            par(mar=c(2, 4.5, 0, 0.5))
+            par(mar=c(2, 5.0, 0, 0.5))
         
         y.ex1 <- y.ex1*ifelse(any(plots==2), 0.33, 1)
         
@@ -1241,7 +1243,7 @@ data2plot <- function(d,
         
         y.ex1 <- y.ex1*ifelse(any(plots==1), 3, 1)
         if ((nplot-iplot)<ncwplot)
-            par(mar=c(2, 4.5, 0, 0.5))
+            par(mar=c(2, 5.0, 0, 0.5))
         
         d$y.plot <- d$y
         d$o.plot <- d$o
@@ -1398,7 +1400,7 @@ data2plot <- function(d,
     if (any(plots==3)) {
         iplot <- iplot + 1
         if ((nplot-iplot)<ncwplot) 
-            par(mar=c(2, 4.5, 0, 0.5), mgp=c(2,0.5,0))
+            par(mar=c(2, 5.0, 0, 0.5), mgp=c(3,0.5,0))
         
         ylm <- range(0.91, 1.1, d$Rtlow[jj,,v], 
                      d$Rtupp[jj,,v], na.rm=TRUE)
@@ -1529,7 +1531,7 @@ data2plot <- function(d,
     if (any(plots==4)) {
         iplot <- iplot + 1
         if ((nplot-iplot)<ncwplot) 
-            par(mar=c(2, 4.5, 0, 0.5))
+            par(mar=c(2, 5.0, 0, 0.5))
         
         arate <- 100*d$o/d$y
         arate[d$y<1] <- NA
@@ -1609,7 +1611,7 @@ data2plot <- function(d,
     if(any(plots%in%c(5,6))) {
       iplot <- iplot + 1
       if ((nplot-iplot)<ncwplot) 
-        par(mar=c(2, 4.5, 0, 0.5))
+        par(mar=c(2, 5.0, 0, 0.5))
       jjvac <- which((5:6) %in% plots)
       Pop <- attr(d, 'population')
       for(k in 1:2) {
@@ -1662,7 +1664,7 @@ data2plot <- function(d,
         iplot <- iplot + 1
         
         if ((nplot-iplot)<ncwplot) 
-            par(mar=c(2, 4.5, 0, 0.5))
+            par(mar=c(2, 5.0, 0, 0.5))
         
         i2i <- attr(d, 'i2i')
         
@@ -1765,7 +1767,7 @@ data2plot <- function(d,
     }
     
     if (any(plots>12)) {
-        par(mar=c(2, 4.5, 0, 0.5))
+        par(mar=c(2, 5.0, 0, 0.5))
         iplot <- iplot + 1
         i3i <- attr(d, 'i3i')
         jjp2 <- plots[(plots>12)]-12

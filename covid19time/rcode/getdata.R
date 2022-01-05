@@ -1,10 +1,16 @@
 if (FALSE)
     setwd('..')
 
-options(timeout=60*5)
+if(!any(ls()=='dupdate'))
+    dupdate <- TRUE
 
-library(parallel)
-(ncores <- as.integer(detectCores()/2))
+owid.f <- function(d=TRUE) {
+    download.file(
+        paste0('https://raw.githubusercontent.com/',
+               'owid/covid-19-data/master/public/',
+               'data/vaccinations/vaccinations.csv'),
+        'data/vaccinations.csv')
+}
 
 cssegis.f <- function(d=TRUE) {
 ### download the cssegis data (the famous one) 
@@ -13,10 +19,10 @@ cssegis.f <- function(d=TRUE) {
         'https://raw.githubusercontent.com/',
         'CSSEGISandData/COVID-19/master/',
         'csse_covid_19_data/csse_covid_19_time_series/',
-    'time_series_covid19_')
+        'time_series_covid19_')
     
 ### The root names of the three derired  data files
-    vnames <- c('confirmed', 'deaths', 'recovered')
+    vnames <- c('confirmed', 'deaths')###, 'recovered')
     
 ### (may or) may not download the files again
     if (d)
@@ -28,9 +34,11 @@ cssegis.f <- function(d=TRUE) {
 
 uss.f <- function(d=TRUE) {
 ### USdata
-    us.fl <- 'data/daily.csv'
-    us.url <- paste0('https://api.covidtracking.com/v1/states/',
-                     'daily.csv')
+    us.fl <- 'data/us-states.csv'
+    us.url <- paste0(
+        'https://raw.githubusercontent.com/nytimes/',
+        'covid-19-data/master/',
+        'us-states.csv')
     if (d)
         download.file(us.url, us.fl)
     return(invisible())
@@ -48,22 +56,38 @@ usc.f <- function(d=TRUE) {
 ### the official data from the Brazilian Health Ministry
 ###  is at https://covid.saude.gov.br/
 brms.f <- function(d=TRUE) {
+    res.url <-
+        httr::GET("https://xx9p7hp1p7.execute-api.us-east-1.amazonaws.com/prod/PortalGeral",
+                  httr::add_headers("X-Parse-Application-Id" =
+                                        "unAFkcaNDeXajurGB7LChj8SgQYS2ptm"))
+    url <- httr::content(res.url)$results[[1]]$arquivo$url 
     if (d) {
-        res.url <-
-            httr::GET("https://xx9p7hp1p7.execute-api.us-east-1.amazonaws.com/prod/PortalGeral",
-                      httr::add_headers("X-Parse-Application-Id" =
-                                            "unAFkcaNDeXajurGB7LChj8SgQYS2ptm"))
-        url <- httr::content(res.url)$results[[1]]$arquivo$url 
+        system('rm HIST_*.csv')
+        if (substring(url, nchar(url)-2)=='.7z') {
+            download.file(url, 'brms.7z')
+            system('7z e brms.7z')
+            system('rm brms.7z')
+        }
         if (substring(url, nchar(url)-2)=='zip') {
             download.file(url, 'brms.zip')
             unzip('brms.zip')
-            system('mv HIST_PAINEL_COVIDBR_*.csv data/HIST_PAINEL_COVIDBR.csv')
             system('rm brms.zip')
         } 
+        if (substring(url, nchar(url)-2)=='rar') {
+            download.file(url, 'brms.rar')
+            system('unrar e brms.rar')
+            system('rm brms.rar')
+        }
+        hpfls <- system('ls HIST_PAINEL*.csv', TRUE)
+        if(length(hpfls)>0) {
+            system('rm data/HIST_*')
+            for(hpfl in hpfls)
+                system(paste0('mv ', hpfl, ' data/', hpfl))
+        }
         if (substring(url, nchar(url)-2)=='csv') {
             download.file(url, 'data/HIST_PAINEL_COVIDBR.csv')
         } 
-    }
+    } else return(url)
     return(invisible())
 }
 
@@ -76,6 +100,15 @@ brio.f <- function(d=FALSE) {
     if (d)
         try(download.file(
             url.br, 'data/caso.csv.gv'), TRUE)
+    return(invisible())
+}
+
+### data from the braziliam deaths registry
+brio.oc.f <- function(d=FALSE) {
+    url.c <- 'https://data.brasil.io/dataset/covid19/obito_cartorio.csv.gz'
+    if(d)
+        try(download.file(
+            url.c, 'data/obito_cartorio.csv.gv'), TRUE)
     return(invisible())
 }
 
@@ -121,11 +154,11 @@ sesa.f <- function(d=FALSE) {
             dd <- format(ldate, '%d')
             
             fldt <- paste0(yyyy, '-', mm, '/informe_epidemiologico_',
-                           dd, '_', mm, '_g')
+                           dd, '_', mm, '_', yyyy, '_g')
             if (CAP>0)
                 fldt <- toupper(fldt)
             
-            sesa.fl <- paste0('https://www.saude.pr.gov.br/sites/default/',
+            sesa.fl <- paste0('http://www.saude.pr.gov.br/sites/default/',
                               'arquivos_restritos/files/documento/',
                               fldt, 'eral.csv')
             sesa.fl
@@ -145,9 +178,9 @@ sesa.f <- function(d=FALSE) {
             
         }
         options(show.error.messages = TRUE)
-
+        
     }
-
+    
     ## https://www.saude.pr.gov.br/sites/default/arquivos_restritos/files/documento/2020-11/informe_epidemiologico_08_11_geral.csv
     ## https://www.saude.pr.gov.br/sites/default/arquivos_restritos/files/documento/2020-11/informe_epidemiologico_08_11_obitos_casos_municipio.csv
     
@@ -162,7 +195,7 @@ sesa.f <- function(d=FALSE) {
                      rep(c('n', 's'), c(3,2))), ses$STATUS)
         
     }
-
+    
     return(invisible())
 }
 
@@ -172,7 +205,7 @@ gmob.f <- function(d=TRUE) {
         
         mfl <- 'Global_Mobility_Report.csv'
         ##system(paste0('wget https://www.gstatic.com/covid19/mobility/',
-          ##            mfl, ' -O data/', mfl))
+        ##            mfl, ' -O data/', mfl))
         download.file(paste0('https://www.gstatic.com/covid19/mobility/',mfl),
                       paste0('data/', mfl))
         
@@ -181,27 +214,23 @@ gmob.f <- function(d=TRUE) {
 }
 
 amob.f <- function(d=TRUE) {
-    if (d) {
-        
-        ## tip from
-        ## https://kieranhealy.org/blog/archives/2020/05/23/get-apples-mobility-data/
-        get_apple_target <- function(cdn_url = "https://covid19-static.cdn-apple.com",
-                                     json_file = "covid19-mobility-data/current/v3/index.json") {
-            tf <- tempfile(fileext = ".json")
-            curl::curl_download(paste0(cdn_url, "/", json_file), tf)
-            json_data <- jsonlite::fromJSON(tf)
-            paste0(cdn_url, json_data$basePath, json_data$regions$`en-us`$csvPath)
-        }
-        
-        aurl <- get_apple_target()
-        aurl
-        
-        amfl <- tail(strsplit(aurl, '/')[[1]], 1)
-        amfl
-        
+    ## tip from
+    ## https://kieranhealy.org/blog/archives/2020/05/23/get-apples-mobility-data/
+    get_apple_target <- function(cdn_url = "https://covid19-static.cdn-apple.com",
+                                 json_file = "covid19-mobility-data/current/v3/index.json") {
+        tf <- tempfile(fileext = ".json")
+        curl::curl_download(paste0(cdn_url, "/", json_file), tf)
+        json_data <- jsonlite::fromJSON(tf)
+        paste0(cdn_url, json_data$basePath, json_data$regions$`en-us`$csvPath)
+    }
+    
+    aurl <- get_apple_target()
+    amfl <- tail(strsplit(aurl, '/')[[1]], 1)
+    
+    if (d) {    
         ##system(paste0('wget ', aurl, ' -O data/', amfl))
         download.file(aurl, paste0('data/', amfl)) 
-    }
+    } else return(aurl)
     return(invisible())
 }
 
@@ -213,55 +242,73 @@ gus.f <- function(d=TRUE) {
 }
 
 others.f <- function() {
-    gus.f()
-    wcota.f()
-    amob.f()
+    gus.f(TRUE)
+    brms.f(TRUE)
+    amob.f(TRUE)
 }
 
-if (ncores<39) {
-    cat('1\n')
-    system.time(mclapply(list(
-    others='others.f()',
-    google='gmob.f()'), 
-    function(x)
-    ##        eval(str2lang(x))
-        eval(parse(text=x)), 
-    mc.cores = ncores))
-} else {
-    if (ncores<69) {
-        cat('2\n')
+if(dupdate) {
+
+    options(timeout=60*5)
+
+owid.f(TRUE)
+
+    if(TRUE) {
+
+        others.f()
+        gmob.f()
+        
+    } else {
+    
+    library(parallel)
+    (ncores <- as.integer(detectCores()/2))
+
+    if (ncores<39) {
+        cat('1\n')
         system.time(mclapply(list(
-            gus='gus.f()',
-            ##brms='brms.f()',    
-            ##brio='brio.f()',
-            wcota=wcota.f(),
-            ##fnd='fnd.f()',
-            ##sesa='sesa.f()')
-            apple='amob.f()',
+            others='others.f()',
             google='gmob.f()'), 
             function(x)
                 ##        eval(str2lang(x))
                 eval(parse(text=x)), 
             mc.cores = ncores))
     } else {
-        cat('3\n')
-        system.time(mclapply(list(
-            global='cssegis.f()',
-            uss='uss.f()',
-            usc='usc.f()',
-            ##brms=brms.f(),
-            ##brio='brio.f()',
-            wcota='wcota.f()',
-            ##fnd='fnd.f()',
-            ##sesa='sesa.f()')
-            apple='amob.f()',
-            google='gmob.f()'),
-            function(x)
-                ##        eval(str2lang(x))
-                eval(parse(text=x)),
+        if (ncores<69) {
+            cat('2\n')
+            system.time(mclapply(list(
+                gus='gus.f()',
+                brms='brms.f()',    
+                ##brio='brio.f()',
+                ##wcota=wcota.f(),
+                ##fnd='fnd.f()',
+                ##sesa='sesa.f()')
+                apple='amob.f()',
+                google='gmob.f()'), 
+                function(x)
+                    ##        eval(str2lang(x))
+                    eval(parse(text=x)), 
             mc.cores = ncores))
-    }
-}
+        } else {
+            cat('3\n')
+            system.time(mclapply(list(
+                global='cssegis.f()',
+                uss='uss.f()',
+                usc='usc.f()',
+                brms=brms.f(),
+                ##brio='brio.f()',
+                ##wcota='wcota.f()',
+                ##fnd='fnd.f()',
+                ##sesa='sesa.f()')
+                apple='amob.f()',
+                google='gmob.f()'),
+                function(x)
+                    ##        eval(str2lang(x))
+                    eval(parse(text=x)),
+                mc.cores = ncores))
+        }
+      }	
+    }	
+}	
 
 ##lapply(list('uss.f()'), function(x) eval(call(x)[[1]]))
 ##lapply(list('uss.f()'), function(x) eval(parse(text=x)))

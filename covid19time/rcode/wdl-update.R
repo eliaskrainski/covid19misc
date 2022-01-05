@@ -222,8 +222,8 @@ if (wcota) {
     brmpop[,2] <- gsub(
         'Gracho Cardoso (SE)', 'Graccho Cardoso (SE)', 
         brmpop[,2], fixed=TRUE)
-    brmpop[,2] <- gsub(
-        'Santa Teresinha', 'Santa Terezinha', brmpop[,2])
+##    brmpop[,2] <- gsub(
+  ##      'Santa Teresinha', 'Santa Terezinha', brmpop[,2])
 
 ### data from Wesley Cota 
     system.time(dbr <- read.csv(
@@ -244,9 +244,8 @@ if (wcota) {
     for (j in which(sapply(dbr, is.factor)))
         dbr[, j] <- as.character(dbr[, j])
     
-    i.mu.l <- which(dbr$city!='TOTAL')
-    i.rg.l <- which(dbr$name_RegiaoDeSaude!='')
-    
+    str(i.mu.l <- which(dbr$city!='TOTAL'))
+    str(i.rg.l <- which(dbr$name_RegiaoDeSaude!=''))
 
     if (FALSE) {
 
@@ -283,12 +282,14 @@ if (wcota) {
             dbr[i.mu.l, c('city', 'fdate')], as.integer))
     str(wbr.mu)
 
+    str(grep('CASO SEM LOCALIZAÇÃO DEFINIDA', rownames(wbr.mu[[1]])))
     system.time(rnmu <- gsub('CASO SEM LOCALIZAÇÃO DEFINIDA',
                              'Indefinido', rownames(wbr.mu[[1]])))
     system.time(rnmu <- gsub("Olho-d'Água do Borges", "Olho d'Água do Borges", rnmu))
-    system.time(rnmu <- gsub("Pingo-d'Água", "Pingo d'Água", rnmu))        
-    system.time(rnmu <- gsub('Santa Teresinha', 'Santa Terezinha', rnmu))
-    rownames(wbr.mu[[1]]) <- rownames(wbr.mu[[2]]) <- rnmu        
+    system.time(rnmu <- gsub("Pingo-d'Água", "Pingo d'Água", rnmu))
+    ##    str(grep('Teresinha', rownames(wbr.mu[[1]]), value=TRUE))
+    system.time(rnmu <- gsub('Santa Teresinha/BA', 'Santa Terezinha/BA', rnmu))
+    rownames(wbr.mu[[1]]) <- rownames(wbr.mu[[2]]) <- rnmu  
     
     system.time(st.mun <- dbr$state[pmatch(rownames(wbr.mu[[1]]), dbr$city)])
 
@@ -298,18 +299,49 @@ if (wcota) {
     table(is.na(st.mun))
     table(st.mun)
     mun.mun[is.na(st.mun)]
-    st.mun[is.na(st.mun)] <- substring(
-        names(mun.mun)[is.na(st.mun)], 12)
+
+    st.mun[is.na(st.mun)] <- 
+        sapply(names(mun.mun)[is.na(st.mun)], function(x)
+            substring(x, nchar(x)-1))
     table(is.na(st.mun))
+    table(st.mun)
+    
+    if(length(i.rg.l)==0) {
+        
+        rlmurg <- read.csv2('data/rl_municip_regsaud.csv')
+        head(rlmurg)
+        head(dbr,2)
+
+        table(as.integer(substr(as.character(rlmurg[,2]), 1,2)))
+        if(FALSE)
+            rlmurg[which(substr(rlmurg[,2],1,2)=='41'),]
+        if(FALSE)
+            rlmurg[which(substr(rlmurg[,2],3,5)=='980'),]
+        table(as.integer(substring(as.character(rlmurg[,2]), 3)))
+
+        system.time(irglong <- pmatch(
+                        substr(dbr$ibgeID, 1, 6),
+                        rlmurg[,1], duplicates.ok=TRUE))
+        
+        system.time(dbr$cod_RegiaoDeSaude <- as.character(rlmurg[irglong, 2]))
+        system.time(dbr$name_RegiaoDeSaude <- paste0('RS_', dbr$cod_RegiaoDeSaude))
+
+        tail(dbr,5)
+        i.rg.l <- which(substring(dbr$name_RegiaoDeSaude, 4)!='NA')
+        str(i.rg.l)
+        
+    }
+
+    table(nchar(as.character(dbr$ibgeID)))
     
     system.time(
         wbr.rg <- lapply(
             dbr[i.rg.l, c('totalCases', 'deaths')], tapply,
-            dbr[i.rg.l, c('name_RegiaoDeSaude', 'fdate')], sum))
+            dbr[i.rg.l, c('cod_RegiaoDeSaude', 'fdate')], sum))
     str(wbr.rg)
     
     st.rg <- dbr$state[pmatch(rownames(
-                     wbr.rg[[1]]), dbr$name_RegiaoDeSaude)]
+                     wbr.rg[[1]]), dbr$cod_RegiaoDeSaude)]
     table(st.rg)
     
     system.time(
@@ -330,7 +362,24 @@ if (wcota) {
     munam.br <- 'city'
     stnam.br <- 'state'
     rgnam.br <- 'name_RegiaoDeSaude'
-    
+    rgcod.br <- 'cod_RegiaoDeSaude'
+
+    unddbr[,munam.br] <- gsub(
+        'CASO SEM LOCALIZAÇÃO DEFINIDA',
+        'Indefinido', unddbr[,munam.br])
+    unddbr[,munam.br] <- gsub(
+        "Olho-d'Água do Borges", "Olho d'Água do Borges", unddbr[,munam.br])
+    unddbr[,munam.br] <- gsub(
+        "Pingo-d'Água", "Pingo d'Água", unddbr[,munam.br])
+    unddbr[,munam.br] <- gsub(
+        'Santa Teresinha/BA', 'Santa Terezinha/BA',
+        unddbr[,munam.br], fixed=TRUE)
+
+    i2und.mn <- pmatch(
+        brmpop[-1,2],
+        paste0(gsub('/', ' (', unddbr[,munam.br], fixed=TRUE), ')'))
+    summary(i2und.mn)
+
 }
 
 if (usems) {
@@ -476,7 +525,13 @@ if (usems) {
         tail(sapply(wbr.R, function(x) x[1,]), 2)
         
     }    
-    
+
+    i2und.mn <- pmatch(
+        brmpop[-1,2],
+        paste0(unddbr[,munam.br], ' (', 
+               unddbr[,stnam.br], ')'))
+    summary(i2und.mn)
+
 }
 
 dim(unddbr)
@@ -492,11 +547,6 @@ brmpop[1,]
 
 head(unddbr[,munam.br])
 head(unddbr[,stnam.br])
-i2und.mn <- pmatch(
-    brmpop[-1,2],
-    paste0(unddbr[,munam.br], ' (', 
-           unddbr[,stnam.br], ')'))
-summary(i2und.mn)
 
 str(brmpop$X2019)
 str(unddbr[i2und.mn[complete.cases(i2und.mn)], rgcod.br])
@@ -618,9 +668,10 @@ for (k in 1:2) {
 ##if (FALSE) {
 
 k <- 1
-dlast <- wdl[[k]][, (nt-5):nt]-
-    wdl[[k]][, (nt-6):(nt-1)]
-mlast <- dlast[, 5:6]<(0.01*rowMeans(dlast[, 1:4]))
+nd0 <- 7
+dlast <- wdl[[k]][, (nt-nd0):nt]-
+    wdl[[k]][, (nt-nd0-1):(nt-1)]
+mlast <- dlast[, nd0+0:1]<(0.01*rowMeans(dlast[, 1:(nd0-1)]))
 for (i in which(rowSums(mlast)>0)) {
     wdl[[k]][i, which(mlast[i, ]) + nt-2] <- NA
     wdl[[k+1]][i, which(mlast[i, ]) + nt-2] <- NA
