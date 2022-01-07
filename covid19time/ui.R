@@ -21,8 +21,8 @@ ui <- fluidPage(
 		     ##'Curitiba(SM), PR - BR',
 		     ##'Curitiba(SMB), PR - BR', 
          ##'Paraná - BR', 
-         ##'Brasil', 
-         'Brazil', 'United Kingdom')
+         #'Brasil') 
+         'United Kingdom')
          ), 
       dateRangeInput(
         inputId = 'dateRange',

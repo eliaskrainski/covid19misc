@@ -535,13 +535,15 @@ dataPrepare <- function(slocal) {
             r <- y
             bbi <- bb[i.ok, colSums(bb[i.ok, , drop=FALSE])>1]
             xxi <- cbind(bbi, ww[i.ok, , drop=FALSE])
+if(FALSE) {
              print(table(is.na(xxi)))
              print(table(is.finite(xxi)))
              print(dim(xxi))
              print(c(n0=length(y), ns=length(i.ok), r=range(i.ok)))
              print(colSums(xxi))
              print(tail(y,30))
-             print(tail(i.ok))
+             print(tail(i.ok))  
+}
             ff <- glm.fit(xxi, y[i.ok], family=poisson())
             ib <- which(!is.na(ff$coeff[1:ncol(bbi)]))
             ix <- which(!is.na(ff$coeff[ncol(bbi)+1:ncol(ww)]))
@@ -565,7 +567,7 @@ dataPrepare <- function(slocal) {
                      'Curitiba(SMB), PR - BR'), slocal)
     icwb <- icwb[!is.na(icwb)]
     if(length(icwb)>0) {
-      iiwv[icwb] <- which(attr(wvac, 'local')=='Curitiba, PR - BR')
+      iiwv[icwb] <- which(substr(attr(wvac, 'local'),1,6)=='410690')##Curitiba, PR - BR')
     }
 
 ##    print(c(ny=ncol(y), nv=ncol(wvac[[1]])))
