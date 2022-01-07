@@ -1,6 +1,8 @@
 if (FALSE)
     setwd('..')
 
+options(timeout=60*30)
+
 if(!any(ls()=='dupdate'))
     dupdate <- TRUE
 
