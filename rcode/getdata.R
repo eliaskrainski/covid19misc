@@ -187,9 +187,12 @@ sesa.f <- function(d=FALSE) {
     ## https://www.saude.pr.gov.br/sites/default/arquivos_restritos/files/documento/2020-11/informe_epidemiologico_08_11_obitos_casos_municipio.csv
     
     if (FALSE) {
-        
-        ses <- read.csv2('data/sesa-pr-geral.csv')
+
+        library(data.table)
+        system.time(ses <- fread('data/sesa-pr-geral.csv'))
         head(ses)
+
+        summary(ses$Data <- as.Date(ses$DATA_CONFIRMACAO_DIVULGACAO))
         
         table(factor(ses$OBITO, c('Não', 'NÃO', '', 'Sim', 'SIM'),
                      rep(c('n', 's'), c(3,2))), ses$OBITO)
@@ -259,6 +262,7 @@ owid.f(TRUE)
 
         others.f()
         gmob.f()
+        sesa.f(TRUE)
         
     } else {
     

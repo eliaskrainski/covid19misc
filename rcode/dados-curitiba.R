@@ -162,38 +162,42 @@ jj
 
 if(FALSE) {
 
+    d0plot <- Sys.Date()-61
+    iid0 <- which(bsm$Date>=d0plot)
+
     png('figures/casos-ativos-CuritibaSM.png', 1500, 1000, res=150)
-    par(mfrow=c(2,1), mar=c(3.5, 3.5, .5, 3.5), mgp=c(2.7, 0.5, 0), las=2)
-    with(bsm, plot(Date, ativos, axes=FALSE,
+    par(mfrow=c(2,1), mar=c(0, 3.7, 1.0, 3.5), mgp=c(2.7, 0.5, 0), las=2)
+    with(bsm[bsm$Date>=d0plot,],
+         plot(Date, ativos, axes=FALSE, main='C U R I T I B A',
          type='h', lwd=6, ylim=c(0, max(ativos, na.rm=TRUE)),
          xlab='', ylab='Casos ativos'))
-    axis(2, pretty(c(0, bsm$ativos), 10), las=1)
-    axis(1, pretty(bsm$Date, 10),
-         format(pretty(bsm$Date, 10), '%d%b%y'), las=2)
-    o.t <- diff(bsm$obitos)
+    axis(2, pretty(c(0, bsm$ativos[iid0]), 10), las=1)
+    c.t <- diff(bsm$casos[c(iid0[1]-1, iid0)])
+    y2c <- c.t/max(c.t, na.rm=TRUE)
+    points(bsm$Date[iid0], y2c*max(bsm$ativos[iid0]), type='o', 
+           cex=0.5, pch=8, col='green4', lwd=2)
+    axis(4, max(bsm$ativos[iid0])*pretty(c(0, max(c.t)), 10)/max(c.t),
+         pretty(c(0, max(c.t)), 10), las=1, line=0)
+    mtext('Casos novos', 4, 2.5, las=3)
+    legend('topleft', c('Casos ativos', 'Casos novos confirmados'),
+           pch=8, pt.cex=c(0,1), lwd=2, col=c(1, 'green4'), bty='n')
+    par(mar=c(1.7,3.7,0.0,3.5))
+    with(bsm[iid0,],
+         plot(Date, ativos, axes=FALSE,
+         type='h', lwd=6, ylim=c(0, max(ativos, na.rm=TRUE)),
+         xlab='', ylab='Casos ativos'))
+    axis(2, pretty(c(0, bsm$ativos[iid0]), 10), las=1)
+    axis(1, pretty(bsm$Date[iid0], 10),
+         format(pretty(bsm$Date[iid0], 10), '%d%b%y'), las=1)
+    o.t <- diff(bsm$obitos[c(iid0[1]-1,iid0)])
     y2 <- o.t/max(o.t, na.rm=TRUE)
-    points(bsm$Date[-1], y2*max(bsm$ativos), type='o', 
+    points(bsm$Date[iid0], y2*max(bsm$ativos[iid0]), type='o', 
            cex=0.5, pch=8, col=2, lwd=2)
-    axis(4, max(bsm$ativos)*pretty(c(0, max(o.t)), 10)/max(o.t),
-         pretty(c(0, max(o.t)), 10), las=1, line=0)
+    axis(4, max(bsm$ativos[iid0])*unique(round(pretty(c(0, max(o.t)), 10)))/max(o.t),
+         unique(round(pretty(c(0, max(o.t)), 10))), las=1, line=0)
     mtext('Óbitos', 4, 2, las=3)
     legend('topleft', c('Casos ativos', 'Óbitos confirmados'),
            pch=8, pt.cex=c(0,1), lwd=2, col=1:2, bty='n')
-    with(bsm, plot(Date, ativos, axes=FALSE,
-         type='h', lwd=6, ylim=c(0, max(ativos, na.rm=TRUE)),
-         xlab='', ylab='Casos ativos'))
-    axis(2, pretty(c(0, bsm$ativos), 10), las=1)
-    axis(1, pretty(bsm$Date, 10),
-         format(pretty(bsm$Date, 10), '%d%b%y'), las=2)
-    c.t <- diff(bsm$casos)
-    y2c <- c.t/max(c.t, na.rm=TRUE)
-    points(bsm$Date[-1], y2c*max(bsm$ativos), type='o', 
-           cex=0.5, pch=8, col='green4', lwd=2)
-    axis(4, max(bsm$ativos)*pretty(c(0, max(c.t)), 10)/max(c.t),
-         pretty(c(0, max(c.t)), 10), las=1, line=0)
-    mtext('Casos novos', 4, 2, las=3)
-    legend('topleft', c('Casos ativos', 'Casos novos confirmados'),
-           pch=8, pt.cex=c(0,1), lwd=2, col=c(1, 'green4'), bty='n')
     dev.off()
 
     if(FALSE)

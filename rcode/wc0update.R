@@ -11,6 +11,7 @@ usems <- !TRUE
 usefnd <- FALSE
 wcota <- !FALSE
 usebrio <- FALSE
+usesesa <- TRUE
 
 if (!any(ls()=='dupdate'))
     dupdate <- TRUE
