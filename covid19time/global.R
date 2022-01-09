@@ -567,7 +567,7 @@ if(FALSE) {
                      'Curitiba(SMB), PR - BR'), slocal)
     icwb <- icwb[!is.na(icwb)]
     if(length(icwb)>0) {
-      iiwv[icwb] <- which(substr(attr(wvac, 'local'),1,6)=='410690')##Curitiba, PR - BR')
+      iiwv[icwb] <- which(attr(wvac, 'local')=='Curitiba, PR - BR')
     }
 
 ##    print(c(ny=ncol(y), nv=ncol(wvac[[1]])))
