@@ -43,13 +43,14 @@ addDateData <- function(date, create=FALSE, verbose=TRUE) {
 if(!file.exists(lfl)) {
     addDateData(Date0, create=TRUE)
     for(k in 1:difftime(DateN, Date0, units='days'))
-        addDateData(Date0+k, create=FALSE, verbose=FALSE)
+        addDateData(Date0+k, create=FALSE, verbose=TRUE)
 }
 
 if(file.exists(lfl)) {
     leitos <- read.csv2(lfl)
-    mdate <- max(as.Date(leitos$Data))
+    mdate <- max(as.Date(leitos$Data), na.rm=TRUE)
     dn <- as.integer(difftime(DateN, mdate, units='days'))
+    cat(as.character(mdate), dn, '\n')
     if(dn>0) {
         for(k in 1:dn)
             addDateData(mdate+k, create=FALSE, verbose=TRUE)
