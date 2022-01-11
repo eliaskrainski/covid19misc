@@ -5,6 +5,8 @@ if (FALSE)
 library(RCurl)
 
 u0 <- 'http://dadosabertos.c3sl.ufpr.br/curitiba/'
+u1 <- 'https://mid.curitiba.pr.gov.br/dadosabertos/'
+
 f.end <- '_Censo_Covid19_-_Base_de_Dados.csv'
 
 Date0 <- as.Date('2020-07-02')
@@ -20,8 +22,13 @@ addDateData <- function(date, create=FALSE, verbose=TRUE) {
     loc.fl <- paste0('data/', fl)
     if(verbose) cat('file :', fl, '\n')
     if(!file.exists(loc.fl))
-        if (url.exists(paste0(u0, fl)))
+        if (url.exists(paste0(u0, fl))) {
             download.file(paste0(u0, fl), loc.fl, quiet=!verbose)
+        } else {
+            if(url.exists(paste0(u1, fl))) {
+                download.file(paste0(u1, fl), loc.fl, quiet=!verbose)
+            }
+        }
     if(file.exists(loc.fl)) {
         skip <- substr(readLines(loc.fl,1), 1, 8)!='Hospital'
         tmp <- read.csv2(loc.fl, skip=skip+0, encoding='latin1')
@@ -75,28 +82,33 @@ summary(nuti.t)
 
 tail(nuti.t,10)
 
+rbind(tail(nuti.t,1), tail(nl.t,1))
+
 ddates <- as.Date(rownames(nl.t))
-i0 <- 1:length(ddates)
+i0 <- tail(1:length(ddates),Inf)
 
 xl <- list(x=pretty(ddates[i0], 15))
-xl$l <- format(xl$x, '%b%Y')
+xl$l <- format(xl$x, '%b%d')
 xl$l <- gsub('01', '1', xl$l)
 
 png('figures/leitosCuritiba.png', 1500, 1500, res=150)
 par(mfrow=c(1,1), mar=c(4, 3, 0.5, 0.5), mgp=c(2,0.5,0))
-plot(ddates[i0], nl.t[, 1], las=1, pch=19, 
-     ylim=range(nl.t, na.rm=TRUE), axes=FALSE,
+plot(ddates[i0], nl.t[i0, 1], las=1, pch=19, 
+     ylim=range(nl.t[i0,], na.rm=TRUE), axes=FALSE,
      ylab='Numero de leitos', xlab='', cex=0.5)
 axis(1, xl$x, xl$l, las=3)
-axis(2, pretty(c(0, max(nl.t, na.rm=TRUE)), 10), las=1)
+axis(2, pretty(c(0, max(nl.t[i0,], na.rm=TRUE)), 10), las=1)
 for (j in 2:3)
-    points(ddates[i0], nl.t[,j], col=j, pch=19, cex=0.5)
-points(ddates[i0], nuti.t[,2], col=6, pch=19, cex=0.5)
-abline(v=pretty(ddates,10),
+    points(ddates[i0], nl.t[i0,j], col=j, pch=19, cex=0.5)
+points(ddates[i0], nuti.t[i0,2], col=6, pch=19, cex=0.5)
+for(i in 1:3)
+    lines(ddates[i0], nl.t[i0,j], col=j)
+lines(ddates[i0], nuti.t[i0,2], col=6)
+abline(v=pretty(ddates[i0],10),
        h=100*(0:15), lty=2, col=gray(.5,.5))
 legend('topleft', c('Total', 'Ocupados', 'Livres', 'UTI'),
        pch=19, col=c(1:3,6), ncol=1,
-       bg=gray(0.95), title='Leitos Curitiba')
+       bg=gray(0.95), title='Leitos COVID, Curitiba')
 dev.off()
 
 if (FALSE)
