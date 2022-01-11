@@ -1,10 +1,11 @@
 if (FALSE)
     setwd('..')
 
-options(timeout=60*30)
-
 if(!any(ls()=='dupdate'))
     dupdate <- TRUE
+
+if(dupdate)
+    options(timeout=60*30)
 
 owid.f <- function(d=TRUE) {
     download.file(
@@ -248,13 +249,11 @@ gus.f <- function(d=TRUE) {
 
 others.f <- function() {
     gus.f(TRUE)
-    brms.f(TRUE)
+    wcota.f(TRUE)
     amob.f(TRUE)
 }
 
 if(dupdate) {
-
-    options(timeout=60*5)
 
 owid.f(TRUE)
 
