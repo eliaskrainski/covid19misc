@@ -48,7 +48,7 @@ if(!file.exists(lfl)) {
 
 if(file.exists(lfl)) {
     leitos <- read.csv2(lfl)
-    mdate <- as.Date(max(leitos$Data))
+    mdate <- max(as.Date(leitos$Data))
     dn <- as.integer(difftime(DateN, mdate, units='days'))
     if(dn>0) {
         for(k in 1:dn)
