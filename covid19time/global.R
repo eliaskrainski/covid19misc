@@ -535,7 +535,7 @@ dataPrepare <- function(slocal) {
             r <- y
             bbi <- bb[i.ok, colSums(bb[i.ok, , drop=FALSE])>1]
             xxi <- cbind(bbi, ww[i.ok, , drop=FALSE])
-#if(FALSE) {
+if(FALSE) {
              print(table(is.na(xxi)))
              print(table(is.finite(xxi)))
              print(dim(xxi))
@@ -543,7 +543,7 @@ dataPrepare <- function(slocal) {
              print(colSums(xxi))
              print(tail(y,30))
              print(tail(i.ok))  
-#}
+}
             ff <- glm.fit(xxi, y[i.ok], family=poisson())
             ib <- which(!is.na(ff$coeff[1:ncol(bbi)]))
             ix <- which(!is.na(ff$coeff[ncol(bbi)+1:ncol(ww)]))
@@ -784,32 +784,38 @@ Rtfit <- function(d, a=0.5, b=1) {
     
     x0t <- rev(seq(nrow(d$yy), -7, -14))
     
-    si.ms <- list(alpha=c(5, 4.0))
+    si.ms <- list(alpha=c(6, 4.2))
     si.ms$delta <- c(3.5, 3) ##si.ms$alpha 
     si.ms$omicron <- c(2.5, 2) ##si.ms$delta 
 
     n0 <- 21
     pwv <- lapply(si.ms, function(ms) {
-      m <- ms[1]+2
+      m <- ms[1]+3.5
       s2 <- ms[2]^2
       diff(c(0, pgamma(1:n0, shape=m^2/s2, scale=s2/m)))
     })
     wv <- sapply(pwv, function(x) x/sum(x))
 
-    range(t.eval <- 1:n0-3)
-    colSums(wv*t.eval)
+    range(t.eval <- 1:n0-4)
+    (w.average <- colSums(wv*t.eval))
 
     if(FALSE) {
     
         plot(t.eval, wv[,3], type='h')
         
-        png('figures/wj_variants.png', 900, 1200, res=200)
-        par(mar=c(3,3,0.5,0), mgp=c(2,0.5,0), las=1)
+        png('figures/wj_variants.png', 1200, 1200, res=200)
+        par(mar=c(3.5,3.5,0.5,0), mgp=c(2.5,0.5,0), las=1)
         plot(t.eval, wv[,1], type='n', bty='n',
-             xlab='days', ylab='w_j', lwd=3, ylim=range(wv))
+             xlab='Days from infectee symptoms onset to infected symptoms onset',
+             ylab='w_j', lwd=3, ylim=range(wv))
+    ##    for(k in 1:3)
+        ##      lines(t.eval, wv[,k], col=k, lwd=3)
         for(k in 1:3)
-            lines(t.eval, wv[,k], col=k, lwd=3)
-        legend('topright', names(si.ms), col=1:k, lwd=3, bty='n')
+            points(t.eval+(k-2)/5, wv[,k], col=k, lwd=3, type='h')
+        legend('topright',
+               paste(names(si.ms), ':', format(w.average,digits=2)),
+               col=1:k, lwd=3, bty='n')
+        abline(v=0, lty=2, col=gray(0.5,0.5))
         dev.off()
 
         system('eog figures/wj_variants.png &')
