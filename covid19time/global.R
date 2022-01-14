@@ -784,27 +784,31 @@ Rtfit <- function(d, a=0.5, b=1) {
     
     x0t <- rev(seq(nrow(d$yy), -7, -14))
     
-    si.ms <- list(alpha=c(5.8, 4.0))
-    si.ms$delta <- c(4, 3) ##si.ms$alpha 
-    si.ms$omicron <- c(3, 2) ##si.ms$delta 
+    si.ms <- list(alpha=c(5, 4.0))
+    si.ms$delta <- c(3.5, 3) ##si.ms$alpha 
+    si.ms$omicron <- c(2.5, 2) ##si.ms$delta 
+
     n0 <- 21
     pwv <- lapply(si.ms, function(ms) {
-      m <- ms[1] + 3
+      m <- ms[1]+2
       s2 <- ms[2]^2
-      pgamma(0:n0, shape=m^2/s2, scale=s2/m)
+      diff(c(0, pgamma(1:n0, shape=m^2/s2, scale=s2/m)))
     })
-    wv <- sapply(pwv, function(x) diff(x)/sum(diff(x)))
+    wv <- sapply(pwv, function(x) x/sum(x))
+
+    range(t.eval <- 1:n0-3)
+    colSums(wv*t.eval)
 
     if(FALSE) {
-
-        colSums(wv*(1:n0-4))
+    
+        plot(t.eval, wv[,3], type='h')
         
         png('figures/wj_variants.png', 900, 1200, res=200)
         par(mar=c(3,3,0.5,0), mgp=c(2,0.5,0), las=1)
-        plot(1:n0-4, wv[,1], type='l', bty='n',
+        plot(t.eval, wv[,1], type='n', bty='n',
              xlab='days', ylab='w_j', lwd=3, ylim=range(wv))
-        for(k in 2:3)
-            lines(1:n0-4, wv[,k], col=k, lwd=3)
+        for(k in 1:3)
+            lines(t.eval, wv[,k], col=k, lwd=3)
         legend('topright', names(si.ms), col=1:k, lwd=3, bty='n')
         dev.off()
 
@@ -844,9 +848,9 @@ Rtfit <- function(d, a=0.5, b=1) {
               w <- wv[, 1] * wwv[i, 1] + 
                 wv[, 2] * wwv[i, 2] + 
                 wv[, 3] * wwv[i, 3] 
-              iie <- i + 1:n0 -4
+              iie <- i + t.eval
               iie0 <- iie>0
-              d$ee[iie[iie0], l, k] <- d$ee[iie[iie0], l, k] + y0[i] * w[iie0] 
+              d$ee[iie[iie0], l, k] <- d$ee[iie[iie0], l, k] + y0[i] * w[iie0]
             }
             d$ee[d$ee<0.01] <- 0.01
             if ((length(ii)>19) & (mgcv.ok)) {
