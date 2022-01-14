@@ -5,17 +5,28 @@ if (FALSE)
 options(timeout=60*10)
 
 u0 <- 'http://dadosabertos.c3sl.ufpr.br/curitiba/CasosCovid19/'
+u1 <- 'https://mid.curitiba.pr.gov.br/dadosabertos/CasosCovid19/'
 
+try <- TRUE
 k <- 0
 repeat {
     ufl <- paste0(u0,  Sys.Date() + k,
                   '_Casos_Covid_19_-_Base_de_Dados.csv')
     if (class(try(download.file(ufl, 'data/casosCuritibaSM.csv'),
                   TRUE))=='try-error') {
-        k <- k-1
+        ufl <- paste0(u1,  Sys.Date() + k,
+                      '_Casos_Covid_19_-_Base_de_Dados.csv')
+        if (class(try(download.file(ufl, 'data/casosCuritibaSM.csv'),
+                      TRUE))=='try-error') {
+            try <- TRUE
+            k <- k-1
+        } else {
+            try <- FALSE
+        }
     } else {
-        break
+        try <- FALSE
     }
+    if(!try) break
 }
 
 library(data.table)
@@ -236,7 +247,7 @@ print(sapply(wcwb, function(x) tail(diff(c(0,x)), 15)))
 if(FALSE){
 
     tno <- as.integer(difftime(
-        as.Date(dcwb$'DATA.ÓBITO', '%d/%m/%Y'),
+        as.Date(dcwb$'DATA ÓBITO', '%d/%m/%Y'),
         dcwb$date, units='days'))
 
     qtno <- quantile(tno, na.rm=TRUE)

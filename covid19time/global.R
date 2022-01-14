@@ -535,7 +535,7 @@ dataPrepare <- function(slocal) {
             r <- y
             bbi <- bb[i.ok, colSums(bb[i.ok, , drop=FALSE])>1]
             xxi <- cbind(bbi, ww[i.ok, , drop=FALSE])
-if(FALSE) {
+#if(FALSE) {
              print(table(is.na(xxi)))
              print(table(is.finite(xxi)))
              print(dim(xxi))
@@ -543,7 +543,7 @@ if(FALSE) {
              print(colSums(xxi))
              print(tail(y,30))
              print(tail(i.ok))  
-}
+#}
             ff <- glm.fit(xxi, y[i.ok], family=poisson())
             ib <- which(!is.na(ff$coeff[1:ncol(bbi)]))
             ix <- which(!is.na(ff$coeff[ncol(bbi)+1:ncol(ww)]))
@@ -785,8 +785,8 @@ Rtfit <- function(d, a=0.5, b=1) {
     x0t <- rev(seq(nrow(d$yy), -7, -14))
     
     si.ms <- list(alpha=c(5.8, 4.0))
-    si.ms$delta <- c(4.5, 3.5) ##si.ms$alpha 
-    si.ms$omicron <- c(3.5, 3.0) ##si.ms$delta 
+    si.ms$delta <- c(4, 3.5) ##si.ms$alpha 
+    si.ms$omicron <- c(3, 3.0) ##si.ms$delta 
     n0 <- 20
     pwv <- lapply(si.ms, function(ms) {
       m <- ms[1] + 3

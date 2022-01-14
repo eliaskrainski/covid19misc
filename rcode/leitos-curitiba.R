@@ -67,6 +67,8 @@ if(file.exists(lfl)) {
 
 str(leitos)
 
+range(as.Date(leitos$Data), na.rm=TRUE)
+
 xnams <- tail(colnames(leitos), 4)
 fnams <- c('Perfil.da.vaga', 'Tipo.de.Leito') 
 
@@ -82,34 +84,100 @@ summary(nuti.t)
 
 tail(nuti.t,10)
 
-rbind(tail(nuti.t,1), tail(nl.t,1))
-
 ddates <- as.Date(rownames(nl.t))
 i0 <- tail(1:length(ddates),Inf)
 
-xl <- list(x=pretty(ddates[i0], 15))
-xl$l <- format(xl$x, '%b%d')
+load('data/wdl.RData')
+
+wdl[[1]][grep('Curitiba', wdl[[1]]$City), 1:7]
+(iic <- which(wdl[[1]]$City=='Curitiba(SMB)'))
+
+accMax <- function(x) {
+    x.ori <- x
+    i.ok <- which(!is.na(x))
+    x <- x.ori[i.ok] 
+    d <- diff(x)
+    dn <- which(d<0)
+    while(length(dn)>0) {
+        for (j in dn) {
+            a <- x[j] 
+            x[j] <- x[j+1]
+            x[j+1] <- a
+        }
+        d <- diff(x)
+        dn <- which(d<0)
+    }
+    x.ori[i.ok] <- x
+    return(x.ori) 
+}
+
+wcwb <- sapply(wdl, function(d)
+    diff(accMax(c(0, unlist(d[iic, -(1:6)])))))
+
+summary(wcwb)
+
+wdlD <- as.Date(colnames(wdl[[1]])[-(1:6)], 'X%Y%m%d')
+summary(wdlD)
+
+t0 <- seq(1, nrow(wcwb), length=round(nrow(wcwb)/14))
+dim(bb <- splines:::bs(1:nrow(wcwb), knots=t0))
+bb <- bb[, which(colSums(bb)>0)]
+bb[,2] <- bb[,1] + bb[,2]
+bb[, ncol(bb)-1] <- bb[, ncol(bb)-1] +bb[,ncol(bb)]
+bb <- bb[, 2:(ncol(bb)-1)]
+
+swcwb <- apply(wcwb, 2, function(y) {
+    r <- y
+    ii <- which(complete.cases(y))
+    b <- glm.fit(bb[ii,], y[ii], family=poisson())$coef
+    r[ii] <- exp(bb %*% b)
+    return(r)
+})
+summary(swcwb)
+
+xl <- list(x=pretty(c(ddates[i0], wdlD), 15))
+xl$l <- format(xl$x, '%b/%y')
 xl$l <- gsub('01', '1', xl$l)
 
+ylm <- range(0, nl.t[i0,], wcwb, na.rm=TRUE)
+
 png('figures/leitosCuritiba.png', 1500, 1500, res=150)
-par(mfrow=c(1,1), mar=c(4, 3, 0.5, 0.5), mgp=c(2,0.5,0))
+par(mfrow=c(2,1), mar=c(4, 3, 0.5, 0.5), mgp=c(2,0.7,0))
 plot(ddates[i0], nl.t[i0, 1], las=1, pch=19, 
-     ylim=range(nl.t[i0,], na.rm=TRUE), axes=FALSE,
+     ylim=ylm, axes=FALSE,
      ylab='Numero de leitos', xlab='', cex=0.5)
 axis(1, xl$x, xl$l, las=3)
-axis(2, pretty(c(0, max(nl.t[i0,], na.rm=TRUE)), 10), las=1)
+axis(2, pretty(c(0, ylm[2]), 10), las=1)
 for (j in 2:3)
     points(ddates[i0], nl.t[i0,j], col=j, pch=19, cex=0.5)
 points(ddates[i0], nuti.t[i0,2], col=6, pch=19, cex=0.5)
 for(i in 1:3)
     lines(ddates[i0], nl.t[i0,j], col=j)
 lines(ddates[i0], nuti.t[i0,2], col=6)
+lines(wdlD, swcwb[,1], col=5, lwd=2)
+points(wdlD, wcwb[,1], cex=0.3, pch=8, col=5)
 abline(v=pretty(ddates[i0],10),
        h=100*(0:15), lty=2, col=gray(.5,.5))
-legend('topleft', c('Total', 'Ocupados', 'Livres', 'UTI'),
-       pch=19, col=c(1:3,6), ncol=1,
-       bg=gray(0.95), title='Leitos COVID, Curitiba')
+legend('topleft',
+       c('Casos', 'Óbitos',
+         'Leitos COVID:', 'Total', 'Ocupados', 'Livres', 'UTI'),
+       pch=19, col=c(5,4,NA,1:3,6), ncol=1,
+       bg=gray(0.95), title='Curitiba')
+text(rep(ddates[tail(i0,1)], 3)+14,
+     c(nl.t[tail(i0,1), 1:2], nuti.t[tail(i0,1),2]),
+     c(nl.t[tail(i0,1), 1:2], nuti.t[tail(i0,1),2]),
+     col=c(1, 2, 6), srt=45, xpd=TRUE, cex=1.2)
+plot(wdlD, swcwb[,2], col=4, lwd=2,
+     axes=FALSE, type='l', las=1, xlab='', ylab='',
+     ylim=c(0.5, max(wcwb[,2], na.rm=TRUE)))
+points(wdlD, wcwb[,2], cex=0.3, pch=8, col=4)
+axis(1, xl$x, xl$l, las=3)
+axis(2, pretty(c(0, max(wcwb[,2], na.rm=TRUE)), 10), las=1)
 dev.off()
 
 if (FALSE)
     system("eog figures/leitosCuritiba.png &")
+
+data.frame(utis=tail(nuti.t[,2]),
+           total=tail(nl.t[,2]))
+
