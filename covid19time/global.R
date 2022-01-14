@@ -785,9 +785,9 @@ Rtfit <- function(d, a=0.5, b=1) {
     x0t <- rev(seq(nrow(d$yy), -7, -14))
     
     si.ms <- list(alpha=c(5.8, 4.0))
-    si.ms$delta <- c(4, 3.5) ##si.ms$alpha 
-    si.ms$omicron <- c(3, 3.0) ##si.ms$delta 
-    n0 <- 20
+    si.ms$delta <- c(4, 3) ##si.ms$alpha 
+    si.ms$omicron <- c(3, 2) ##si.ms$delta 
+    n0 <- 21
     pwv <- lapply(si.ms, function(ms) {
       m <- ms[1] + 3
       s2 <- ms[2]^2
@@ -796,6 +796,8 @@ Rtfit <- function(d, a=0.5, b=1) {
     wv <- sapply(pwv, function(x) diff(x)/sum(diff(x)))
 
     if(FALSE) {
+
+        colSums(wv*(1:n0-4))
         
         png('figures/wj_variants.png', 900, 1200, res=200)
         par(mar=c(3,3,0.5,0), mgp=c(2,0.5,0), las=1)
@@ -808,12 +810,11 @@ Rtfit <- function(d, a=0.5, b=1) {
 
         system('eog figures/wj_variants.png &')
     }
-
     
     n1 <- nrow(d$sdy)
     nl <- ncol(d$sdo)
     
-    wdv <- 20
+    wdv <- 3*7
     datesv <- as.Date(c('2019-10-15', '2021-06-01', '2021-12-01'))
     wwv <- matrix(0, n1, 3) 
     wwv[,1] <- 1/(1+exp(-as.numeric(difftime(d$x, datesv[1], units='days'))/wdv))
@@ -843,7 +844,7 @@ Rtfit <- function(d, a=0.5, b=1) {
               w <- wv[, 1] * wwv[i, 1] + 
                 wv[, 2] * wwv[i, 2] + 
                 wv[, 3] * wwv[i, 3] 
-              iie <- i + 1:n0 -3
+              iie <- i + 1:n0 -4
               iie0 <- iie>0
               d$ee[iie[iie0], l, k] <- d$ee[iie[iie0], l, k] + y0[i] * w[iie0] 
             }
