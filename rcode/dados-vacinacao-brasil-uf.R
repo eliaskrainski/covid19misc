@@ -23,15 +23,22 @@ jj <- c(3, 5, 8, 28, 29, 31)
 brvac.uf <- function(d=FALSE, uf=NULL) { 
     url0 <- paste0('https://opendatasus.saude.gov.br/',
                    'dataset/covid-19-vacinacao/resource/',
-                   'ef3bd0b8-b605-474b-9ae5-c97390c197a8')
+                   '301983f2-aa50-4977-8fec-cfab0806cb0b')
 ### non elegant way to get the file names... 
     d0 <- readLines(url0)
     urls <- grep('c000.csv', d0, value=TRUE)[-1]
-    ufls <- substr(urls, 14, 155)
+    ufls <- sapply(urls, function(u) {
+        g1 <- gregexpr('https', u)[[1]]
+        g2 <- gregexpr('csv', u)[[1]]
+        substr(u, g1, g2+2)
+        }) ##substr(urls, 14, 155)
     if(!is.null(uf)) {
-        ufls <- ufls[substr(ufls, 84, 85) %in% uf]
+        ufls <- ufls[grep(uf, ufls)] 
     }
-    lfls <- gsub('/', '_', substring(ufls, 84), fixed=TRUE)
+    lfls <- sapply(ufls, function(u) {
+        gg <- gregexpr('/', u)[[1]]
+        substring(u, tail(gg,1)+1)
+    })
 ### download if asked and do not exists locally
     if(d) {
         for(j in 1:length(lfls)) {
