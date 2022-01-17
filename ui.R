@@ -3,14 +3,10 @@ ui <- fluidPage(
 #  includeHTML("../GLOBAL/MathJax.html"),
 #  includeCSS("../GLOBAL/style.css"),
   withMathJax(),
-  titlePanel("Visualização temporal de dados de COVID19"),
+  titlePanel(paste("Visualização temporal de dados de COVID19,"),
+	     'incluindo', lb.n[1], 'e', lb.n[2], 'globais'),
   sidebarLayout(
     sidebarPanel(
-      checkboxGroupInput(
-        inputId = "variables", 
-        label = "Variável (Total Mundo)", 
-        choices=lb.n, 
-        selected = 'cases'),
       checkboxInput(
         inputId = 'popDivide',
         label = "Por 1M habitantes",
