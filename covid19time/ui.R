@@ -1,13 +1,9 @@
 ui <- fluidPage(
   withMathJax(),
-  titlePanel("Temporal visualization of COVID19 data"),
+  titlePanel(paste("Temporal visualization of COVID19 related data including",
+                   names(lb.n)[1], 'and', names(lb.n)[2], 'all over the world')),
   sidebarLayout(
     sidebarPanel(
-      checkboxGroupInput(
-        inputId = "variables", 
-        label = 'Variable (Total world)',  
-        choices=lb.n, 
-        selected = 'cases'),
       checkboxInput(
         inputId = 'popDivide',
         label = "Per 1M inhabitants",
@@ -19,7 +15,7 @@ ui <- fluidPage(
         multiple = TRUE, 
         selected = c("US", ##'Curitiba, PR - BR', 
 		     ##'Curitiba(SM), PR - BR',
-		     ##'Curitiba(SMB), PR - BR', 
+		     ##'Curitiba(SMB), PR - BR') 
          ##'Paraná - BR', 
          #'Brasil') 
          'United Kingdom')
