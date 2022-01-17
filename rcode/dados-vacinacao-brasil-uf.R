@@ -37,12 +37,18 @@ brvac.uf <- function(d=FALSE, uf=NULL) {
     }
     lfls <- sapply(ufls, function(u) {
         gg <- gregexpr('/', u)[[1]]
-        substring(u, tail(gg,1)+1)
+        paste(substr(u, tail(gg,1)-2, tail(gg,1)-1),  
+              substring(u, tail(gg,1)+1), sep='_')
+    })
+    names(lfls) <- sapply(ufls, function(u) {
+        gg <- gregexpr('/', u)[[1]]
+        substr(u, tail(gg,1)-2, tail(gg,1)-1)
     })
 ### download if asked and do not exists locally
     if(d) {
         for(j in 1:length(lfls)) {
             fl.j <- paste0('data/vacinacao/vac_', lfls[j])
+            print(fl.j)
             if(!file.exists(fl.j))
                 download.file(ufls[j], fl.j)
         }
