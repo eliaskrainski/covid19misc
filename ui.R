@@ -3,8 +3,8 @@ ui <- fluidPage(
 #  includeHTML("../GLOBAL/MathJax.html"),
 #  includeCSS("../GLOBAL/style.css"),
   withMathJax(),
-  titlePanel(paste("Visualização temporal de dados de COVID19,"),
-	     'incluindo', lb.n[1], 'e', lb.n[2], 'globais'),
+  titlePanel(paste("Visualização temporal de dados de COVID19,",
+	     'incluindo', lb.n[1], 'e', lb.n[2], 'globais')),
   sidebarLayout(
     sidebarPanel(
       checkboxInput(
