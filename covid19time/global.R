@@ -1144,7 +1144,7 @@ if(FALSE){
             
         yl <- axTransfTicks(transf, ylm)
 	yl$l <- round(yl$l)
-	yldd <- dupplicated(yl$l)
+	yldd <- duplicated(yl$l)
 	yl$x <- yl$x[!yldd]
 	yl$l <- yl$l[!yldd]
         yab <- par()$usr[3:4]
