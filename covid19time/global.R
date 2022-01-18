@@ -1143,6 +1143,10 @@ if(FALSE){
              ylab=ylabs[[1]][1]) 
             
         yl <- axTransfTicks(transf, ylm)
+	yl$l <- round(yl$l)
+	yldd <- dupplicated(yl$l)
+	yl$x <- yl$x[!yldd]
+	yl$l <- yl$l[!yldd]
         yab <- par()$usr[3:4]
         i.yl <- which(findInterval(
           yl$x, ylm+c(-1,1)*0.1*diff(ylm))==1)
