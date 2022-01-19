@@ -86,8 +86,8 @@ allpls <-
       'Cases reproduction number', 
       '"Deaths based" reproduction number', 
       'Fatality rate (%)',
-      names(wvac), 
-      paste(names(wvac), 'accumulated'), 
+      paste('Daily', names(wvac)),
+      paste('Accumulated', names(wvac)), 
       names(wgmbl), 
       names(wambl))
 if (pt) {
@@ -99,7 +99,7 @@ if (pt) {
       'Número de reprodução de casos', 
       'Número de reprodução "baseado em óbitos"', 
       'Taxa de letalidade (%)',
-      names(wvac), 
+      paste(names(wvac), 'diária'),
       paste(names(wvac), 'acumulada'), 
       'varejo e recreação',
       'supermercados e farmácias',
@@ -480,8 +480,8 @@ accMax <- function(x) {
 dataPrepare <- function(slocal) {
     
     ii <- pmatch(slocal, locals)
-    print(c(ii=ii))
-    print(tail(diff(c(0, unlist(wdl[[1]][ii, -(1:6)])))))
+##    print(c(ii=ii))
+  ##  print(tail(diff(c(0, unlist(wdl[[1]][ii, -(1:6)])))))
     
     nl <- length(ii)
     jj <- 7:ncol(wdl[[1]])
@@ -540,10 +540,21 @@ dataPrepare <- function(slocal) {
             if(all(is.na(y))) return(rep(NA, length(y)))
             i1 <- which(ifelse(is.na(y), 0, y)>0)[1]
             if(i1>=length(y)) return(rep(0, length(y)))
-            i.ok <- intersect(which(!is.na(y)), (i1+1):length(y))
+            i.ok <- intersect(which(!is.na(y)), i1:length(y))
             r <- y
-            bbi <- bb[i.ok, colSums(bb[i.ok, , drop=FALSE])>1]
-            xxi <- cbind(bbi, ww[i.ok, , drop=FALSE])
+            if((length(i.ok)<20)|(sum(y[i.ok])<10)) {
+              r[i.ok] <- mean(y[i.ok])
+              return(r)
+            }
+            jjbbisel <- which(colSums(bb[i.ok, , drop=FALSE])>1)
+            if(length(jjbbisel)>0) {
+              bbi <- bb[i.ok, jjbbisel]
+##            print(c(ncolbbi=ncol(bbi))) 
+              xxi <- cbind(bbi, ww[i.ok, , drop=FALSE])
+            } else {
+              bbi <- matrix(0, length(i.ok), 0)
+              xxi <- ww[i.ok,,drop=FALSE]
+            }
 if(FALSE) {
              print(table(is.na(xxi)))
              print(table(is.finite(xxi)))
@@ -554,10 +565,17 @@ if(FALSE) {
              print(tail(i.ok))  
 }
             ff <- glm.fit(xxi, y[i.ok], family=poisson())
-            ib <- which(!is.na(ff$coeff[1:ncol(bbi)]))
-            ix <- which(!is.na(ff$coeff[ncol(bbi)+1:ncol(ww)]))
-            mx <- ww[i.ok, ix, drop=FALSE] %*% ff$coeff[ix+ncol(bbi)]
-            r[i.ok] <- exp(drop(bbi[, ib, drop=FALSE] %*% ff$coeff[ib] + mean(mx)))
+            if(length(jjbbisel)>0) {
+              ib <- which(!is.na(ff$coeff[1:ncol(bbi)]))
+              ix <- which(!is.na(ff$coeff[ncol(bbi)+1:ncol(ww)]))
+              mx <- ww[i.ok, ix, drop=FALSE] %*% ff$coeff[ix+ncol(bbi)]
+              r[i.ok] <- exp(drop(bbi[, ib, drop=FALSE] %*% ff$coeff[ib] + mean(mx)))
+            } else {
+              ix <- which(!is.na(ff$coeff[1:ncol(ww)]))
+              mx <- ww[i.ok, ix, drop=FALSE] %*% ff$coeff[ix]
+              r[i.ok] <- exp(drop(mean(mx)))
+            }
+            r[r>1e7] <- NA
             return(r * sum(y, na.rm=TRUE)/sum(r, na.rm=TRUE)) 
         }
         d$sdy <- apply(yy[,,1, drop=FALSE], 2, fSloc)
@@ -586,19 +604,27 @@ if(FALSE) {
         if(length(ij)>0) {
           for (l in ij) {
             tmp <- m[iiwv[l], ii0[1]:ncol(m)]
-            tmp[which(tmp<0)] <- 0
+            tmp[which(tmp<0)] <- NA
             r[, l] <- tmp 
           }
         }
         return(r)
     })
-    d$vac <- c(d$vac, lapply(d$vac, function(v) {
-      apply(v, 2, cumsum) 
-    }))
     d$svac <- lapply(d$vac, function(v) {
       apply(v, 2, function(x) fSloc(x)) 
     })
-
+##    print(summary(d$vac[[1]]))
+  ##  print(summary(d$svac[[1]]))
+    d$vac <- c(d$vac, lapply(d$vac, function(v) {
+      v[is.na(v)] <- 0
+      apply(v, 2, cumsum) 
+    }))
+    d$svac <- c(d$svac, lapply(d$svac, function(v) {
+      v[is.na(v)] <- 0
+      apply(v, 2, cumsum) 
+    }))
+    names(d$svac) <- names(d$vac) <- gsub(' ', '', allpls[8:13])
+    
     iim <- pmatch(slocal, glocals)
     i2i <- pmatch(glocals[iim], locals[ii])
     
@@ -907,9 +933,7 @@ data2plot <- function(d,
                       transf, 
                       legpos) {
     
-if(FALSE) { ## no longer needed
-   if ((length(plots)==0) |
-        (any(plots%in%(1:4)) & (length(variables)<1))) {
+   if ((length(plots)==0)) {
         if (pt) {
             stop(safeError(
                 'Favor selecionar pelo menos uma variável!'))
@@ -918,11 +942,8 @@ if(FALSE) { ## no longer needed
                 'Please select at least one variable!'))
         }
     }
-    v <- pmatch(
-        variables, 
-        c('cases', 'deaths'))
-}
-  
+
+##  print(str(d))
     plots <- pmatch(plots, allpls)
     
     wplot <- integer(4+1+2+3*2+1+1)
@@ -938,7 +959,7 @@ if(FALSE) { ## no longer needed
         wplot[14] <- 14
     if (any(plots>19))
         wplot[15] <- 15
-    print(c(w=wplot))
+##    print(c(w=wplot))
     wplot <- wplot[wplot>0]
     nplot <- length(wplot)
 
@@ -1115,8 +1136,8 @@ if(FALSE){
       nn1, decreasing = TRUE)
   }
 }
-      print(names(d))      
-      dtplot <- list(cases=d[c(19,21)], deaths=d[c(20,22)])
+      idxc <- pmatch(c('dy.plot', 'sdy.plot'), names(d))
+      dtplot <- list(cases=d[idxc], deaths=d[idxc])
       dtplot <- c(dtplot, lapply(dtplot, lapply, function(d) 
         apply(d, 2, cumsum)))[c(1,3,2,4)]
       nnlegs <- lapply(dtplot[c(2,4)], function(d) 
@@ -1140,13 +1161,12 @@ if(FALSE){
              ylim=c(ylm[1], ylm[2]+diff(ylm)*y.ex1), 
              type = 'n',
              xlab='',
-             ylab=ylabs[[1]][1]) 
+             ylab=ylabs[kc]) 
             
         yl <- axTransfTicks(transf, ylm)
-	yl$l <- round(yl$l)
-	yldd <- duplicated(yl$l)
-	yl$x <- yl$x[!yldd]
-	yl$l <- yl$l[!yldd]
+	ylrd <- which(abs(yl$l-round(yl$l))<sqrt(.Machine$double.eps))
+	yl$x <- yl$x[ylrd]
+	yl$l <- yl$l[ylrd]
         yab <- par()$usr[3:4]
         i.yl <- which(findInterval(
           yl$x, ylm+c(-1,1)*0.1*diff(ylm))==1)
@@ -1197,100 +1217,6 @@ if(FALSE){
 
     par(mgp=mgpp)
     
-if(FALSE){
-  if (any(plots==2)) {
-        iplot <- iplot + 1        
-        
-        y.ex1 <- y.ex1##ifelse(any(plots==1), 3, 1)
-        if ((nplot-iplot)<ncwplot)
-            par(mar=c(2, 5.0, 0, 0.5))
-        
-        d$y.plot <- d$y
-        d$o.plot <- d$o
-        d$sy.plot <- d$sy <- apply(d$sdy, 2, cumsum)
-        d$so.plot <- d$so <- apply(d$sdo, 2, cumsum)
-
-        for (l in 1:nl) {
-            d$y.plot[, l] <- xTransf(
-                d$y[, l]/popd[l], transf)
-            d$o.plot[, l] <- xTransf(
-                d$o[, l]/popd[l], transf)
-            d$sy.plot[, l] <- xTransf(
-                d$sy[, l]/popd[l], transf)
-            d$so.plot[, l] <- xTransf(
-                d$so[, l]/popd[l], transf)
-        }
-        
-                if (showPoints) {
-                    ylm <- range(d$o.plot[jj, ], na.rm=TRUE)
-                } else {
-                    ylm <- range(d$so.plot[jj, ], na.rm=TRUE)
-                }
-                
-                plot(d$x, 
-                     d$do.plot[,1], 
-                     axes=FALSE, 
-                     xlim=xlm,
-                     ylim=c(ylm[1], ylm[2]+diff(ylm)*y.ex1*length(wplot)), 
-                     type = 'n', 
-                     xlab='', 
-                     ylab=ylabs[[2]][3])
-                
-
-        yl <- axTransfTicks(transf, ylm)
-        yab <- par()$usr[3:4]
-        i.yl <- which(findInterval(
-            yl$x, ylm+c(-1,1)*0.1*diff(ylm))==1)
-        
-        axis(2, yl$x[i.yl], round(yl$l[i.yl]), las=1)
-        segments(rep(xlm0[1], length(i.yl)), yl$x[i.yl],
-                 rep(xlm0[2], length(i.yl)), yl$x[i.yl],
-                 lty=2, col=gray(0.7, 0.5))
-        
-           for (l in 1:nl) {
-                lines(d$x, d$so.plot[,l], col=scol[l], 
-                      lty=length(v), lwd=3)
-                if (showPoints)
-                    points(d$x, d$o.plot[,l], 
-                           cex=1-log(nl,10)/2, pch=8, col=scol[l])
-            }
-        
-        nn1x <- format(nn1, big.mark = ',')
-        nn2x <- format(nn2, big.mark = ',')
-        if (pt) {
-            nn1x <- gsub(',', '.', nn1x, fixed=TRUE)
-            nn2x <- gsub(',', '.', nn2x, fixed=TRUE)
-        }
-
-        nlab <- nn2x 
-        
-        if (nl>1) {
-            legend(legpos, paste0(lll, '\n', nlab)[oloc], 
-                   ##inset = c(0, -0.05),
-                   col=scol[oloc], lty=1, lwd=5,
-                   bty='n', xpd=TRUE,
-                   y.intersp=sqrt(0.5+max(nnll)),
-                   cex=leg.cex, ncol=leg.ncols)
-        } else {
-            if (pt) {
-                llg <- paste(c('Casos', 'Óbitos'), ':', nlab)
-            } else {
-                llg <- paste(c('Cases', 'Deaths'), ':', nlab)
-            }
-            if (showPoints) {
-                legend(legpos, llg[v], bty='n', 
-                       pch=c(19,8)[v], lty=v, lwd=2)
-            } else {
-                legend(legpos, llg[v], bty='n', 
-                       lty=1:length(v), lwd=2)
-            }
-        }
-
-        if ((nplot-iplot)<ncwplot)
-            axis(1, xl$x, format(xl$x, '%b,%d'))
-
-    }
-}    
     par(mar=mmar)
     if (any(plots%in%c(5,6))) {
       if(pt) {
@@ -1512,8 +1438,7 @@ if(FALSE){
         ylm <- range(unlist(d$svac[[vk]]), na.rm=TRUE)
         if(showPoints)
           ylm <- range(ylm, unlist(d$vac[[vk]]), na.rm = TRUE)
-        plot(d$x, 
-             rowMeans(d$vac[[vk]], na.rm=TRUE), 
+        plot(d$x, d$vac[[vk]][,1], 
              xlim=xlm, ylim=ylm, type='n', axes=F,
              xlab='', ylab=ifelse(popDivide, "% doses/Pop", '# doses'))
         axis(2)
@@ -1525,9 +1450,9 @@ if(FALSE){
             points(d$x, d$vac[[vk]][,j], col=scol[j], pch=19, cex=0.5)
         }
         if (showPoints) {
-          legend(legpos, names(d$vac)[vk], pch=jjvac, lty=jjvac, lwd=3, bty='n')
+          legend(legpos, rep(names(wvac),2)[vk], pch=jjvac, lty=jjvac, lwd=3, bty='n')
         } else {
-          legend(legpos, names(d$vac)[vk], lty=jjvac, lwd=3, bty='n') 
+          legend(legpos, rep(names(wvac),2)[vk], lty=jjvac, lwd=3, bty='n') 
         }
         segments(xl$x, rep(ylm[1], length(xl$x)),
                  xl$x, rep(ylm[2], length(xl$x)),
