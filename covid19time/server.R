@@ -69,6 +69,7 @@ server <- function(input, output) {
                 sprintf("%0.2f", sdata$Rtupp[itt,l,1]), ')')))
         colnames(rtt) <- input$local
         rtt <- data.frame(Date=rev(as.character(tail(sdata$x, nd))), rtt)
+        colnames(rtt)[-1] <- input$local
         rtt
     })
 
@@ -83,6 +84,7 @@ server <- function(input, output) {
                 sprintf("%0.2f", sdata$Rtupp[itt,l,2]), ')')))
         colnames(rtt) <- input$local
         rtt <- data.frame(Date=rev(as.character(tail(sdata$x, nd))), rtt)
+        colnames(rtt)[-1] <- input$local
         rtt
     })
 }
