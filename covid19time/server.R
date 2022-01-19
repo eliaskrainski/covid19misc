@@ -67,8 +67,11 @@ server <- function(input, output) {
                 sprintf("%0.2f", sdata$Rt[itt,l,1]), ' (',
                 sprintf("%0.2f", sdata$Rtlow[itt,l,1]), '-',
                 sprintf("%0.2f", sdata$Rtupp[itt,l,1]), ')')))
-        colnames(rtt) <- input$local
-        rtt <- data.frame(Date=rev(as.character(tail(sdata$x, nd))), rtt)
+        tsel <- which(!sapply(itt, function(tt) 
+          all(is.na(sdata$Rt[tt,,1]))))
+        rtt <- data.frame(
+          Date=rev(as.character(tail(sdata$x, nd)))[tsel], 
+          rtt[tsel,])
         colnames(rtt)[-1] <- input$local
         rtt
     })
@@ -82,8 +85,11 @@ server <- function(input, output) {
                 sprintf("%0.2f", sdata$Rt[itt,l,2]), ' (',
                 sprintf("%0.2f", sdata$Rtlow[itt,l,2]), '-',
                 sprintf("%0.2f", sdata$Rtupp[itt,l,2]), ')')))
-        colnames(rtt) <- input$local
-        rtt <- data.frame(Date=rev(as.character(tail(sdata$x, nd))), rtt)
+        tsel <- which(!sapply(itt, function(tt) 
+          all(is.na(sdata$Rt[tt,,2]))))
+        rtt <- data.frame(
+          Date=rev(as.character(tail(sdata$x, nd)))[tsel], 
+          rtt[tsel,])
         colnames(rtt)[-1] <- input$local
         rtt
     })
