@@ -3,7 +3,7 @@ if (FALSE)
 
 options(width=70)
 
-(fls <- system('ls data/INFLUD21*2021.csv', TRUE))
+(fls <- system('ls data/INFLUD21*.csv', TRUE))
 if (length(fls)>0) {
     file <- fls[tail(order(as.Date(substr(
         fls, 15, 24), '%d-%m-%Y')), 1)]

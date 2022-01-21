@@ -966,8 +966,6 @@ data2plot <- function(d,
     iplot <- 0
     
     mgpp <- c(3.0, 0.5, 0)
-    if (popDivide)
-        mgpp[1] <- 3.0
     if(nplot>9) {
       if (pt) {
         stop(safeError(
@@ -1104,8 +1102,10 @@ data2plot <- function(d,
           'Casos acumulados confirmados\n',
           'Óbitos diários confirmados\n',
           'Óbitos acumulados confirmados\n') 
+        titleleg <- rep(c('Último dia', 'No período'),2)
         if (popDivide) {
           ylabs[1:4] <- paste0(ylabs[1:4], 'por 1M habitantes')
+  ##        titleleg <- paste(titleleg, 'por 1M habitantes')
         }
       } else {
         ylabs <- c(
@@ -1113,41 +1113,37 @@ data2plot <- function(d,
           'Accumulated confirmed cases\n',
           'Daily confirmed deaths\n',
           'Accumulated confirmed deaths\n')
+        titleleg <- rep(c('Last day', 'In the period'),2)
         if (popDivide) {
           ylabs[1:4] <- paste0(ylabs[1:4], 'per 1M inhabitants')
+##          titleleg <- paste(titleleg, 'per 1M inhabitants')
         }
       }
-      getNc <- function(x) {
-        x <- c(0, x) 
-        for (j in 2:length(x))
-          if (is.na(x[j]))
-            x[j] <- x[j-1]
-        round(x[jj[length(jj)]+1] - x[jj[1]])
+      getNc <- function(x,diff=TRUE) {
+        r <- x[jj]
+        if(diff) {
+          r <- r[length(r)]-r[1]
+        } else {
+          r <- r[length(r)]
+        }
+        return(round(r)) 
       }
 
-if(FALSE){
-  nn1 <- apply(d$y, 2, getNc)
-  nn2 <- apply(d$o, 2, getNc)
-  if (any(plots==c(3,4))) {
-    oloc <- order(
-      nn2, decreasing = TRUE)
-  } else {
-    oloc <- order(
-      nn1, decreasing = TRUE)
-  }
-}
       idxc <- pmatch(c('dy.plot', 'sdy.plot'), names(d))
-      dtplot <- list(cases=d[idxc], deaths=d[idxc])
+      dtplot <- list(cases=d[idxc], deaths=d[idxc+1])
       dtplot <- c(dtplot, lapply(dtplot, lapply, function(d) 
         apply(d, 2, cumsum)))[c(1,3,2,4)]
-      nnlegs <- lapply(dtplot[c(2,4)], function(d) 
-        apply(d[[1]], 2, getNc))
-      nnlegs <- c(nnlegs[1], nnlegs[1], nnlegs[2], nnlegs[2])
-      
+      nnlegs <- c(lapply(d[c('dy', 'do')], apply, 2, getNc, diff=FALSE),
+                  lapply(d[c('y', 'o')], apply, 2, getNc, diff=TRUE))[c(1,3,2,4)] 
+
       for(kc in which((1:4)%in%plots)){ 
         iplot <- iplot + 1 
-        if (nrwplot==1) 
-            par(mar=c(2, 5.0, 0, 0.5))
+        if (ceiling(iplot/ncwplot)==nrwplot) {
+          par(mar=c(3, 5.0, 0, 0.5))
+        } else {
+          par(mar=mmar)
+        }
+        
         if (showPoints) {
                 ylm <- range(dtplot[[kc]][[1]][jj,], na.rm=TRUE)
         } else {
@@ -1192,25 +1188,29 @@ if(FALSE){
         }
         
         if (nl>1) {
-          legend(legpos, paste0(lll, '\n', nlab),##[oloc], 
-                 ##inset = c(0, -0.05),
-                 col=scol, ##[oloc], 
+          legend(legpos, paste0(lll, '\n', nlab), 
+                 col=scol, title = titleleg[[kc]], 
                  lty=1, lwd=5,
                  bty='n', xpd=TRUE,
                  y.intersp=sqrt(0.5+max(nnll)),
                  cex=leg.cex, ncol=leg.ncols)
         } else {
           if (showPoints) {
-            legend(legpos, nlab, bty='n', 
+            legend(legpos, nlab, bty='n', title = titleleg[[kc]], 
                    pch=19, lty=1, lwd=2)
           } else {
-            legend(legpos, nlab, bty='n', 
+            legend(legpos, nlab, bty='n', title = titleleg[[kc]], 
                    lty=1, lwd=2)
           }
         }
         
-        if ((nplot-iplot)<ncwplot)
-          axis(1, xl$x, format(xl$x, '%b,%d'))
+        if ((nplot-iplot)<ncwplot) {
+          if(as.integer(difftime(xl$x[length(xl$x)], xl$x[1], units='days'))<300) {
+            axis(1, xl$x, format(xl$x, '%b,%d'))
+          } else {
+            axis(1, xl$x, format(xl$x, '%b,%Y'))
+          }
+        }
         
       }
     }
@@ -1243,9 +1243,13 @@ if(FALSE){
         }
       }
       for(k in which(c(5:6)%in%plots)) {
-        iplot <- iplot + 1
-        if ((nplot-iplot)<ncwplot) 
-            par(mar=c(2, 5.0, 0, 0.5), mgp=c(3,0.5,0))
+
+        iplot <- iplot + 1 
+        if (ceiling(iplot/ncwplot)==nrwplot) {
+          par(mar=c(3, 5.0, 0, 0.5))
+        } else {
+          par(mar=mmar)
+        }
         
         ylm <- range(0.91, 1.1, d$Rtlow[jj,,k], 
                      d$Rtupp[jj,,k], na.rm=TRUE)
@@ -1330,10 +1334,13 @@ if(FALSE){
     
     par(mar=mmar) 
     if (any(plots==7)) {
-        iplot <- iplot + 1
-        if ((nplot-iplot)<ncwplot) 
-            par(mar=c(2, 5.0, 0, 0.5))
-        if(pt) {
+      iplot <- iplot + 1 
+      if (ceiling(iplot/ncwplot)==nrwplot) {
+        par(mar=c(3, 5.0, 0, 0.5))
+      } else {
+        par(mar=mmar)
+      }
+      if(pt) {
           ylabs <- 'Taxa de letalidade (%)'
           } else {
             ylabs <- 'Fatality rate (%)'
@@ -1432,9 +1439,12 @@ if(FALSE){
         }
       }
       for(vk in jjvac) {
-        iplot <- iplot + 1
-        if ((nplot-iplot)<ncwplot) 
-          par(mar=c(2, 5.0, 0, 0.5))
+        iplot <- iplot + 1 
+        if (ceiling(iplot/ncwplot)==nrwplot) {
+          par(mar=c(3, 5.0, 0, 0.5))
+        } else {
+          par(mar=mmar)
+        }
         ylm <- range(unlist(d$svac[[vk]]), na.rm=TRUE)
         if(showPoints)
           ylm <- range(ylm, unlist(d$vac[[vk]]), na.rm = TRUE)
@@ -1466,11 +1476,13 @@ if(FALSE){
 
     if (any((plots>13) & (plots<20))) {
         
-        iplot <- iplot + 1
-        
-        if ((nplot-iplot)<ncwplot) 
-            par(mar=c(2, 5.0, 0, 0.5))
-        
+      iplot <- iplot + 1 
+      if (ceiling(iplot/ncwplot)==nrwplot) {
+        par(mar=c(3, 5.0, 0, 0.5))
+      } else {
+        par(mar=mmar)
+      }
+      
         i2i <- attr(d, 'i2i')
         
         if (length(i2i)>0) {
@@ -1572,9 +1584,13 @@ if(FALSE){
     }
     
     if (any(plots>19)) {
-        par(mar=c(2, 5.0, 0, 0.5))
-        iplot <- iplot + 1
-        i3i <- attr(d, 'i3i')
+      iplot <- iplot + 1 
+      if (ceiling(iplot/ncwplot)==nrwplot) {
+        par(mar=c(3, 5.0, 0, 0.5))
+      } else {
+        par(mar=mmar)
+      }
+      i3i <- attr(d, 'i3i')
         jjp2 <- plots[(plots>19)]-19
         jjl2 <- 1:length(jjp2)
         

@@ -1,5 +1,4 @@
 library(shiny)
-library(shinydashboard)
 
 load('RData/w2pop.RData')
 load('RData/v2tab.RData')

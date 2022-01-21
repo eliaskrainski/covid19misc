@@ -9,9 +9,9 @@ options(width=70)
 
 usems <- !TRUE
 usefnd <- FALSE
-wcota <- !FALSE
+wcota <- !usems
 usebrio <- FALSE
-usesesa <- TRUE
+usesesa <- !usems
 
 if (!any(ls()=='dupdate'))
     dupdate <- TRUE

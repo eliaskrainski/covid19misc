@@ -250,6 +250,7 @@ gus.f <- function(d=TRUE) {
 others.f <- function() {
     gus.f(TRUE)
     wcota.f(TRUE)
+    brms.f(TRUE)
     amob.f(TRUE)
 }
 
