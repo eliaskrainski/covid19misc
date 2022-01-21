@@ -522,7 +522,7 @@ dataPrepare <- function(slocal) {
     w <- weekdays(d$x)
     ww <- model.matrix(~0+w, data.frame(w=w))
     nt <- nrow(ww)
-    tk0 <- seq(-1, nt+2, length=round(nt/14))
+    tk0 <- seq(1, nt, length=round(nt/14))
     bb <- bs(1:nt, knots=tk0, Boundary.knots=range(tk0))
     bb <- bb[, which(colSums(bb)>0)]
     bb[,2] <- bb[,1] + bb[,2]
