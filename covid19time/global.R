@@ -370,12 +370,18 @@ axTransfTicks <- function(transf, lim, n=npretty) {
         r$l <- sqrtR(r$x, inverse = TRUE)
     }
     if (transf=='log10') {
-        if (diff(lim)<1.2) {
+        if(diff(lim)<0.5) {
+          r <- list(x=pretty(lim, n))
+          r$l <- logR(r$x, 10, inverse=TRUE)
+          return(r)
+        } else {
+          if (diff(lim)<1.2) {
             r <- list(l=pretty(logR(lim, 10, inverse=TRUE), 10))
             if (length(r$l)<5)
                 r <- list(l=pretty(logR(lim, 10, inverse=TRUE), 15))
             r$x <- logR(r$l, 10)
             return(r)
+          }
         }
         if ((lim[1]>=(-3)) & (lim[2]<=3)) {
             b <- findInterval(diff(lim), c(0, 1.1, 2.5, 4))
@@ -524,7 +530,7 @@ dataPrepare <- function(slocal) {
     nt <- nrow(ww)
 ##    tk0 <- seq(nt, -30, -14); tk0 <- tk0[tk0>0] ##
     tk0 <- seq(1, nt, length=round(nt/14))
-    print(c(nt=nt, r=range(tk0)))
+##    print(c(nt=nt, r=range(tk0)))
     bb <- bs(1:nt, knots=tk0, Boundary.knots=range(tk0))
     bb <- bb[, which(colSums(bb)>0)]
     bb[,2] <- bb[,1] + bb[,2]
@@ -1025,15 +1031,23 @@ data2plot <- function(d,
 
 ##    print(names(d))    
     for (j in 1:4) {
-        d[[length(d)+1]] <- d[[3+j]]
-        for (l in 1:nl) {
-            d[[length(d)]][, l] <- xTransf(
-                d[[3+j]][, l]/popd[l], transf)
-        }
+      d[[length(d)+1]] <- d[[3+j]]
+      for (l in 1:nl) {
+        d[[length(d)]][, l] <- xTransf(
+          d[[3+j]][, l]/popd[l], transf)
+      }
     }
-    
     names(d)[(nd0+1):length(d)] <-
-        paste0(names(d)[4:7], '.plot')
+      paste0(names(d)[4:7], '.plot')
+    for (j in 1:4) {
+      d[[length(d)+1]] <- d[[length(d)-3]]
+      for (l in 1:nl) {
+        d[[length(d)]][, l] <- xTransf(
+          cumsum(d[[3+j]][, l])/popd[l], transf)
+      }
+    }
+    names(d)[length(d)-3:0] <-
+        paste0(c('y', 'o', 'sy', 'so'), '.plot')
 
     jj0 <- which((d$x>=sxlm[1]) & 
                  (d$x<=sxlm[2]))
@@ -1132,9 +1146,8 @@ data2plot <- function(d,
       }
 
       idxc <- pmatch(c('dy.plot', 'sdy.plot'), names(d))
-      dtplot <- list(cases=d[idxc], deaths=d[idxc+1])
-      dtplot <- c(dtplot, lapply(dtplot, lapply, function(d) 
-        apply(d, 2, cumsum)))[c(1,3,2,4)]
+      dtplot <- list(cases=d[idxc], acases=d[idxc+4], 
+                     deaths=d[idxc+1], adeaths=d[idxc+5])
       nnlegs <- c(lapply(d[c('dy', 'do')], apply, 2, getNc, diff=FALSE),
                   lapply(d[c('y', 'o')], apply, 2, getNc, diff=TRUE))[c(1,3,2,4)] 
 
@@ -1162,9 +1175,11 @@ data2plot <- function(d,
              ylab=ylabs[kc]) 
             
         yl <- axTransfTicks(transf, ylm)
-	ylrd <- which(abs(yl$l-round(yl$l))<sqrt(.Machine$double.eps))
-	yl$x <- yl$x[ylrd]
-	yl$l <- yl$l[ylrd]
+        if(length(yl$l)>length(unique(round(yl$l)))) {
+          ylrd <- which(abs(yl$l-round(yl$l))<sqrt(.Machine$double.eps))
+          yl$x <- yl$x[ylrd]
+          yl$l <- yl$l[ylrd]
+        }
         yab <- par()$usr[3:4]
         i.yl <- which(findInterval(
           yl$x, ylm+c(-1,1)*0.1*diff(ylm))==1)
