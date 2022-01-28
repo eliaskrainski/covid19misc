@@ -155,7 +155,7 @@ pyramid2plot <- function(slocal,
     p3s <- nvac/npop
     p3l <- matrix(paste0(round(100*p3s, 1), '%'), 2) 
     for(k in 1:2)
-      legend(c(-0.95, 0.99)[k], 3, 
+      legend(c(-0.95, 0.99)[k], 5, 
              paste(c('D1', 'D2', 'D3'), p3l[k,]), 
              bg='white', box.col='transparent',
              border='transparent', xjust=k-1,
