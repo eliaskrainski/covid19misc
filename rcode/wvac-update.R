@@ -4,7 +4,8 @@ if(FALSE)
 
 t0 <- Sys.time()
 
-system.time(dMunDateDose <- read.csv2('data/tMunDateN.csv'))
+library(data.table)
+system.time(dMunDateDose <- fread('data/tMunDateN.csv'))
 
 dim(dMunDateDose)
 

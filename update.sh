@@ -4,7 +4,7 @@ cd /home/elias/covid19misc/
 
 git pull
 
-R CMD BATCH --vanilla rcode/dados-vacinacao-brasil-uf.R
+R CMD BATCH --vanilla rcode/dados-vacinacao-brasil.R
 
 R CMD BATCH --vanilla rcode/vacinacao_brasil.R
 

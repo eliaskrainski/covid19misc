@@ -25,15 +25,15 @@ attdvtime <- difftime(
     attr(v2tab, 'updated'), units='hours')
 attdvtime
 
-if(floor(attdvtime)>19) {
+if(TRUE) {##if(floor(attdvtime)>19) {
     
-    dv2tab <- function(uf='PR', verbose=FALSE) {
+    dv2tab <- function(part, verbose=FALSE) {
         
-        rfl <- paste0('RData/dv_', uf, '.RData')
+        rfl <- paste0('RData/dv_', sprintf('%05d', part), '.RData')
         attach(rfl) # safer and will warn about masked objects w/ same name in .GlobalEnv
-        if(verbose) cat('data loaded: dim =', dim(ufdv), '\n')
+        if(verbose) cat('data loaded: dim =', dim(dvpart), '\n')
         
-	vl <- unique(ufdv$vacina_nome)
+	vl <- unique(dvpart$vacina_nome)
 	ll <- rep('AZ', length(vl))
 	ll[grep('Coronav', vl)] <- 'Coronavac'
         ll[grep('CORONAV', vl)] <- 'Coronavac'
@@ -43,20 +43,20 @@ if(floor(attdvtime)>19) {
 	ll[grep('ANSSEN', vl)] <- 'Janssen'
 
 	vaclab <- c('AZ', 'Coronavac', 'Janssen', 'Pfizer')
-        vacina <- factor(factor(ufdv$vacina_nome, vl, ll), vaclab)
+        vacina <- factor(factor(dvpart$vacina_nome, vl, ll), vaclab)
 
         if(verbose) cat("'vacina' created\n")
         
         if(verbose>999) {
-            print(table(ufdv$vacina_nome, vacina))
-            print(table(vacina, ufdv$vacina_descricao_dose))
+            print(table(dvpart$vacina_nome, vacina))
+            print(table(vacina, dvpart$vacina_descricao_dose))
         }
         
-        ufdv$vacina_nome <- vacina
+        dvpart$vacina_nome <- vacina
         rm(vacina)
         gc(reset=TRUE)
        
-        dl0 <- unique(ufdv$vacina_descricao_dose)
+        dl0 <- unique(dvpart$vacina_descricao_dose)
         dl <- rep('3', length(dl0))
 	dl[intersect(grep('1', dl0), grep('ose', dl0))] <- '1'
 	dl[intersect(grep('1', dl0), grep('OSE', dl0))] <- '1'
@@ -69,16 +69,16 @@ if(floor(attdvtime)>19) {
 	dl[dl0%in%c('Dose', 'Dose ', 'DOSE', 'DOSE ')] <- '1'
 	dl[union(grep('Re', dl0), grep('RE', dl0))] <- '3'
 
-        dose <- factor(factor(ufdv$vacina_descricao_dose, dl0, paste0('D', dl)),
+        dose <- factor(factor(dvpart$vacina_descricao_dose, dl0, paste0('D', dl)),
                        paste0('D', 1:3))
         if(verbose) cat("'dose' created\n")
 
         if(verbose>999) {
-            print(addmargins(table(ufdv$vacina_descricao_dose, dose)))
-            print(addmargins(table(ufdv$vacina_nome, dose)))
+            print(addmargins(table(dvpart$vacina_descricao_dose, dose)))
+            print(addmargins(table(dvpart$vacina_nome, dose)))
 	}
 
-        ufdv$vacina_descricao_dose <- dose
+        dvpart$vacina_descricao_dose <- dose
         rm(dose)
         gc(reset=TRUE)
 
@@ -86,8 +86,8 @@ if(floor(attdvtime)>19) {
             Sys.Date(),
             as.Date('2021-01-03'), units='days')) %/% 7)+1
 
-        ddate <- as.Date(ufdv$vacina_dataaplicacao)
-        ufdv$vacina_dataaplicacao <-
+        ddate <- as.Date(dvpart$vacina_dataAplicacao)
+        dvpart$vacina_dataAplicacao <-
             factor((as.integer(difftime(
                        ddate,
                        as.Date('2021-01-03'), units='days')) %/% 7)+1,
@@ -98,37 +98,37 @@ if(floor(attdvtime)>19) {
         if(verbose) cat("epidemiological week created\n")
         
         if(verbose>999)
-            print(table(ufdv$vacina_dataaplicacao))
+            print(table(dvpart$vacina_dataAplicacao))
         
-        ufdv$paciente_idade <-
-            cut(ufdv$paciente_idade, 5*c(0:18, Inf), right=FALSE)
+        dvpart$paciente_idade <-
+            cut(dvpart$paciente_idade, 5*c(0:18, Inf), right=FALSE)
         
         if(verbose) cat("age group created\n")
         
         if(verbose>999)
-            print(table(ufdv$paciente_idade))
+            print(table(dvpart$paciente_idade))
         
         if(verbose>999)
-            print(table(ufdv$paciente_enumsexobiologico))
+            print(table(dvpart$paciente_enumSexoBiologico))
         
-        ufdv$paciente_enumsexobiologico <-
-            factor(ufdv$paciente_enumsexobiologico, c('F', 'M'))
+        dvpart$paciente_enumSexoBiologico <-
+            factor(dvpart$paciente_enumSexoBiologico, c('F', 'M'))
         
         if(verbose) cat("gender cleared\n")
         
         if(verbose>999)
-            print(table(ufdv$paciente_enumsexobiologico))
+            print(table(dvpart$paciente_enumSexoBiologico))
         
-        ufdv$paciente_endereco_coibgemunicipio <-
-            factor(ufdv$paciente_endereco_coibgemunicipio,
+        dvpart$paciente_endereco_coIbgeMunicipio <-
+            factor(dvpart$paciente_endereco_coIbgeMunicipio,
                    locc, locc)
         
         if(verbose) cat("local cleared\n")
         
         if(verbose>999)
-            print(str(table(ufdv$paciente_endereco_coibgemunicipio)))
+            print(str(table(dvpart$paciente_endereco_coIbgeMunicipio)))
         
-        tab <- table(ufdv[c(3,4,1,2,6,5)])
+        tab <- table(dvpart[c(3,4,1,2,6,5)])
     
         attr(tab, 'dataupdate') <- maxdate
         
@@ -138,12 +138,13 @@ if(floor(attdvtime)>19) {
     }
 
     t1 <- Sys.time()
-    v2tab <- dv2tab('SP', 10000)
-    cat('SP : ', Sys.time()-t1, '\n')
+    v2tab <- dv2tab(0, 10000)
+    cat('part_00000 : ', Sys.time()-t1, '\n')
 
     cat("'dim(v2tab)' =", dim(v2tab), '\n')
     print(tail(dimnames(v2tab),4))
     
+
     uftb <- structure(list(
         STATE = c("RONDÔNIA", "ACRE", "AMAZONAS", "RORAIMA", "PARÁ", "AMAPÁ",
                   "TOCANTINS", "MARANHÃO", "PIAUÍ", "CEARÁ", "RIO GRANDE DO NORTE",
@@ -164,16 +165,18 @@ if(floor(attdvtime)>19) {
                   "23", "24", "25", "26", "27", "28", "29", "31", "32",
                   "33", "35", "41", "42", "43", "50", "51", "52", "53"),
     class = "data.frame")
-    
+
     dataup <- attr(v2tab, 'dataupdate')
-    for(u in setdiff(uftb$UF, 'SP')) {
+    for(u in 1:9) {
         tt <- Sys.time()
-        cat('uf =', u, '... ')
+        cat('part', u, '... ')
         b <- dv2tab(u, FALSE)
         d2 <- attr(b, 'dataupdate')
         v2tab <- v2tab + b
         dataup <- max(dataup, d2)
-        cat(' data update on', dataup, 'cpu time:')
+        cat(' data update on',
+            as.Date(dataup, origin='1960-01-01'),
+            'cpu time: ')
         cat(Sys.time()-tt)
         cat(' done!\n')
     }

@@ -117,7 +117,16 @@ wcwb <- sapply(wdl, function(d)
 summary(wcwb)
 
 wdlD <- as.Date(colnames(wdl[[1]])[-(1:6)], 'X%Y%m%d')
+i1 <- which(wdlD>=ddates[i0[1]] &
+            wdlD<=ddates[i0[length(i0)]])
+str(i0)
+str(i1)
+
+range(ddates[i0])
+range(wdlD[i1])
+
 summary(wdlD)
+range(ddates)
 
 t0 <- seq(1, nrow(wcwb), length=round(nrow(wcwb)/14))
 dim(bb <- splines:::bs(1:nrow(wcwb), knots=t0))
@@ -139,40 +148,46 @@ xl <- list(x=pretty(c(ddates[i0], wdlD), 15))
 xl$l <- format(xl$x, '%b/%y')
 xl$l <- gsub('01', '1', xl$l)
 
-ylm <- range(0, nl.t[i0,], wcwb, na.rm=TRUE)
-
 png('figures/leitosCuritiba.png', 1500, 1500, res=150)
-par(mfrow=c(2,1), mar=c(4, 3, 0.5, 0.5), mgp=c(2,0.7,0))
-plot(ddates[i0], nl.t[i0, 1], las=1, pch=19, 
-     ylim=ylm, axes=FALSE,
+par(mfrow=c(3,1), mar=c(1,4,0.5,1), mgp=c(3,0.5,0))
+plot(wdlD[i1], wcwb[i1, 1], las=1, pch=19, bty='n',##axes=FALSE,
      ylab='Numero de leitos', xlab='', cex=0.5)
-axis(1, xl$x, xl$l, las=3)
-axis(2, pretty(c(0, ylm[2]), 10), las=1)
+lines(wdlD, swcwb[,1], col=1, lwd=2)
+abline(v=pretty(par()$usr[1:2], 20),
+       h=pretty(par()$usr[3:4], 20),
+       lty=2, col=gray(.5,.5))
+legend('topleft',
+       c('Casos'), pch=19, lty=1,
+       bg=gray(0.95))
+legend('top', '', title='Curitiba',
+       bg=gray(0.95), bty='n', cex=2)
+plot(ddates[i0], nl.t[i0, 1], las=1, pch=19, 
+     ylim=ylm, bty='n', ##axes=FALSE,
+     ylab='Numero de leitos', xlab='', cex=0.5)
 for (j in 2:3)
     points(ddates[i0], nl.t[i0,j], col=j, pch=19, cex=0.5)
 points(ddates[i0], nuti.t[i0,2], col=6, pch=19, cex=0.5)
-for(i in 1:3)
-    lines(ddates[i0], nl.t[i0,j], col=j)
-lines(ddates[i0], nuti.t[i0,2], col=6)
-lines(wdlD, swcwb[,1], col=5, lwd=2)
-points(wdlD, wcwb[,1], cex=0.3, pch=8, col=5)
-abline(v=pretty(ddates[i0],10),
-       h=100*(0:15), lty=2, col=gray(.5,.5))
+abline(v=pretty(par()$usr[1:2], 20),
+       h=pretty(par()$usr[3:4], 20),
+       lty=2, col=gray(.5,.5))
 legend('topleft',
-       c('Casos', 'Óbitos',
-         'Leitos COVID:', 'Total', 'Ocupados', 'Livres', 'UTI'),
-       pch=19, col=c(5,4,NA,1:3,6), ncol=1,
-       bg=gray(0.95), title='Curitiba')
+       c('Total', 'Ocupados', 'Livres', 'UTI'),
+       pch=19, col=c(1:3,6), ncol=1,
+       bg=gray(0.95), title='Leitos COVID')
 text(rep(ddates[tail(i0,1)], 3)+14,
      c(nl.t[tail(i0,1), 1:2], nuti.t[tail(i0,1),2]),
      c(nl.t[tail(i0,1), 1:2], nuti.t[tail(i0,1),2]),
      col=c(1, 2, 6), srt=45, xpd=TRUE, cex=1.2)
-plot(wdlD, swcwb[,2], col=4, lwd=2,
-     axes=FALSE, type='l', las=1, xlab='', ylab='',
-     ylim=c(0.5, max(wcwb[,2], na.rm=TRUE)))
-points(wdlD, wcwb[,2], cex=0.3, pch=8, col=4)
-axis(1, xl$x, xl$l, las=3)
-axis(2, pretty(c(0, max(wcwb[,2], na.rm=TRUE)), 10), las=1)
+par(mar=c(1.5,4,0.5,1))
+plot(wdlD, wcwb[,2], col=2, cex=0.5, pch=19, 
+     bty='n', las=1, xlab='', ylab='Número de óbitos')
+lines(wdlD, swcwb[,2], lwd=2, col=2)
+abline(v=pretty(par()$usr[1:2], 15),
+       h=pretty(par()$usr[3:4], 15),
+       lty=2, col=gray(.5,.5))
+legend('topleft',
+       c('Óbitos'), pch=19, lty=1, lwd=2, col=2,
+       bg=gray(0.95))
 dev.off()
 
 if (FALSE)
