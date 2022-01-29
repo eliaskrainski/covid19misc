@@ -7,7 +7,7 @@ if (FALSE) { ## can manually skip
 
 options(width=70)
 
-usems <- !TRUE
+usems <- TRUE
 usefnd <- FALSE
 wcota <- !usems
 usebrio <- FALSE

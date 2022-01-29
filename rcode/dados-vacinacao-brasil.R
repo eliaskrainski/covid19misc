@@ -7,9 +7,11 @@ t00 <- Sys.time()
 ### download from links available at 
 ### https://opendatasus.saude.gov.br/dataset/covid-19-vacinacao/resource/ef3bd0b8-b605-474b-9ae5-c97390c197a8
 
-### colnames of the files
-##fl1 <- system('ls data/vacinacao/*', TRUE)[1]
-##fl1
+## copy current files to back                                                                       
+fls.old <- system('ls data/vacinacao/vac_completo_part-0*.csv', TRUE)
+fls.old
+for (k in 1:length(fls.old))
+    system(paste0('cp ', fls.old[k], ' data/vacinacao/vback', k-1, '.csv'))
 
 library(data.table)
 
@@ -111,7 +113,7 @@ if(file.exists('data/tMunDateN.csv')) {
 
 }
 
-if(rdata) {
+if(TRUE) {##(rdata) {
     
     parts <- substr(fls, 34, 38)
     parts
