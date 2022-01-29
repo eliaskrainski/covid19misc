@@ -45,7 +45,7 @@ if(TRUE) {##if(floor(attdvtime)>19) {
 	vaclab <- c('AZ', 'Coronavac', 'Janssen', 'Pfizer')
         vacina <- factor(factor(dvpart$vacina_nome, vl, ll), vaclab)
 
-        if(verbose) cat("'vacina' created\n")
+        if(verbose>9) cat("'vacina' created\n")
         
         if(verbose>999) {
             print(table(dvpart$vacina_nome, vacina))
@@ -71,7 +71,7 @@ if(TRUE) {##if(floor(attdvtime)>19) {
 
         dose <- factor(factor(dvpart$vacina_descricao_dose, dl0, paste0('D', dl)),
                        paste0('D', 1:3))
-        if(verbose) cat("'dose' created\n")
+        if(verbose>9) cat("'dose' created\n")
 
         if(verbose>999) {
             print(addmargins(table(dvpart$vacina_descricao_dose, dose)))
@@ -95,7 +95,7 @@ if(TRUE) {##if(floor(attdvtime)>19) {
         maxdate <- max(ddate)
         rm(ddate)
         
-        if(verbose) cat("epidemiological week created\n")
+        if(verbose>9) cat("epidemiological week created\n")
         
         if(verbose>999)
             print(table(dvpart$vacina_dataAplicacao))
@@ -103,7 +103,7 @@ if(TRUE) {##if(floor(attdvtime)>19) {
         dvpart$paciente_idade <-
             cut(dvpart$paciente_idade, 5*c(0:18, Inf), right=FALSE)
         
-        if(verbose) cat("age group created\n")
+        if(verbose>9) cat("age group created\n")
         
         if(verbose>999)
             print(table(dvpart$paciente_idade))
@@ -114,7 +114,7 @@ if(TRUE) {##if(floor(attdvtime)>19) {
         dvpart$paciente_enumSexoBiologico <-
             factor(dvpart$paciente_enumSexoBiologico, c('F', 'M'))
         
-        if(verbose) cat("gender cleared\n")
+        if(verbose>9) cat("gender cleared\n")
         
         if(verbose>999)
             print(table(dvpart$paciente_enumSexoBiologico))
@@ -123,7 +123,7 @@ if(TRUE) {##if(floor(attdvtime)>19) {
             factor(dvpart$paciente_endereco_coIbgeMunicipio,
                    locc, locc)
         
-        if(verbose) cat("local cleared\n")
+        if(verbose>9) cat("local cleared\n")
         
         if(verbose>999)
             print(str(table(dvpart$paciente_endereco_coIbgeMunicipio)))
@@ -170,7 +170,7 @@ if(TRUE) {##if(floor(attdvtime)>19) {
     for(u in 1:9) {
         tt <- Sys.time()
         cat('part', u, '... ')
-        b <- dv2tab(u, FALSE)
+        b <- dv2tab(u, 1)
         d2 <- attr(b, 'dataupdate')
         v2tab <- v2tab + b
         dataup <- max(dataup, d2)
