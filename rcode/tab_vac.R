@@ -69,7 +69,8 @@ dvac2tabf <- function(part, verbose=FALSE) {
     if(verbose>999)
         print(table(dvpart$vacina_dataAplicacao))
     
-    age3g <- cut(dvpart$paciente_idade, c(0, 12, 60, Inf), right=FALSE)
+    dvpart$paciente_idade <-
+        cut(dvpart$paciente_idade, c(0, 12, 60, Inf), right=FALSE)
     
     if(verbose>9) cat("age group created\n")
     
@@ -110,9 +111,9 @@ for(u in 1:9) {
     b <- dvac2tabf(u, 1)
     d2 <- attr(b, 'dataupdate')
     vac2tab <- vac2tab + b
-    dataup <- max(dataup, d2)
+    dataup <- as.character(max(dataup, d2))
     cat(' data update on',
-        as.Date(dataup, origin='1960-01-01'),
+        dataup, ##as.character(as.Date(dataup, origin='1960-01-01')),
         'cpu time: ')
     cat(Sys.time()-tt)
     cat(' done!\n')
