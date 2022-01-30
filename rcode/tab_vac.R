@@ -102,7 +102,7 @@ vac2tab <- dvac2tabf(0, 10000)
 cat('part_00000 : ', Sys.time()-t1, '\n')
 
 cat("'dim(vac2tab)' =", dim(vac2tab), '\n')
-print(tail(dimnames(vac2tab),4))
+print(str(dimnames(vac2tab)))
 
 dataup <- attr(vac2tab, 'dataupdate')
 for(u in 1:9) {
