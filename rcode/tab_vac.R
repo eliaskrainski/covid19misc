@@ -129,13 +129,13 @@ round(addmargins(apply(vac2tab, 3:4, sum)/213e4), 1)
 ii.mun <- (1+5+27+1):dim(vac2tab)[1]
 length(ii.mun)
 
-vac2tab[1,,,,,] <- apply(vac2tab[(1+5+27+1):dim(vac2tab)[1],,,,,], 2:4, sum)
+vac2tab[1,,,] <- apply(vac2tab[(1+5+27+1):dim(vac2tab)[1],,,,,], 2:4, sum)
 
-sum(vac2tab[1,,,,,])
+sum(vac2tab[1,,,])
 
 for(i in 1:5) {
     ii <- which(substr(loc.full.names[ii.mun], 1, 1)==i)
-    vac2tab[1+i,,,,,] <- apply(vac2tab[1+5+27+ii,,,,,], 2:4, sum)
+    vac2tab[1+i,,,] <- apply(vac2tab[1+5+27+ii,,,], 2:4, sum)
 }
     
 uftb <- structure(list(
@@ -163,13 +163,13 @@ i2i.uf <- pmatch(loc.full.names[(1+5+1):(1+5+27)], uftb$STATE)
 
 for(i in 1:27) {
     ii <- which(substr(loc.full.names, 1, 2)==rownames(uftb)[i2i.uf[i]])
-    vac2tab[6+i,,,,,] <- apply(vac2tab[ii,,,,,,drop=FALSE], 2:4, sum)
+    vac2tab[6+i,,,] <- apply(vac2tab[ii,,,,drop=FALSE], 2:4, sum)
 }
 
-print(c(br=sum(vac2tab[1,,,,,]),
-        rg=sum(vac2tab[2:6,,,,,]),
-        uf=sum(vac2tab[c(1+5+1):(1+5+27),,,,,]),
-        muns=sum(vac2tab[ii.mun,,,,,]))/1e6)
+print(c(br=sum(vac2tab[1,,,]),
+        rg=sum(vac2tab[2:6,,,]),
+        uf=sum(vac2tab[c(1+5+1):(1+5+27),,,]),
+        muns=sum(vac2tab[ii.mun,,,]))/1e6)
 
 dimnames(vac2tab)[[1]] <- locl
 
