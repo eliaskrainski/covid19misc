@@ -129,7 +129,7 @@ round(addmargins(apply(vac2tab, 3:4, sum)/213e4), 1)
 ii.mun <- (1+5+27+1):dim(vac2tab)[1]
 length(ii.mun)
 
-vac2tab[1,,,] <- apply(vac2tab[(1+5+27+1):dim(vac2tab)[1],,,,,], 2:4, sum)
+vac2tab[1,,,] <- apply(vac2tab[(1+5+27+1):dim(vac2tab)[1],,,], 2:4, sum)
 
 sum(vac2tab[1,,,])
 
