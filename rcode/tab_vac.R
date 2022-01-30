@@ -70,7 +70,7 @@ dvac2tabf <- function(part, verbose=FALSE) {
         print(table(dvpart$vacina_dataAplicacao))
     
     dvpart$paciente_idade <-
-        cut(dvpart$paciente_idade, c(0, 12, 60, Inf), right=FALSE)
+        cut(dvpart$paciente_idade, c(0, 5, 12, 18, 30, 45, 60, 80, Inf), right=FALSE)
     
     if(verbose>9) cat("age group created\n")
     
