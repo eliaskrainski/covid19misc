@@ -86,6 +86,8 @@ dvac2tabf <- function(part, verbose=FALSE) {
         print(str(table(dvpart$paciente_endereco_coIbgeMunicipio)))
     
     tab <- table(dvpart[c(3,4,1,6)])
+
+    if(verbose) cat('dim(tab) =', dim(tab), '\n')
     
     attr(tab, 'dataupdate') <- maxdate
     
@@ -100,28 +102,6 @@ cat('part_00000 : ', Sys.time()-t1, '\n')
 
 cat("'dim(vac2tab)' =", dim(vac2tab), '\n')
 print(tail(dimnames(vac2tab),4))
-
-
-uftb <- structure(list(
-    STATE = c("RONDÔNIA", "ACRE", "AMAZONAS", "RORAIMA", "PARÁ", "AMAPÁ",
-              "TOCANTINS", "MARANHÃO", "PIAUÍ", "CEARÁ", "RIO GRANDE DO NORTE",
-              "PARAÍBA", "PERNAMBUCO", "ALAGOAS", "SERGIPE", "BAHIA",
-              "MINAS GERAIS", "ESPÍRITO SANTO", "RIO DE JANEIRO", 
-              "SÃO PAULO", "PARANÁ", "SANTA CATARINA", "RIO GRANDE DO SUL", 
-              "MATO GROSSO DO SUL", "MATO GROSSO", "GOIÁS", "DISTRITO FEDERAL"),
-    State = c("Rondônia", "Acre", "Amazonas", "Roraima", "Pará", "Amapá",
-              "Tocantins", "Maranhão", "Piauí", "Ceará", "Rio Grande do Norte", 
-              "Paraíba", "Pernambuco", "Alagoas", "Sergipe", "Bahia",
-              "Minas Gerais", "Espírito Santo", "Rio de Janeiro",
-              "São Paulo", "Paraná", "Santa Catarina", "Rio Grande do Sul",
-              "Mato Grosso do Sul", "Mato Grosso", "Goiás", "Distrito Federal"),
-    UF = c("RO", "AC", "AM", "RR", "PA", "AP", "TO", "MA", "PI",
-           "CE", "RN", "PB", "PE", "AL", "SE", "BA", "MG", "ES",
-           "RJ", "SP", "PR", "SC", "RS", "MS", "MT", "GO", "DF")),
-    row.names = c("11", "12", "13", "14", "15", "16", "17", "21", "22",
-                  "23", "24", "25", "26", "27", "28", "29", "31", "32",
-                  "33", "35", "41", "42", "43", "50", "51", "52", "53"),
-    class = "data.frame")
 
 dataup <- attr(vac2tab, 'dataupdate')
 for(u in 1:9) {
@@ -157,6 +137,27 @@ round(addmargins(apply(vac2tab, 5:6, sum)/213e4), 1)
         vac2tab[1+i,,,,,] <- apply(vac2tab[1+5+27+ii,,,,,], 2:6, sum)
     }
     
+uftb <- structure(list(
+    STATE = c("RONDÔNIA", "ACRE", "AMAZONAS", "RORAIMA", "PARÁ", "AMAPÁ",
+              "TOCANTINS", "MARANHÃO", "PIAUÍ", "CEARÁ", "RIO GRANDE DO NORTE",
+              "PARAÍBA", "PERNAMBUCO", "ALAGOAS", "SERGIPE", "BAHIA",
+              "MINAS GERAIS", "ESPÍRITO SANTO", "RIO DE JANEIRO", 
+              "SÃO PAULO", "PARANÁ", "SANTA CATARINA", "RIO GRANDE DO SUL", 
+              "MATO GROSSO DO SUL", "MATO GROSSO", "GOIÁS", "DISTRITO FEDERAL"),
+    State = c("Rondônia", "Acre", "Amazonas", "Roraima", "Pará", "Amapá",
+              "Tocantins", "Maranhão", "Piauí", "Ceará", "Rio Grande do Norte", 
+              "Paraíba", "Pernambuco", "Alagoas", "Sergipe", "Bahia",
+              "Minas Gerais", "Espírito Santo", "Rio de Janeiro",
+              "São Paulo", "Paraná", "Santa Catarina", "Rio Grande do Sul",
+              "Mato Grosso do Sul", "Mato Grosso", "Goiás", "Distrito Federal"),
+    UF = c("RO", "AC", "AM", "RR", "PA", "AP", "TO", "MA", "PI",
+           "CE", "RN", "PB", "PE", "AL", "SE", "BA", "MG", "ES",
+           "RJ", "SP", "PR", "SC", "RS", "MS", "MT", "GO", "DF")),
+    row.names = c("11", "12", "13", "14", "15", "16", "17", "21", "22",
+                  "23", "24", "25", "26", "27", "28", "29", "31", "32",
+                  "33", "35", "41", "42", "43", "50", "51", "52", "53"),
+    class = "data.frame")
+
     i2i.uf <- pmatch(loc.full.names[(1+5+1):(1+5+27)], uftb$STATE)
     
     for(i in 1:27) {
