@@ -7,12 +7,6 @@ t00 <- Sys.time()
 ### download from links available at 
 ### https://opendatasus.saude.gov.br/dataset/covid-19-vacinacao/resource/ef3bd0b8-b605-474b-9ae5-c97390c197a8
 
-## copy current files to back                                                                       
-fls.old <- system('ls data/vacinacao/vac_completo_part-0*.csv', TRUE)
-fls.old
-for (k in 1:length(fls.old))
-    system(paste0('cp ', fls.old[k], ' data/vacinacao/vback', k-1, '.csv'))
-
 library(data.table)
 
 ### desired variables
@@ -137,7 +131,7 @@ if(TRUE) {##(rdata) {
         save(list='dvpart',
              file=paste0('RData/dv_', parts[k], '.RData'))
 
-	if(verbose) cat(' rm csv ... ')
+        if(verbose) cat(' rm csv ... ')
 	system(paste('rm', fls[k]))
         
         if(verbose) cat('tabulate ... ')

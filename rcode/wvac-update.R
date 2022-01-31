@@ -66,8 +66,8 @@ system.time(wvac.mu <- lapply(ldose, function(d) {
 str(wvac.mu)
 
 sapply(wvac.mu, sum, na.rm=TRUE)
-
-library(data.table)
+sapply(wvac.mu, function(m)
+    colSums(m[, ncol(m)-4:0], na.rm=TRUE))
 
 hpsfls <- system('ls data/HIST_PAINEL*.csv', TRUE)
 hpsfls
