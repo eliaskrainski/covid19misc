@@ -29,6 +29,19 @@ repeat {
     if(!try) break
 }
 
+if(FALSE) {
+
+    newr <- function(r0, a0, n, a, o) {
+        r0 + n + a0-a - o
+    }
+    newr(314102, 10890, 2667, 10909, 3)
+
+    newr(335576, 13741, 3430, 13887, 8)
+    newr(338852, 13887, 3177, 14292, 7)
+
+}
+    
+
 library(data.table)
 
 dcwb <- as.data.frame(fread(

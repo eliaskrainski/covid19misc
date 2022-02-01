@@ -85,7 +85,7 @@ allpls <-
       'Accumulated deaths',
       'Cases reproduction number', 
       '"Deaths based" reproduction number', 
-      'Fatality rate (%)',
+      'Case (not Infection) Fatality rate (%)',
       paste('Daily', names(wvac)),
       paste('Accumulated', names(wvac)), 
       names(wgmbl), 
@@ -98,7 +98,7 @@ if (pt) {
       'Óbitos acumulados',
       'Número de reprodução de casos', 
       'Número de reprodução "baseado em óbitos"', 
-      'Taxa de letalidade (%)',
+      'Taxa de letalidade de casos (não de infecções) (%)',
       paste(names(wvac), 'diária'),
       paste(names(wvac), 'acumulada'), 
       'varejo e recreação',
@@ -1477,9 +1477,9 @@ data2plot <- function(d,
             points(d$x, d$vac[[vk]][,j], col=scol[j], pch=19, cex=0.5)
         }
         if (showPoints) {
-          legend(legpos, rep(names(wvac),2)[vk], pch=jjvac, lty=jjvac, lwd=3, bty='n')
+          legend(legpos, lll, col=scol, title=names(wvac)[vk], pch=19, lty=1, lwd=2, bty='n')
         } else {
-          legend(legpos, rep(names(wvac),2)[vk], lty=jjvac, lwd=3, bty='n') 
+          legend(legpos, lll, col=scol, title=names(wvac)[vk], lty=1, lwd=2, bty='n')
         }
         segments(xl$x, rep(ylm[1], length(xl$x)),
                  xl$x, rep(ylm[2], length(xl$x)),

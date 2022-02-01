@@ -6,6 +6,9 @@ if (FALSE) { ## manually skip
 
 t0 <- Sys.time()
 
+library(parallel)
+library(data.table)
+
 if (!any(ls() %in% c('ussabb', 'uf')))
     source('rcode/ocommon.R')
 
@@ -25,8 +28,9 @@ us.d <- read.csv('data/us-states.csv')
 
 us.d$fdate <- factor(gsub('-', '', as.character(us.d$date)), alldates)
 
-w.us <- lapply(us.d[c('cases', 'deaths')], tapply, 
-               us.d[c('state', 'fdate')], as.integer)
+system.time(w.us <- lapply(
+                us.d[c('cases', 'deaths')], tapply, 
+                us.d[c('state', 'fdate')], as.integer))
 lapply(lapply(w.us, colSums), tail)
 
 if(FALSE) {
@@ -110,9 +114,9 @@ if(FALSE) {
 
 uscl$local <- paste(uscl$county, uscl$ST, 'US', sep='_')
 
-system.time(wuscl <- lapply(
+system.time(wuscl <- mclapply(
                 uscl[, c('cases', 'deaths')], tapply,
-                uscl[, c('local', 'fdate')], sum))
+                uscl[, c('local', 'fdate')], sum, mc.cores=2))
 str(wuscl)
 
 wuscl.loc <- strsplit(rownames(wuscl[[1]]), '_')
@@ -384,8 +388,6 @@ if (usems) {
 
     } else {
         
-        library(data.table)
-
         hpfls <- system('ls data/HIST_PAINEL*.csv', TRUE)
         hpfls
         
@@ -429,7 +431,7 @@ if (usems) {
    ### points(diff(c(0, accMax(dbr$casosAcumulado[ii]))), col=2, pch=8)
     
     dbr$casosAcumulado[ii] <- accMax(dbr$casosAcumulado[ii])
-    dbr$casosAcumulado[ii] <- accMax(dbr$obitosAcumulado[ii])
+    dbr$obitosAcumulado[ii] <- accMax(dbr$obitosAcumulado[ii])
             
     i.mu.l <- which(dbr$municipio!='')
     i.rg.l <- which(dbr$nomeRegiaoSaude!='')
@@ -526,7 +528,6 @@ if (usems) {
 
 if(usesesa) {
 
-    library(data.table)
     system.time(ses <- as.data.frame(fread('data/sesa-pr-geral.csv')))
 
     str(ii.ses.pr <- which(substr(ses$IBGE_RES_PR, 1, 2)=='41'))
@@ -550,7 +551,14 @@ if(usesesa) {
 
     head(rownames(wbr.mu[[1]]))
     head(rownames(wsesa[[1]]))
-    iimu.sesa <- pmatch(rownames(wsesa[[1]]), rownames(wbr.mu[[1]]))
+    
+    if(all(nchar(rownames(wsesa[[1]]))==7)) {
+        iimu.sesa <- pmatch(
+            substr(rownames(wsesa[[1]]), 1, 6), rownames(wbr.mu[[1]]))
+    } else {
+        iimu.sesa <- pmatch(
+            rownames(wsesa[[1]]), rownames(wbr.mu[[1]]))
+    }
     str(iimu.sesa)
 
     cbind(sapply(wsesa, function(m) colSums(m[, ncol(m)-15:0])),
@@ -567,7 +575,6 @@ if(usesesa) {
     }
 
 }
-
 
 dim(unddbr)
 
@@ -616,7 +623,7 @@ system.time(source('rcode/dados-curitiba.R'))
 wuf2ufnam <- uf$State[pmatch(rownames(wbr.uf[[1]]), uf$UF)]
 wuf2ufnam
 
-    for (k in 1:2) {
+     for (k in 1:2) {
         wdl[[k]] <- rbind(
             wdl[[k]],
             data.frame(code='', City='',

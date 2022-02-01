@@ -86,7 +86,7 @@ dvac2tabf <- function(part, verbose=FALSE) {
     if(verbose>999)
         print(str(table(dvpart$paciente_endereco_coIbgeMunicipio)))
     
-    tab <- table(dvpart[c(3,4,1,6)])
+    tab <- table(dvpart[c(3,4,1,5)])
 
     if(verbose) cat('dim(tab) =', dim(tab), '\n')
     
