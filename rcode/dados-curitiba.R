@@ -46,9 +46,11 @@ library(data.table)
 
 dcwb <- as.data.frame(fread(
     'data/casosCuritibaSM.csv', encoding='Latin-1', dec=','))
+head(dcwb)
 
 dcwb$date <- as.Date(as.character(dcwb[,1]), '%d/%m/%Y')
-if(sum(is.na(dcwb$date))>(0.5*nrow(dcwb)))
+
+if(sum(is.na(dcwb$date))>(1.1*sum(is.na(dcwb$IDADE))))
  dcwb$date <- as.Date(dcwb[,2], '%d/%m/%Y')
 
 summary(dcwb$date)
