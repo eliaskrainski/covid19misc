@@ -26,29 +26,28 @@ brvac.parts <- function(d=FALSE, part=NULL) {
 ### non elegant way to get the file names... 
     d0 <- readLines(url0)
     urls <- grep('c000.csv', d0, value=TRUE)
-urls
-    fls <- sapply(urls, function(u) {
+
+    fls <- unique(sapply(urls, function(u) {
         g1 <- gregexpr('https', u)[[1]]
         g2 <- gregexpr('csv', u)[[1]]
         substr(u, g1, g2+2)
-        }) ##substr(urls, 14, 155)
-    fls
+    })) ##substr(urls, 14, 155)
    
     if(!is.null(part)) {
         pfls <- fls[grep(paste0('part-', sprintf('%05d', part)), fls)] 
     } else pfls <- fls
-    pfls
+
     lfls <- sapply(pfls, function(u) {
         gg <- gregexpr('/', u)[[1]]
         paste(substr(u, tail(gg,2)[1]+1, tail(gg,1)-1),  
               substring(u, tail(gg,1)+1), sep='_')
     })
-    lfls
+
     names(lfls) <- sapply(pfls, function(u) {
         gg <- gregexpr('/', u)[[1]]
         substr(u, tail(gg,1)+1, tail(gg,1)+10)
     })
-    lfls
+
 ### download if asked and do not exists locally
     if(d) {
         for(j in 1:length(lfls)) {
