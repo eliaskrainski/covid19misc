@@ -159,7 +159,7 @@ pyramid2plot <- function(slocal,
              paste(c('D1', 'D2', 'D3'), p3l[k,]), 
              bg=gray(0.9,0.5), box.col='transparent',
              border='transparent', xjust=k-1,
-             fill=rbind(cF, cM)[k,], 
+             fill=rbind(cF[-1], cM[-1])[k,], 
              cex=1.00, title=genderlabs[k])
   } 
   mtext('@eliaskrainski', 1, 2, adj=0.97, cex=1.25)
@@ -246,7 +246,7 @@ timeplot <- function(slocal, svac, ppop, doplot) {
     axis(2, yl$x, yl$l)
     legend('topleft', vaclab[iv], fill=col4d[[d]][iv], 
            bty='n', border='transparent', 
-           title=paste('Dose', c(1, '2')[d]))
+           title=paste('Dose', c(1, '2', 3)[d]))
   }
   
 }
