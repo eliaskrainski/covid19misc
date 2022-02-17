@@ -47,6 +47,12 @@ vd[vd$location=='United States' &
    (Sys.Date()-vd$date)<4, ]
 vd[vd$location=='China' &
    (Sys.Date()-vd$date)<4, ]
+vd[vd$location=='Denmark' &
+   (Sys.Date()-vd$date)<4, ]
+vd[vd$location=='Norway' &
+   (Sys.Date()-vd$date)<4, ]
+vd[vd$location=='Sweden' &
+   (Sys.Date()-vd$date)<4, ]
 
 pfully.c <- tapply(vd$people_fully_vaccinated_per_hundred,
                    vd$location, max, na.rm=TRUE)

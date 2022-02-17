@@ -29,13 +29,29 @@ repeat {
     if(!try) break
 }
 
+if(FALSE) {
+
+    newr <- function(r0, a0, n, a, o) {
+        r0 + n + a0-a - o
+    }
+    newr(314102, 10890, 2667, 10909, 3)
+
+    newr(335576, 13741, 3430, 13887, 8)
+    newr(338852, 13887, 3177, 14292, 7)
+    newr(355842, 15680, 993, 15596, 8)
+
+}
+    
+
 library(data.table)
 
 dcwb <- as.data.frame(fread(
     'data/casosCuritibaSM.csv', encoding='Latin-1', dec=','))
+head(dcwb)
 
 dcwb$date <- as.Date(as.character(dcwb[,1]), '%d/%m/%Y')
-if(sum(is.na(dcwb$date))>(0.5*nrow(dcwb)))
+
+if(sum(is.na(dcwb$date))>(1.1*sum(is.na(dcwb$IDADE))))
  dcwb$date <- as.Date(dcwb[,2], '%d/%m/%Y')
 
 summary(dcwb$date)
@@ -159,7 +175,7 @@ tail(bsm)
 
 bsm$casos <- bsm$ativos + bsm$obitos + bsm$recuperados
 bsm$fdate <- factor(bsm$date, alldates)
-tail(diff(bsm$casos))
+tail(diff(bsm$casos),10)
 
 wbsm <- lapply(bsm[c('casos', 'obitos')], tapply, 
                bsm[c('fdate')], as.integer)

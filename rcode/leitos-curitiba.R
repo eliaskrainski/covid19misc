@@ -148,6 +148,12 @@ xl <- list(x=pretty(c(ddates[i0], wdlD), 15))
 xl$l <- format(xl$x, '%b/%y')
 xl$l <- gsub('01', '1', xl$l)
 
+apply(nl.t[i0,], 2, range)
+(ylm <- range(nl.t[i0, ], na.rm=TRUE))
+
+(nhosp <- length(hosps <- unique(leitos$Hospital)))
+hosps
+
 png('figures/leitosCuritiba.png', 1500, 1500, res=150)
 par(mfrow=c(3,1), mar=c(1,4,0.5,1), mgp=c(3,0.5,0))
 plot(wdlD[i1], wcwb[i1, 1], las=1, pch=19, bty='n',##axes=FALSE,
@@ -173,7 +179,7 @@ abline(v=pretty(par()$usr[1:2], 20),
 legend('topleft',
        c('Total', 'Ocupados', 'Livres', 'UTI'),
        pch=19, col=c(1:3,6), ncol=1,
-       bg=gray(0.95), title='Leitos COVID')
+       bg=gray(0.95), title='Leitos COVID (SUS)')
 text(rep(ddates[tail(i0,1)], 3)+14,
      c(nl.t[tail(i0,1), 1:2], nuti.t[tail(i0,1),2]),
      c(nl.t[tail(i0,1), 1:2], nuti.t[tail(i0,1),2]),
