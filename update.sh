@@ -8,6 +8,8 @@ R CMD BATCH --vanilla rcode/dados-vacinacao-brasil.R
 
 R CMD BATCH --vanilla rcode/vacinacao_brasil.R
 
+git pull
+
 R CMD BATCH --vanilla rcode/wdl-update.R 
 
 R CMD BATCH --vanilla rcode/wgmbl-update.R 
