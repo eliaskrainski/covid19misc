@@ -260,9 +260,13 @@ owid.f(TRUE)
 
     if(TRUE) {
 
-        others.f()
-        gmob.f()
-        sesa.f(TRUE)
+        if(Sys.info()['nodename']=='pataxo') {
+            others.f()
+            gmob.f()
+            sesa.f(TRUE)
+        } else {
+            gus.f(TRUE)
+        }
         
     } else {
     

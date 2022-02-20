@@ -4,6 +4,9 @@ if (FALSE)
 if(!any(ls()=='dupdate'))
     dupdate <- TRUE
 
+if(dupdate)
+    options(timeout=60*30)
+
 owid.f <- function(d=TRUE) {
     download.file(
         paste0('https://raw.githubusercontent.com/',
@@ -185,9 +188,12 @@ sesa.f <- function(d=FALSE) {
     ## https://www.saude.pr.gov.br/sites/default/arquivos_restritos/files/documento/2020-11/informe_epidemiologico_08_11_obitos_casos_municipio.csv
     
     if (FALSE) {
-        
-        ses <- read.csv2('data/sesa-pr-geral.csv')
+
+        library(data.table)
+        system.time(ses <- fread('data/sesa-pr-geral.csv'))
         head(ses)
+
+        summary(ses$Data <- as.Date(ses$DATA_CONFIRMACAO_DIVULGACAO))
         
         table(factor(ses$OBITO, c('Não', 'NÃO', '', 'Sim', 'SIM'),
                      rep(c('n', 's'), c(3,2))), ses$OBITO)
@@ -243,20 +249,24 @@ gus.f <- function(d=TRUE) {
 
 others.f <- function() {
     gus.f(TRUE)
+    wcota.f(TRUE)
     brms.f(TRUE)
     amob.f(TRUE)
 }
 
 if(dupdate) {
 
-    options(timeout=60*5)
-
 owid.f(TRUE)
 
     if(TRUE) {
 
-        others.f()
-        gmob.f()
+        if(Sys.info()['nodename']=='pataxo') {
+            others.f()
+            gmob.f()
+            sesa.f(TRUE)
+        } else {
+            gus.f(TRUE)
+        }
         
     } else {
     
