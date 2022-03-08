@@ -39,7 +39,12 @@ if(FALSE) {
     newr(335576, 13741, 3430, 13887, 8)
     newr(338852, 13887, 3177, 14292, 7)
     newr(355842, 15680, 993, 15596, 8)
+    newr(377537, 12364, 1117, 11792, 5)
+    newr(379221, 11792, 824, 11605, 4)
+    newr(388037,9120,728,8490,4)
 
+    newr(396674,5207,452,4876,6)
+    newr(397451,4876,615,4693,4)
 }
     
 
@@ -199,7 +204,7 @@ if(FALSE) {
          type='h', lwd=6, ylim=c(0, max(ativos, na.rm=TRUE)),
          xlab='', ylab='Casos ativos'))
     axis(2, pretty(c(0, bsm$ativos[iid0]), 10), las=1)
-    c.t <- diff(bsm$casos[c(iid0[1]-1, iid0)])
+    c.t <- diff(c(0, bsm$casos))[c(min(1,iid0[1]-1), iid0)]
     y2c <- c.t/max(c.t, na.rm=TRUE)
     points(bsm$Date[iid0], y2c*max(bsm$ativos[iid0]), type='o', 
            cex=0.5, pch=8, col='green4', lwd=2)
@@ -216,7 +221,7 @@ if(FALSE) {
     axis(2, pretty(c(0, bsm$ativos[iid0]), 10), las=1)
     axis(1, pretty(bsm$Date[iid0], 10),
          format(pretty(bsm$Date[iid0], 10), '%d%b%y'), las=1)
-    o.t <- diff(bsm$obitos[c(iid0[1]-1,iid0)])
+    o.t <- diff(c(0, bsm$obitos))[c(min(1,iid0[1]-1),iid0)]
     y2 <- o.t/max(o.t, na.rm=TRUE)
     points(bsm$Date[iid0], y2*max(bsm$ativos[iid0]), type='o', 
            cex=0.5, pch=8, col=2, lwd=2)
