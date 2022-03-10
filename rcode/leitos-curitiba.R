@@ -72,14 +72,18 @@ range(as.Date(leitos$Data), na.rm=TRUE)
 xnams <- tail(colnames(leitos), 4)
 fnams <- c('Perfil.da.vaga', 'Tipo.de.Leito') 
 
-nl.t <- sapply(leitos[, 5:8], tapply, leitos[,'Data'], sum, na.rm=TRUE)
+nl.t <- sapply(leitos[, 5:8], tapply,
+               leitos[,'Data'], sum, na.rm=TRUE)
 str(nl.t)
 summary(nl.t)
 
 tail(nl.t,10)
 
-nuti.t <- sapply(leitos[which(leitos$Tipo=='UTI'), 5:8], tapply,
-                 leitos[which(leitos$Tipo=='UTI'), 'Data'], sum, na.rm=TRUE)
+nuti.t <- sapply(
+    leitos[which(leitos$Tipo=='UTI'), 5:8],
+    tapply,
+    leitos[which(leitos$Tipo=='UTI'), 'Data'],
+    sum, na.rm=TRUE)
 summary(nuti.t)
 
 tail(nuti.t,10)
@@ -156,8 +160,9 @@ hosps
 
 png('figures/leitosCuritiba.png', 1500, 1500, res=150)
 par(mfrow=c(3,1), mar=c(1,4,0.5,1), mgp=c(3,0.5,0))
-plot(wdlD[i1], wcwb[i1, 1], las=1, pch=19, bty='n',##axes=FALSE,
-     ylab='Numero de leitos', xlab='', cex=0.5)
+plot(wdlD, wcwb[,2], type='n', bty='n', ylim=range(wcwb[i1,1]),
+     xlab='', ylab='Numero de leitos', las=1)
+points(wdlD[i1], wcwb[i1, 1], pch=19, cex=0.5)
 lines(wdlD, swcwb[,1], col=1, lwd=2)
 abline(v=pretty(par()$usr[1:2], 20),
        h=pretty(par()$usr[3:4], 20),
@@ -167,9 +172,9 @@ legend('topleft',
        bg=gray(0.95))
 legend('top', '', title='Curitiba',
        bg=gray(0.95), bty='n', cex=2)
-plot(ddates[i0], nl.t[i0, 1], las=1, pch=19, 
-     ylim=ylm, bty='n', ##axes=FALSE,
-     ylab='Numero de leitos', xlab='', cex=0.5)
+plot(wdlD, wcwb[,2], type='n', bty='n', ylim=ylm, 
+     xlab='', ylab='Numero de leitos', las=1)
+points(ddates[i0], nl.t[i0, 1], pch=19, cex=0.5)
 for (j in 2:3)
     points(ddates[i0], nl.t[i0,j], col=j, pch=19, cex=0.5)
 points(ddates[i0], nuti.t[i0,2], col=6, pch=19, cex=0.5)

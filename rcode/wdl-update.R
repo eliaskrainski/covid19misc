@@ -539,7 +539,7 @@ if(Sys.info()['nodename']=='pataxo') {
         
         ses$fdate <- factor(gsub(
             '-', '', as.character(ses$DATA_CONFIRMACAO_DIVULGACAO)), alldates)
-        ses$casoobito <- ifelse(ses$OBITO=='SIM', 'obitos', 'casos')
+        ses$casoobito <- ifelse(ses$ÓBITO=='SIM', 'obitos', 'casos')
         
         system.time(w0sesa <- table(
                         ses[ii.ses.pr, c('IBGE_RES_PR', 'fdate', 'casoobito')]))

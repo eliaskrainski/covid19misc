@@ -17,7 +17,7 @@ if (file.exists('data/wdl.RData')) {
   load('data/wdl.RData')
   if (difftime(Sys.time(),
                attr(wdl, 'Sys.time'),
-               units='hours')>71) {
+               units='hours')>23) {
     wupdate <- TRUE
   }
 }
