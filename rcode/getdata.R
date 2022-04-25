@@ -219,7 +219,7 @@ gmob.f <- function(d=TRUE) {
     return(invisible())
 }
 
-amob.f <- function(d=TRUE) {
+amob.f <- function(d=!TRUE) {
     ## tip from
     ## https://kieranhealy.org/blog/archives/2020/05/23/get-apples-mobility-data/
     get_apple_target <- function(cdn_url = "https://covid19-static.cdn-apple.com",
@@ -251,7 +251,7 @@ others.f <- function() {
     gus.f(TRUE)
     wcota.f(TRUE)
     brms.f(TRUE)
-    amob.f(TRUE)
+    amob.f(!TRUE)
 }
 
 if(dupdate) {
