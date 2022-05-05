@@ -226,7 +226,7 @@ jj
 
 if(FALSE) {
 
-    d0plot <- Sys.Date()-61
+    d0plot <- Sys.Date()-1910
     iid0 <- which(bsm$Date>=d0plot)
 
     png('figures/casos-ativos-CuritibaSM.png', 1500, 1000, res=150)
@@ -236,7 +236,7 @@ if(FALSE) {
          type='h', lwd=6, ylim=c(0, max(ativos, na.rm=TRUE)),
          xlab='', ylab='Casos ativos'))
     axis(2, pretty(c(0, bsm$ativos[iid0]), 10), las=1)
-    c.t <- diff(c(0, bsm$casos))[c(min(1,iid0[1]-1), iid0)]
+    c.t <- diff(c(0, bsm$casos))[iid0]##c(max(1,iid0[1]-1), iid0)]
     y2c <- c.t/max(c.t, na.rm=TRUE)
     points(bsm$Date[iid0], y2c*max(bsm$ativos[iid0]), type='o', 
            cex=0.5, pch=8, col='green4', lwd=2)
@@ -253,7 +253,7 @@ if(FALSE) {
     axis(2, pretty(c(0, bsm$ativos[iid0]), 10), las=1)
     axis(1, pretty(bsm$Date[iid0], 10),
          format(pretty(bsm$Date[iid0], 10), '%d%b%y'), las=1)
-    o.t <- diff(c(0, bsm$obitos))[c(min(1,iid0[1]-1),iid0)]
+    o.t <- diff(c(0, bsm$obitos))[iid0]##c(max(1,iid0[1]-1),iid0)]
     y2 <- o.t/max(o.t, na.rm=TRUE)
     points(bsm$Date[iid0], y2*max(bsm$ativos[iid0]), type='o', 
            cex=0.5, pch=8, col=2, lwd=2)
