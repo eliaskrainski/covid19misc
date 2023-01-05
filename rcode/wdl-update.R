@@ -234,9 +234,19 @@ if(Sys.info()['nodename']=='pataxo') {
 ###    brmpop[,2] <- gsub(
 ###      'Santa Teresinha', 'Santa Terezinha', brmpop[,2])
         
-### data from Wesley Cota 
-        system.time(dbr <- read.csv(
-                        'data/cases-brazil-cities-time.csv.gz'))
+### data from Wesley Cota
+        if(!file.exists("data/cases-brazil-cities-time-olds.RData")) {
+            dbr <- Reduce(
+                "rbind",
+                list(read.csv('data/cases-brazil-cities-time_2020.csv.gz'),
+                     read.csv('data/cases-brazil-cities-time_2021.csv.gz'),
+                     read.csv('data/cases-brazil-cities-time_2022.csv.gz')))
+            saveRDS(dbr, "data/cases-brazil-cities-time-olds.RData")
+        }
+        
+        dbr <- Reduce(
+            "rbind", list(readRDS("data/cases-brazil-cities-time-olds.RData"),
+                          read.csv('data/cases-brazil-cities-time.csv.gz')))
     
         dim(dbr)
         summary(as.Date(unique(dbr$date)))

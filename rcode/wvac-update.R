@@ -18,20 +18,49 @@ n.doses <- sort(n.doses, decreasing=TRUE)
 n.doses
 
 dl0 <- names(n.doses)##levels(dMunDateDose$Dose)
-        dl <- rep('3', length(dl0))
+        dl <- rep('5', length(dl0))
+dl[substr(dl0, 1, 5)=='Refor'] <- '3'
+dl[dl0=='Dose Adicional'] <- '3'
+dl[intersect(grep('1', dl0), grep('Refor', dl0))] <- '3'
+dl[intersect(grep('1', dl0), grep('Revacin', dl0))] <- '3'
+dl[intersect(grep('2', dl0), grep('Refor', dl0))] <- '4'
+dl[intersect(grep('2', dl0), grep('Revacin', dl0))] <- '4'
+dl[intersect(grep('3', dl0), grep('Refor', dl0))] <- '5'
+dl[intersect(grep('3', dl0), grep('Revacin', dl0))] <- '5'
+##dl[intersect(intersect(grep('3', dl0), grep('ose', dl0)), grep('efor', dl0))] <- '6'
+##dl[intersect(intersect(grep('3', dl0), grep('ose', dl0)), grep('Revacin', dl0))] <- '7'
+##dl[intersect(intersect(grep('3', dl0), grep('ose', dl0)), grep('efor', dl0))] <- '6'
+##dl[intersect(intersect(grep('3', dl0), grep('ose', dl0)), grep('Revacin', dl0))] <- '7'
         dl[intersect(grep('1', dl0), grep('ose', dl0))] <- '1'
         dl[intersect(grep('1', dl0), grep('OSE', dl0))] <- '1'
         dl[intersect(grep('2', dl0), grep('ose', dl0))] <- '2'
         dl[intersect(grep('2', dl0), grep('OSE', dl0))] <- '2'
+        dl[intersect(grep('3', dl0), grep('ose', dl0))] <- '3'
+        dl[intersect(grep('3', dl0), grep('OSE', dl0))] <- '3'
+        dl[intersect(grep('4', dl0), grep('ose', dl0))] <- '4'
+        dl[intersect(grep('4', dl0), grep('OSE', dl0))] <- '4'
+        dl[intersect(grep('5', dl0), grep('ose', dl0))] <- '5'
+        dl[intersect(grep('5', dl0), grep('OSE', dl0))] <- '5'
+##        dl[intersect(grep('6', dl0), grep('ose', dl0))] <- '6'
+##        dl[intersect(grep('6', dl0), grep('OSE', dl0))] <- '6'
+##        dl[intersect(grep('7', dl0), grep('ose', dl0))] <- '7'
+##        dl[intersect(grep('7', dl0), grep('OSE', dl0))] <- '7'
+##dl[grep('Refor', dl0)] <- '3'
         dl[grep('icial', dl0)] <- '1'
         dl[grep('ICIAL', dl0)] <- '1'
         dl[grep('nica', dl0)] <- '2'
         dl[grep('NICA', dl0)] <- '2'
-        dl[dl0%in%c('Dose', 'Dose ', 'DOSE', 'DOSE ')] <- '2'
-dl[union(grep('Re', dl0), grep('RE', dl0))] <- '3'
+##        dl[dl0%in%c('Dose', 'Dose ', 'DOSE', 'DOSE ')] <- '2'
+##dl[union(grep('Re', dl0), grep('RE', dl0))] <- '3'
 dl <- paste0('D', dl)
+dl
 
-system.time(Dose <- factor(factor(dMunDateDose$Dose, dl0, dl), c('D1','D2','D3')))
+system.time(Dose <- factor(
+    factor(dMunDateDose$Dose, dl0, dl),
+    c('D1','D2','D3', 'D4', 'D5')))
+
+table(Dose)
+
 ldose <- levels(Dose)#[1:2]
 names(ldose) <- ldose
 ldose

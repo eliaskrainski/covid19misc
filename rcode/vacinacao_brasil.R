@@ -18,12 +18,17 @@ locl[1:(1+5+27)] <- dimnames(w2pop)[[1]][1:(1+5+27)]
 head(locl, 40)
 tail(locl)
 
+if(FALSE) {
+
 load(file='data/v2tab.RData')
 
 attdvtime <- difftime(
     Sys.time(),
     attr(v2tab, 'updated'), units='hours')
+
 attdvtime
+
+}
 
 if(TRUE) {##if(floor(attdvtime)>19) {
     

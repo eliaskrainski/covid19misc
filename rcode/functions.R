@@ -164,3 +164,46 @@ tSmooth <- function(y, Date, off = rep(0, length(y))) {
                 s=exp(drop(off[d$i] + mean(x.m) + b.m))))
 }
 
+### old vacinacao download function
+### automatic download function
+brvac.uf <- function(d=FALSE, uf=NULL) { 
+
+    url0 <- paste0(
+        'https://opendatasus.saude.gov.br/',
+        'dataset/covid-19-vacinacao/resource/',
+        '301983f2-aa50-4977-8fec-cfab0806cb0b')
+    
+### non elegant way to get the file names... 
+    d0 <- readLines(url0)
+    urls <- grep('c000.csv', d0, value=TRUE)[-1]
+urls
+    ufls <- sapply(urls, function(u) {
+        g1 <- gregexpr('https', u)[[1]]
+        g2 <- gregexpr('csv', u)[[1]]
+        substr(u, g1, g2+2)
+        }) ##substr(urls, 14, 155)
+ufls
+    if(!is.null(uf)) {
+        ufls <- ufls[grep(uf, ufls)] 
+    }
+    lfls <- sapply(ufls, function(u) {
+        gg <- gregexpr('/', u)[[1]]
+        paste(substr(u, tail(gg,1)-2, tail(gg,1)-1),  
+              substring(u, tail(gg,1)+1), sep='_')
+    })
+    names(lfls) <- sapply(ufls, function(u) {
+        gg <- gregexpr('/', u)[[1]]
+        substr(u, tail(gg,1)-2, tail(gg,1)-1)
+    })
+### download if asked and do not exists locally
+    if(d) {
+        for(j in 1:length(lfls)) {
+            fl.j <- paste0('data/vacinacao/vac_', lfls[j])
+            print(fl.j)
+            if(!file.exists(fl.j))
+                download.file(ufls[j], fl.j)
+        }
+    } 
+    return(paste0('data/vacinacao/vac_', lfls))
+}
+

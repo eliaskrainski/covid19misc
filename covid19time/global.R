@@ -529,14 +529,18 @@ dataPrepare <- function(slocal) {
     ww <- model.matrix(~0+w, data.frame(w=w))
     nt <- nrow(ww)
 ##    tk0 <- seq(nt, -30, -14); tk0 <- tk0[tk0>0] ##
-    tk0 <- seq(1, nt, length=round(nt/14))
-##    print(c(nt=nt, r=range(tk0)))
+    tk0 <- sort(seq(1, nt, length=max(1,round(nt/14))))
+    print(c(nt=nt, r=range(tk0)))
     bb <- bs(1:nt, knots=tk0, Boundary.knots=range(tk0))
+    print(c(bb=dim(bb)))
     bb <- bb[, which(colSums(bb)>0)]
+    print(c(bb=dim(bb)))
     bb[,2] <- bb[,1] + bb[,2]
     bb[,ncol(bb)-1] <- bb[, ncol(bb)] + bb[, ncol(bb)-1]
     bb <- bb[, 2:(ncol(bb)-1)]
-
+    print(c(bb=dim(bb)))
+    print(tail(bb[, ncol(bb)-3:0]))
+    
 ##    print(summary(yy[,,1]))
   ##  print(summary(yy[,,2]))
     
@@ -546,9 +550,11 @@ dataPrepare <- function(slocal) {
     } else {
         fSloc <- function(y) {
             if(all(is.na(y))) return(rep(NA, length(y)))
-            i1 <- which(ifelse(is.na(y), 0, y)>0)[1]
+##            i1 <- which(ifelse(is.na(y), 0, y)>0)[1]
+            i.ok <- which(!is.na(y))
+            i1 <- i.ok[1]
             if(i1>=length(y)) return(rep(0, length(y)))
-            i.ok <- intersect(which(!is.na(y)), i1:length(y))
+##            i.ok <- intersect(which(!is.na(y)), i1:length(y))
             r <- y
             if((length(i.ok)<20)|(sum(y[i.ok])<10)) {
               r[i.ok] <- mean(y[i.ok])

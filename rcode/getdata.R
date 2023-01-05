@@ -250,8 +250,8 @@ gus.f <- function(d=TRUE) {
 others.f <- function() {
     gus.f(TRUE)
     wcota.f(TRUE)
-    brms.f(TRUE)
-    amob.f(!TRUE)
+ #   brms.f(TRUE)
+#    amob.f(!TRUE)
 }
 
 if(dupdate) {
@@ -292,7 +292,7 @@ owid.f(TRUE)
                 ##wcota=wcota.f(),
                 ##fnd='fnd.f()',
                 ##sesa='sesa.f()')
-                apple='amob.f()',
+            ##    apple='amob.f()',
                 google='gmob.f()'), 
                 function(x)
                     ##        eval(str2lang(x))
