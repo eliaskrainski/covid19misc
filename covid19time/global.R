@@ -237,6 +237,17 @@ y2positive <- function(y) {
     return(y)
 }
 
+y7to1 <- function(y) {
+    r <- rle(y)
+    j <- cumsum(r$lengths) + 1
+    print(j)
+    for(k in which(r$lengths>4)) {
+        print(-r$lengths[k]:0 + j[k])
+        y[-r$lengths[k]:0 + j[k]] <- r$values[k+1]/(r$lengths[k]+1)
+    }
+    return(y)
+}
+
 tSmoothPoisson <- function(y, X, B) {
     n <- length(y)
     if (is.null(colnames(X)))
@@ -899,15 +910,17 @@ Rtfit <- function(d, a=0.5, b=1) {
             i1 <- which(y0>0)[1]
             ii <- which(!is.na(y0)) 
             ii <- ii[ii>=i1]
+            y0b <- y0
+            y0b[ii] <- y7to1(y0[ii])
             ii0 <- 1:max(n0, i1+14)
-            d$ee[ii0, l, k] <- max(1, mean(y0[ii0], na.rm=TRUE))
+            d$ee[ii0, l, k] <- max(1, mean(y0b[ii0], na.rm=TRUE))
             for (i in ii) {
               w <- wv[, 1] * wwv[i, 1] + 
                 wv[, 2] * wwv[i, 2] + 
                 wv[, 3] * wwv[i, 3] 
               iie <- i + t.eval
               iie0 <- iie>0
-              d$ee[iie[iie0], l, k] <- d$ee[iie[iie0], l, k] + y0[i] * w[iie0]
+              d$ee[iie[iie0], l, k] <- d$ee[iie[iie0], l, k] + y0b[i] * w[iie0]
             }
             d$ee[d$ee<0.01] <- 0.01
             if ((length(ii)>19) & (mgcv.ok)) {

@@ -16,7 +16,7 @@ server <- function(input, output) {
                         'Paraná - BR', 
                         'Brasil'),
 #                        'India'),
-                dateRange=c('01/01/20', '10/10/21'),
+                dateRange=c('01/12/22', '10/01/23'),
                 plots=allpls[c(1,3)],
                 ##c("Daily counts",
                   ##      "Reproduction number",
@@ -26,7 +26,7 @@ server <- function(input, output) {
                         ##'workplaces', 'residential')[c(1:2, 4:5)],
                 showPoints=TRUE,
                 legend='top',
-                transf='log10')
+                transf='none')
             
             source("global.R")
             
