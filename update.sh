@@ -30,4 +30,3 @@ cp data/wvac.RData /home/elias/ShinyApps/covid19time/data/
 cp data/v2tab.RData /home/elias/ShinyApps/covid19vacina/RData/ 
 
 rm -rf data/vacinacao/*.csv -rf
-
